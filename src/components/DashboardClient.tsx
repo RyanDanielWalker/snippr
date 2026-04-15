@@ -97,6 +97,20 @@ export default function DashboardClient({ snippets, user }: Props) {
           </div>
         </div>
 
+        {snippets.length >= 8 && (
+          <div
+            className={`text-xs px-4 py-2 rounded-lg mb-4 ${
+              snippets.length >= 10
+                ? "bg-red-950 text-red-400"
+                : "bg-yellow-950 text-yellow-500"
+            }`}
+          >
+            {snippets.length >= 10
+              ? "You've reached the 10 snippet limit on the free plan."
+              : `${snippets.length}/10 snippets used on the free plan.`}
+          </div>
+        )}
+
         <div className="flex items-center gap-3 mb-8">
           <div className="relative flex-1">
             <input
