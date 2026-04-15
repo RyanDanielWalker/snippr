@@ -73,6 +73,7 @@ ANTHROPIC_API_KEY=
 ```
 
 ## Project Structure
+```
 src/
 ├── app/
 │   ├── api/
@@ -86,8 +87,9 @@ src/
 │   ├── NewSnippetModal  # Create snippet form
 │   └── LoginButton      # GitHub OAuth trigger
 └── lib/
-├── auth.ts          # NextAuth config
-└── prisma.ts        # Prisma client singleton
+    ├── auth.ts          # NextAuth config
+    └── prisma.ts        # Prisma client singleton
+```
 
 ## AI Search
 
