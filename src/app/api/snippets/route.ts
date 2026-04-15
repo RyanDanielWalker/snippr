@@ -34,3 +34,18 @@ export async function POST(req: Request) {
 
   return NextResponse.json(snippet)
 }
+
+export async function DELETE(req: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return NextResponse.json({}, { status: 401 })
+
+  const { id } = await req.json()
+
+  const snippet = await prisma.snippet.findUnique({ where: { id } })
+  if (!snippet || snippet.userId !== session.user.id) {
+    return NextResponse.json({}, { status: 403 })
+  }
+
+  await prisma.snippet.delete({ where: { id } })
+  return NextResponse.json({ success: true })
+}

@@ -1,76 +1,78 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import SnippetCard from "@/components/SnippetCard"
-import NewSnippetModal from "@/components/NewSnippetModal"
+import { useState } from "react";
+import SnippetCard from "@/components/SnippetCard";
+import NewSnippetModal from "@/components/NewSnippetModal";
+import { signOut } from "next-auth/react";
 
 type Snippet = {
-  id: string
-  title: string
-  code: string
-  language: string
-  description?: string | null
-  tags: string[]
-  createdAt: string
-}
+  id: string;
+  title: string;
+  code: string;
+  language: string;
+  description?: string | null;
+  tags: string[];
+  createdAt: string;
+};
 
 type Props = {
-  snippets: Snippet[]
-  user: { email: string; image: string }
-}
+  snippets: Snippet[];
+  user: { email: string; image: string };
+};
 
 export default function DashboardClient({ snippets, user }: Props) {
-  const [showModal, setShowModal] = useState(false)
-  const [search, setSearch] = useState("")
-  const [aiMode, setAiMode] = useState(false)
-  const [aiResults, setAiResults] = useState<Snippet[] | null>(null)
-  const [aiLoading, setAiLoading] = useState(false)
+  const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState("");
+  const [aiMode, setAiMode] = useState(false);
+  const [aiResults, setAiResults] = useState<Snippet[] | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
-  const filtered = snippets.filter(s =>
-    s.title.toLowerCase().includes(search.toLowerCase()) ||
-    s.tags.some(t => t.toLowerCase().includes(search.toLowerCase())) ||
-    s.language.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = snippets.filter(
+    (s) =>
+      s.title.toLowerCase().includes(search.toLowerCase()) ||
+      s.tags.some((t) => t.toLowerCase().includes(search.toLowerCase())) ||
+      s.language.toLowerCase().includes(search.toLowerCase()),
+  );
 
-async function handleAiSearch() {
-  if (!search.trim()) return
-  setAiLoading(true)
-  setAiResults(null)
+  async function handleAiSearch() {
+    if (!search.trim()) return;
+    setAiLoading(true);
+    setAiResults(null);
 
-  try {
-    const res = await fetch("/api/snippets/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: search }),
-    })
+    try {
+      const res = await fetch("/api/snippets/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: search }),
+      });
 
-    if (!res.ok) {
-      console.error("Search failed:", res.status)
-      setAiResults([])
-      return
+      if (!res.ok) {
+        console.error("Search failed:", res.status);
+        setAiResults([]);
+        return;
+      }
+
+      const data = await res.json();
+      setAiResults(data);
+    } catch (err) {
+      console.error("AI search error:", err);
+      setAiResults([]);
+    } finally {
+      setAiLoading(false);
     }
-
-    const data = await res.json()
-    setAiResults(data)
-  } catch (err) {
-    console.error("AI search error:", err)
-    setAiResults([])
-  } finally {
-    setAiLoading(false)
   }
-}
 
   function handleSearchKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && aiMode) handleAiSearch()
+    if (e.key === "Enter" && aiMode) handleAiSearch();
   }
 
   function handleModeToggle() {
-    setAiMode(v => !v)
-    setAiResults(null)
-    setSearch("")
+    setAiMode((v) => !v);
+    setAiResults(null);
+    setSearch("");
   }
 
-  const displaySnippets = aiMode && aiResults !== null ? aiResults : filtered
+  const displaySnippets = aiMode && aiResults !== null ? aiResults : filtered;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -81,7 +83,17 @@ async function handleAiSearch() {
           <h1 className="text-2xl font-bold">Snippr</h1>
           <div className="flex items-center gap-4">
             <span className="text-gray-400 text-sm">{user.email}</span>
-            <img src={user.image} alt="avatar" className="w-8 h-8 rounded-full" />
+            <img
+              src={user.image}
+              alt="avatar"
+              className="w-8 h-8 rounded-full"
+            />
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="text-xs text-gray-500 hover:text-white transition"
+            >
+              Sign out
+            </button>
           </div>
         </div>
 
@@ -89,9 +101,16 @@ async function handleAiSearch() {
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder={aiMode ? "Describe what you're looking for..." : "Search snippets..."}
+              placeholder={
+                aiMode
+                  ? "Describe what you're looking for..."
+                  : "Search snippets..."
+              }
               value={search}
-              onChange={e => { setSearch(e.target.value); if (!aiMode) setAiResults(null) }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                if (!aiMode) setAiResults(null);
+              }}
               onKeyDown={handleSearchKeyDown}
               className="w-full bg-gray-900 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 border border-gray-800"
             />
@@ -133,8 +152,8 @@ async function handleAiSearch() {
               {aiMode && aiResults !== null
                 ? "No matching snippets found."
                 : search
-                ? "No snippets match your search."
-                : "No snippets yet."}
+                  ? "No snippets match your search."
+                  : "No snippets yet."}
             </p>
             <p className="text-sm mt-2">
               {!search && !aiResults && "Create your first one to get started."}
@@ -144,12 +163,12 @@ async function handleAiSearch() {
 
         {!aiLoading && displaySnippets.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {displaySnippets.map(snippet => (
+            {displaySnippets.map((snippet) => (
               <SnippetCard key={snippet.id} snippet={snippet} />
             ))}
           </div>
         )}
       </div>
     </main>
-  )
+  );
 }
