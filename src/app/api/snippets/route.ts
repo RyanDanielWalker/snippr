@@ -60,3 +60,22 @@ export async function DELETE(req: Request) {
   await prisma.snippet.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }
+
+export async function PATCH(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
+
+  const { id, title, code, language, description, tags } = await req.json();
+
+  const snippet = await prisma.snippet.findUnique({ where: { id } });
+  if (!snippet || snippet.userId !== session.user.id) {
+    return NextResponse.json({}, { status: 403 });
+  }
+
+  const updated = await prisma.snippet.update({
+    where: { id },
+    data: { title, code, language, description, tags },
+  });
+
+  return NextResponse.json(updated);
+}
