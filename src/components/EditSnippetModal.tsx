@@ -24,13 +24,21 @@ type Snippet = {
   language: string;
   description?: string | null;
   tags: string[];
+  folderId?: string | null;
+};
+
+type Folder = {
+  id: string;
+  name: string;
 };
 
 export default function EditSnippetModal({
   snippet,
+  folders,
   onClose,
 }: {
   snippet: Snippet;
+  folders: Folder[];
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -42,6 +50,7 @@ export default function EditSnippetModal({
     language: snippet.language,
     description: snippet.description ?? "",
     tags: snippet.tags.join(", "),
+    folderId: snippet.folderId ?? "",
   });
 
   const originalTags = snippet.tags.join(", ");
@@ -50,7 +59,8 @@ export default function EditSnippetModal({
     form.code !== snippet.code ||
     form.language !== snippet.language ||
     form.description !== (snippet.description ?? "") ||
-    form.tags !== originalTags;
+    form.tags !== originalTags ||
+    form.folderId !== (snippet.folderId ?? "");
 
   async function handleSubmit() {
     if (!form.title || !form.code) return;
@@ -62,6 +72,7 @@ export default function EditSnippetModal({
       body: JSON.stringify({
         id: snippet.id,
         ...form,
+        folderId: form.folderId || null,
         tags: form.tags
           .split(",")
           .map((t) => t.trim())
@@ -113,31 +124,61 @@ export default function EditSnippetModal({
           className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
         />
 
-        <div className="relative">
-          <select
-            value={form.language}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, language: e.target.value }))
-            }
-            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
-          >
-            {LANGUAGES.map((l) => (
-              <option key={l} value={l}>
-                {l}
-              </option>
-            ))}
-          </select>
-          <svg
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.4a.75.75 0 01-1.08 0l-4.25-4.4a.75.75 0 01.02-1.06z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="relative">
+            <select
+              value={form.language}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, language: e.target.value }))
+              }
+              className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
+            >
+              {LANGUAGES.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
+            <svg
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.4a.75.75 0 01-1.08 0l-4.25-4.4a.75.75 0 01.02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+
+          <div className="relative">
+            <select
+              value={form.folderId}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, folderId: e.target.value }))
+              }
+              className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
+            >
+              <option value="">No folder</option>
+              {folders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.name}
+                </option>
+              ))}
+            </select>
+            <svg
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.4a.75.75 0 01-1.08 0l-4.25-4.4a.75.75 0 01.02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
         </div>
 
         <textarea

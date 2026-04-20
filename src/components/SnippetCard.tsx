@@ -12,16 +12,30 @@ type Snippet = {
   language: string;
   description?: string | null;
   tags: string[];
+  folderId?: string | null;
   createdAt: string;
 };
 
-export default function SnippetCard({ snippet }: { snippet: Snippet }) {
+type Folder = {
+  id: string;
+  name: string;
+};
+
+export default function SnippetCard({
+  snippet,
+  folders,
+}: {
+  snippet: Snippet;
+  folders: Folder[];
+}) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+
+  const folderName = folders.find((f) => f.id === snippet.folderId)?.name;
 
   function copy(e: React.MouseEvent) {
     e.stopPropagation();
@@ -56,6 +70,7 @@ export default function SnippetCard({ snippet }: { snippet: Snippet }) {
       {showEdit && (
         <EditSnippetModal
           snippet={snippet}
+          folders={folders}
           onClose={() => setShowEdit(false)}
         />
       )}
@@ -82,9 +97,16 @@ export default function SnippetCard({ snippet }: { snippet: Snippet }) {
               </p>
             )}
           </div>
-          <span className="text-xs text-blue-400 bg-blue-950 px-2 py-1 rounded-md shrink-0">
-            {snippet.language}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            {folderName && (
+              <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded-md">
+                {folderName}
+              </span>
+            )}
+            <span className="text-xs text-blue-400 bg-blue-950 px-2 py-1 rounded-md">
+              {snippet.language}
+            </span>
+          </div>
         </div>
 
         <pre className="bg-gray-950 rounded-lg p-4 text-sm text-gray-300 font-mono overflow-x-auto max-h-40">
