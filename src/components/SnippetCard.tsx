@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import EditSnippetModal from "@/components/EditSnippetModal";
+import SnippetModal from "@/components/SnippetModal";
 
 type Snippet = {
   id: string;
@@ -20,14 +21,17 @@ export default function SnippetCard({ snippet }: { snippet: Snippet }) {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
-  function copy() {
+  function copy(e: React.MouseEvent) {
+    e.stopPropagation();
     navigator.clipboard.writeText(snippet.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
-  async function handleDelete() {
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
     if (!confirmDelete) {
       setConfirmDelete(true);
       setTimeout(() => setConfirmDelete(false), 3000);
@@ -42,6 +46,11 @@ export default function SnippetCard({ snippet }: { snippet: Snippet }) {
     router.refresh();
   }
 
+  function handleEdit(e: React.MouseEvent) {
+    e.stopPropagation();
+    setShowEdit(true);
+  }
+
   return (
     <>
       {showEdit && (
@@ -50,7 +59,20 @@ export default function SnippetCard({ snippet }: { snippet: Snippet }) {
           onClose={() => setShowEdit(false)}
         />
       )}
-      <div className="bg-gray-900 rounded-xl p-5 flex flex-col gap-3 border border-gray-800 hover:border-gray-700 transition">
+      {showPreview && (
+        <SnippetModal
+          snippet={snippet}
+          onClose={() => setShowPreview(false)}
+          onEdit={() => {
+            setShowPreview(false);
+            setShowEdit(true);
+          }}
+        />
+      )}
+      <div
+        onClick={() => setShowPreview(true)}
+        className="bg-gray-900 rounded-xl p-5 flex flex-col gap-3 border border-gray-800 hover:border-gray-700 transition cursor-pointer"
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-white font-medium">{snippet.title}</h3>
@@ -100,7 +122,7 @@ export default function SnippetCard({ snippet }: { snippet: Snippet }) {
                   : "Delete"}
             </button>
             <button
-              onClick={() => setShowEdit(true)}
+              onClick={handleEdit}
               className="text-xs text-gray-600 hover:text-white transition"
             >
               Edit

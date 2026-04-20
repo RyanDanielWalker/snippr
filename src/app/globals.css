@@ -28,3 +28,13 @@ body {
 button {
   cursor: pointer;
 }
+
+.shiki-wrapper pre {
+  padding: 1.25rem;
+  overflow-x: auto;
+  background: #0d1117 !important;
+}
+
+.shiki-wrapper code {
+  font-family: var(--font-mono), monospace;
+}
