@@ -29,6 +29,12 @@ export default function NewSnippetModal({ onClose }: { onClose: () => void }) {
     tags: "",
   });
 
+  const hasContent =
+    form.title.trim() !== "" ||
+    form.code.trim() !== "" ||
+    form.description.trim() !== "" ||
+    form.tags.trim() !== "";
+
   async function handleSubmit() {
     if (!form.title || !form.code) return;
     setLoading(true);
@@ -71,8 +77,16 @@ export default function NewSnippetModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-xl w-full max-w-3xl p-6 space-y-4">
+    <div
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+      onClick={() => {
+        if (!hasContent) onClose();
+      }}
+    >
+      <div
+        className="bg-gray-900 rounded-xl w-full max-w-3xl p-6 space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between">
           <h2 className="text-white font-semibold text-lg">New snippet</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white">
