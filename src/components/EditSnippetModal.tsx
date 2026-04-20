@@ -43,6 +43,14 @@ export default function EditSnippetModal({
     tags: snippet.tags.join(", "),
   });
 
+  const originalTags = snippet.tags.join(", ");
+  const hasChanges =
+    form.title !== snippet.title ||
+    form.code !== snippet.code ||
+    form.language !== snippet.language ||
+    form.description !== (snippet.description ?? "") ||
+    form.tags !== originalTags;
+
   async function handleSubmit() {
     if (!form.title || !form.code) return;
     setLoading(true);
@@ -130,7 +138,7 @@ export default function EditSnippetModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={loading || !form.title || !form.code}
+            disabled={loading || !form.title || !form.code || !hasChanges}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Saving..." : "Save changes"}
