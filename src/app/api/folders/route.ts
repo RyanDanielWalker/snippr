@@ -7,69 +7,61 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json([], { status: 401 });
 
-  const snippets = await prisma.snippet.findMany({
+  const folders = await prisma.folder.findMany({
     where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: "asc" },
+    include: {
+      _count: {
+        select: { snippets: true },
+      },
+    },
   });
 
-  return NextResponse.json(snippets);
+  return NextResponse.json(folders);
 }
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
-  const snippetCount = await prisma.snippet.count({
-    where: { userId: session.user.id },
-  });
-
-  if (snippetCount >= 10) {
+  const { name } = await req.json();
+  if (!name?.trim()) {
     return NextResponse.json(
-      { error: "Free plan limit reached. Maximum 10 snippets allowed." },
-      { status: 403 },
+      { error: "Folder name is required" },
+      { status: 400 },
     );
   }
 
-  const { title, code, language, description, tags, folderId } =
-    await req.json();
-
-  const snippet = await prisma.snippet.create({
+  const folder = await prisma.folder.create({
     data: {
-      title,
-      code,
-      language,
-      description: description ?? "",
-      tags: tags ?? [],
-      folderId: folderId ?? null,
+      name: name.trim(),
       userId: session.user.id,
     },
   });
 
-  return NextResponse.json(snippet);
+  return NextResponse.json(folder);
 }
 
 export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
-  const { id, title, code, language, description, tags, folderId } =
-    await req.json();
+  const { id, name } = await req.json();
+  if (!name?.trim()) {
+    return NextResponse.json(
+      { error: "Folder name is required" },
+      { status: 400 },
+    );
+  }
 
-  const snippet = await prisma.snippet.findUnique({ where: { id } });
-  if (!snippet || snippet.userId !== session.user.id) {
+  const folder = await prisma.folder.findUnique({ where: { id } });
+  if (!folder || folder.userId !== session.user.id) {
     return NextResponse.json({}, { status: 403 });
   }
 
-  const updated = await prisma.snippet.update({
+  const updated = await prisma.folder.update({
     where: { id },
-    data: {
-      title,
-      code,
-      language,
-      description,
-      tags,
-      folderId: folderId ?? null,
-    },
+    data: { name: name.trim() },
   });
 
   return NextResponse.json(updated);
@@ -81,11 +73,11 @@ export async function DELETE(req: Request) {
 
   const { id } = await req.json();
 
-  const snippet = await prisma.snippet.findUnique({ where: { id } });
-  if (!snippet || snippet.userId !== session.user.id) {
+  const folder = await prisma.folder.findUnique({ where: { id } });
+  if (!folder || folder.userId !== session.user.id) {
     return NextResponse.json({}, { status: 403 });
   }
 
-  await prisma.snippet.delete({ where: { id } });
+  await prisma.folder.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

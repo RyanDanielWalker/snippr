@@ -16,7 +16,17 @@ model User {
   accounts      Account[]
   sessions      Session[]
   snippets      Snippet[]
+  folders       Folder[]
   createdAt     DateTime  @default(now())
+}
+
+model Folder {
+  id        String    @id @default(cuid())
+  name      String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snippets  Snippet[]
+  createdAt DateTime  @default(now())
 }
 
 model Snippet {
@@ -28,6 +38,8 @@ model Snippet {
   description String?
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId    String?
+  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
