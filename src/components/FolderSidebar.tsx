@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 type Folder = {
@@ -30,6 +30,19 @@ export default function FolderSidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpenId(null);
+      }
+    }
+    if (menuOpenId) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpenId]);
 
   async function handleCreate() {
     if (!newName.trim()) {
@@ -138,7 +151,7 @@ export default function FolderSidebar({
               }`}
             >
               <span className="truncate pr-6">{folder.name}</span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 group-hover:opacity-0 transition">
                 {folder._count.snippets}
               </span>
             </button>
@@ -157,7 +170,10 @@ export default function FolderSidebar({
           )}
 
           {menuOpenId === folder.id && (
-            <div className="absolute right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden">
+            <div
+              ref={menuRef}
+              className="absolute right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden"
+            >
               <button
                 onClick={() => startEdit(folder)}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
