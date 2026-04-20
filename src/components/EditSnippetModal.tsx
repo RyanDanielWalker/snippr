@@ -35,6 +35,7 @@ export default function EditSnippetModal({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [form, setForm] = useState({
     title: snippet.title,
     code: snippet.code,
@@ -71,6 +72,19 @@ export default function EditSnippetModal({
     setLoading(false);
     onClose();
     router.refresh();
+  }
+
+  async function handleGenerateDescription() {
+    if (!form.code) return;
+    setGenerating(true);
+    const res = await fetch("/api/snippets/describe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: form.code, language: form.language }),
+    });
+    const data = await res.json();
+    setForm((f) => ({ ...f, description: data.description }));
+    setGenerating(false);
   }
 
   return (
@@ -111,15 +125,24 @@ export default function EditSnippetModal({
           className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm font-mono outline-none focus:ring-1 focus:ring-blue-500 resize-none"
         />
 
-        <input
-          type="text"
-          placeholder="Description (optional)"
-          value={form.description}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, description: e.target.value }))
-          }
-          className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Description (optional)"
+            value={form.description}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, description: e.target.value }))
+            }
+            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-28 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+          />
+          <button
+            onClick={handleGenerateDescription}
+            disabled={!form.code || generating}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-400 hover:text-blue-300 px-2 py-1 disabled:opacity-40"
+          >
+            {generating ? "..." : "✦ Generate"}
+          </button>
+        </div>
 
         <input
           type="text"
