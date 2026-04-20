@@ -72,7 +72,7 @@ export default function NewSnippetModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-xl w-full max-w-2xl p-6 space-y-4">
+      <div className="bg-gray-900 rounded-xl w-full max-w-3xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-white font-semibold text-lg">New snippet</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white">
@@ -88,17 +88,32 @@ export default function NewSnippetModal({ onClose }: { onClose: () => void }) {
           className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
         />
 
-        <select
-          value={form.language}
-          onChange={(e) => setForm((f) => ({ ...f, language: e.target.value }))}
-          className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          {LANGUAGES.map((l) => (
-            <option key={l} value={l}>
-              {l}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={form.language}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, language: e.target.value }))
+            }
+            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.4a.75.75 0 01-1.08 0l-4.25-4.4a.75.75 0 01.02-1.06z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
 
         <textarea
           placeholder="Paste your code here..."
