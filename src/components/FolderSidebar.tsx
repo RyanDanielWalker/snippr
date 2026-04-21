@@ -15,6 +15,8 @@ type Props = {
   unorganizedCount: number;
   selectedFolderId: string | null;
   onSelectFolder: (id: string | null) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 };
 
 export default function FolderSidebar({
@@ -23,6 +25,8 @@ export default function FolderSidebar({
   unorganizedCount,
   selectedFolderId,
   onSelectFolder,
+  collapsed,
+  onToggleCollapse,
 }: Props) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
@@ -96,8 +100,57 @@ export default function FolderSidebar({
     setMenuOpenId(null);
   }
 
+  if (collapsed) {
+    return (
+      <aside className="w-10 shrink-0">
+        <button
+          onClick={onToggleCollapse}
+          className="w-full h-[42px] flex items-center justify-center text-gray-500 hover:text-white transition rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-800"
+          title="Expand sidebar"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+      </aside>
+    );
+  }
+
   return (
     <aside className="w-56 shrink-0 space-y-1">
+      <div className="flex items-center justify-between px-3 py-2">
+        <span className="text-xs text-gray-600 uppercase tracking-wider">
+          Library
+        </span>
+        <button
+          onClick={onToggleCollapse}
+          className="text-gray-500 hover:text-white transition"
+          title="Collapse sidebar"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+      </div>
+
       <button
         onClick={() => onSelectFolder(null)}
         className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition ${

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import SnippetCard from "@/components/SnippetCard";
 import NewSnippetModal from "@/components/NewSnippetModal";
@@ -36,6 +36,18 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   const [aiResults, setAiResults] = useState<Snippet[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("sidebarCollapsed");
+    if (stored === "true") setSidebarCollapsed(true);
+  }, []);
+
+  function toggleSidebar() {
+    const newState = !sidebarCollapsed;
+    setSidebarCollapsed(newState);
+    localStorage.setItem("sidebarCollapsed", String(newState));
+  }
 
   const unorganizedCount = snippets.filter((s) => !s.folderId).length;
 
@@ -138,6 +150,8 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
             unorganizedCount={unorganizedCount}
             selectedFolderId={selectedFolderId}
             onSelectFolder={setSelectedFolderId}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={toggleSidebar}
           />
 
           <div className="flex-1 min-w-0">
