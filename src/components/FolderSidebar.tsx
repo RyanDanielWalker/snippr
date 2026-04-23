@@ -2,12 +2,43 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useDroppable } from "@dnd-kit/core";
 
 type Folder = {
   id: string;
   name: string;
   _count: { snippets: number };
 };
+
+function DroppableFolder({
+  id,
+  selected,
+  onClick,
+  children,
+}: {
+  id: string;
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+
+  return (
+    <button
+      ref={setNodeRef}
+      onClick={onClick}
+      className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition ${
+        isOver
+          ? "bg-blue-600 text-white ring-2 ring-blue-400"
+          : selected
+            ? "bg-gray-800 text-white"
+            : "text-gray-400 hover:text-white hover:bg-gray-900"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 type Props = {
   folders: Folder[];
@@ -163,17 +194,14 @@ export default function FolderSidebar({
         <span className="text-xs text-gray-500">{totalSnippets}</span>
       </button>
 
-      <button
+      <DroppableFolder
+        id="unorganized"
+        selected={selectedFolderId === "unorganized"}
         onClick={() => onSelectFolder("unorganized")}
-        className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition ${
-          selectedFolderId === "unorganized"
-            ? "bg-gray-800 text-white"
-            : "text-gray-400 hover:text-white hover:bg-gray-900"
-        }`}
       >
         <span>Unorganized</span>
         <span className="text-xs text-gray-500">{unorganizedCount}</span>
-      </button>
+      </DroppableFolder>
 
       <div className="pt-4 pb-2 px-3 text-xs text-gray-600 uppercase tracking-wider">
         Folders
@@ -195,19 +223,16 @@ export default function FolderSidebar({
               className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500"
             />
           ) : (
-            <button
+            <DroppableFolder
+              id={folder.id}
+              selected={selectedFolderId === folder.id}
               onClick={() => onSelectFolder(folder.id)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition ${
-                selectedFolderId === folder.id
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-400 hover:text-white hover:bg-gray-900"
-              }`}
             >
               <span className="truncate pr-6">{folder.name}</span>
               <span className="text-xs text-gray-500 group-hover:opacity-0 transition">
                 {folder._count.snippets}
               </span>
-            </button>
+            </DroppableFolder>
           )}
 
           {editingId !== folder.id && (
