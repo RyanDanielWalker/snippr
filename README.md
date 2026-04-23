@@ -1,16 +1,18 @@
 # Snippr
 
-A personal code snippet manager with AI-powered search and descriptions.
+A personal code snippet manager with AI-powered search, auto-generated descriptions, and folder organization.
 
 Live at **[snippr.dev](https://snippr.dev)**.
 
-Built as a portfolio project to demonstrate full-stack development with modern tooling, authentication, database integration, and AI API usage.
+Built as a portfolio project to demonstrate full-stack development with modern tooling, authentication, database integration, drag-and-drop UX, and AI API usage.
 
 ## Features
 
-- **GitHub OAuth** — secure login via NextAuth.js
+- **Multi-provider OAuth** — sign in with GitHub or Google, with automatic account linking by email
 - **Create, edit & delete snippets** — save code with title, language, tags, and description
-- **Syntax highlighting** — snippet preview modal with Shiki-powered code highlighting
+- **Syntax-highlighted preview** — full-screen modal with Shiki-powered code highlighting
+- **Folder organization** — group snippets into folders with a collapsible sidebar
+- **Drag-and-drop** — drag snippets between folders to organize them
 - **Keyword search** — filter snippets instantly by title, tag, or language
 - **AI-powered semantic search** — describe what you're looking for in plain English and Claude finds the right snippet
 - **AI-generated descriptions** — auto-generate concise descriptions for any snippet with one click
@@ -22,11 +24,12 @@ Built as a portfolio project to demonstrate full-stack development with modern t
 
 - **Framework:** Next.js 16 (App Router, TypeScript)
 - **Styling:** Tailwind CSS
-- **Auth:** NextAuth.js with GitHub OAuth
+- **Auth:** NextAuth.js with GitHub + Google OAuth
 - **Database:** PostgreSQL via Supabase
 - **ORM:** Prisma
 - **AI:** Anthropic Claude API (Claude Sonnet)
 - **Syntax highlighting:** Shiki
+- **Drag-and-drop:** dnd-kit
 - **Deployment:** Vercel
 
 ## AI Features
@@ -44,6 +47,7 @@ Snippr uses the Anthropic Claude API for two core features:
 - Node.js 18+
 - A Supabase account
 - A GitHub OAuth app
+- A Google OAuth app
 - An Anthropic API key
 
 ### Installation
@@ -82,6 +86,8 @@ NEXTAUTH_SECRET=
 NEXTAUTH_URL=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 ANTHROPIC_API_KEY=
 ```
 
@@ -91,28 +97,29 @@ src/
 ├── app/
 │   ├── api/
 │   │   ├── auth/        # NextAuth route handler
+│   │   ├── folders/     # Folder CRUD
 │   │   └── snippets/    # Snippet CRUD, AI search, AI describe
 │   ├── dashboard/       # Main app page
 │   └── login/           # Login page
 ├── components/
-│   ├── DashboardClient  # Client-side dashboard logic
-│   ├── SnippetCard      # Individual snippet display
-│   ├── SnippetModal     # Syntax-highlighted preview
-│   ├── NewSnippetModal  # Create snippet form
-│   ├── EditSnippetModal # Edit snippet form
-│   └── LoginButton      # GitHub OAuth trigger
+│   ├── DashboardClient    # Client-side dashboard with DnD context
+│   ├── FolderSidebar      # Collapsible sidebar with drop targets
+│   ├── SnippetCard        # Draggable snippet display
+│   ├── SnippetModal       # Syntax-highlighted preview
+│   ├── NewSnippetModal    # Create snippet form
+│   ├── EditSnippetModal   # Edit snippet form
+│   └── LoginButton        # OAuth trigger buttons
 └── lib/
 ├── auth.ts          # NextAuth config
 └── prisma.ts        # Prisma client singleton
 ```
-
 ## Roadmap
 
-- Projects / folders for organizing snippets
-- Google OAuth in addition to GitHub
+- Format code on paste
 - Public snippet sharing
-- Stripe integration for paid tier (unlimited snippets)
+- Social feed with follows, likes, and comments
 - VS Code extension
+- Stripe integration for paid tier (unlimited snippets)
 
 ## License
 
