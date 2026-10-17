@@ -12,7 +12,8 @@ Quick, high-value fixes and the groundwork everything else builds on.
 
 - [x] Engineering docs: architecture overview, decision records, development guide
 - [ ] Disable the Supabase Data API, or enable RLS on every table ([0003](./adr/0003-supabase-postgres-with-prisma-5.md))
-- [ ] Check folder ownership when creating or updating a snippet ([0006](./adr/0006-folders-as-optional-one-to-many.md))
+- [x] Check folder ownership when creating or updating a snippet ([0006](./adr/0006-folders-as-optional-one-to-many.md))
+- [ ] Make snippet PATCH a true partial update: it writes `folderId ?? null`, so a request that leaves out `folderId` quietly moves the snippet to Unorganized. Today's callers always send it, so nothing breaks yet
 - [x] Require a verified email when a sign-in account is first attached ([0009](./adr/0009-require-verified-email-for-new-accounts.md))
 - [x] Pass `authOptions` in the login page's session check ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md))
 - [ ] Store emails lowercased: NextAuth matches emails case-sensitively, so `Me@x.com` from one provider and `me@x.com` from another create two users instead of linking

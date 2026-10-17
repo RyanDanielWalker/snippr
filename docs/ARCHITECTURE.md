@@ -84,7 +84,7 @@ Every Route Handler follows the same pattern:
 2. **Is it yours?** For any record addressed by id, load it and compare its `userId` to the session's. Mismatch or missing means `403`.
 3. **Do the work,** scoped by `userId`.
 
-Lists are always filtered with `where: { userId }`, so one user can never see another's data. Known gap: when a snippet is created or updated, the `folderId` it points to isn't checked against the same rule ([0006](./adr/0006-folders-as-optional-one-to-many.md)).
+Lists are always filtered with `where: { userId }`, so one user can never see another's data. Foreign keys in a request body get the same rule: when a snippet is created or updated, its `folderId` must be null or a folder you own, or the request gets a `403` (`src/lib/folder-ownership.ts`; history in [0006](./adr/0006-folders-as-optional-one-to-many.md)).
 
 ## Data model
 
