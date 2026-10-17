@@ -13,8 +13,9 @@ Quick, high-value fixes and the groundwork everything else builds on.
 - [x] Engineering docs: architecture overview, decision records, development guide
 - [ ] Disable the Supabase Data API, or enable RLS on every table ([0003](./adr/0003-supabase-postgres-with-prisma-5.md))
 - [ ] Check folder ownership when creating or updating a snippet ([0006](./adr/0006-folders-as-optional-one-to-many.md))
-- [ ] Only link accounts by email when the provider confirms the email is verified ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md))
-- [ ] Pass `authOptions` in the login page's session check ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md))
+- [x] Require a verified email when a sign-in account is first attached ([0009](./adr/0009-require-verified-email-for-new-accounts.md))
+- [x] Pass `authOptions` in the login page's session check ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md))
+- [ ] Store emails lowercased: NextAuth matches emails case-sensitively, so `Me@x.com` from one provider and `me@x.com` from another create two users instead of linking
 - [ ] Rate-limit the AI endpoints ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
 - [ ] Remove unused dependencies: `@prisma/adapter-pg`, `pg`, `@types/pg`, `@dnd-kit/sortable`
 - [ ] Remove the unused Next.js starter files from `public/`
@@ -36,11 +37,13 @@ What an engineer looks for when they open the repo.
 - [ ] Consistent API errors: one error shape, correct status codes, no `alert()`
 - [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
 - [ ] Structured output for AI search instead of parsing free text ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
+- [x] Test runner (Vitest) with `npm test`
 - [ ] Unit and integration tests for API logic (ownership, validation, cap)
 - [ ] End-to-end tests for the critical flows (sign in, create, search, move to folder)
 - [ ] GitHub Actions CI: lint, typecheck, test on every push
 - [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md))
 - [ ] Separate databases for production and everything else
+- [ ] Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
 
 ## Phase 3: Make it look designed
 

@@ -1,6 +1,6 @@
 # 0004. Use NextAuth v4 with database sessions and email-based account linking
 
-- **Status:** Accepted, revisit (see Consequences)
+- **Status:** Accepted, amended by [0009](./0009-require-verified-email-for-new-accounts.md)
 - **Date:** Decided 2026-04-13 (GitHub) and 2026-04-21 (Google), recorded 2026-10-17
 - **Related:** `src/lib/auth.ts`, `src/types/next-auth.d.ts`
 

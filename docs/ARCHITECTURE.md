@@ -2,7 +2,7 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-17*
+*Last reviewed: 2026-10-17 (after ADR 0009)*
 
 ## The short version
 
@@ -151,12 +151,18 @@ sequenceDiagram
     P-->>B: redirect to /api/auth/callback/github
     B->>S: callback with code
     S->>P: exchange code for profile + email
+    S->>DB: is this provider account already attached?
+    alt first time this account signs in
+        S->>P: is the email verified? (Google claim or GitHub /user/emails)
+        P-->>S: verified or not
+        S-->>B: if not verified, redirect to /login?error=AccessDenied
+    end
     S->>DB: find Account, or link to User with same email, or create User
     S->>DB: create Session row
     S-->>B: set session cookie, redirect to /dashboard
 ```
 
-The cookie only holds a random session token. All user data stays in the database. See [0004](./adr/0004-nextauth-database-sessions-and-account-linking.md) for how account linking works and the open issue with GitHub email verification.
+The cookie only holds a random session token. All user data stays in the database. Accounts with the same email are linked into one user ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md)). To make that safe, a provider account being attached for the first time must come with an email the provider has verified ([0009](./adr/0009-require-verified-email-for-new-accounts.md)). Failed sign-ins return to `/login` with an error code that the page turns into a readable message.
 
 ## AI features
 
@@ -195,7 +201,9 @@ src/
 │   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
-│   ├── auth.ts                 NextAuth config
+│   ├── auth.ts                 NextAuth config, verified-email check
+│   ├── email-verification.ts   Provider email verification (tested)
+│   ├── sign-in-errors.ts       Login error messages (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type
 ```
@@ -213,4 +221,4 @@ Secrets live in Vercel environment variables, marked Sensitive, and in a local `
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: no automated tests or CI, no input validation at the API boundary, the Supabase Data API exposure, and the GitHub account-linking gap.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: no automated tests or CI, no input validation at the API boundary, the Supabase Data API exposure, and the remaining Phase 0 security items.
