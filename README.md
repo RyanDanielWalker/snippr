@@ -6,19 +6,26 @@ Live at **[snippr.dev](https://snippr.dev)**.
 
 Built as a portfolio project to demonstrate full-stack development with modern tooling, authentication, database integration, drag-and-drop UX, and AI API usage.
 
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md): how the system fits together, with diagrams
+- [Decision records](docs/adr/README.md): why it's built this way, and the trade-offs
+- [Development guide](docs/DEVELOPMENT.md): setup, environment variables, and how changes ship
+- [Roadmap](docs/ROADMAP.md): what's next
+
 ## Features
 
-- **Multi-provider OAuth** — sign in with GitHub or Google, with automatic account linking by email
-- **Create, edit & delete snippets** — save code with title, language, tags, and description
-- **Syntax-highlighted preview** — full-screen modal with Shiki-powered code highlighting
-- **Folder organization** — group snippets into folders with a collapsible sidebar
-- **Drag-and-drop** — drag snippets between folders to organize them
-- **Keyword search** — filter snippets instantly by title, tag, or language
-- **AI-powered semantic search** — describe what you're looking for in plain English and Claude finds the right snippet
-- **AI-generated descriptions** — auto-generate concise descriptions for any snippet with one click
-- **Copy to clipboard** — one click to copy any snippet
-- **Freemium limit** — free tier capped at 10 snippets with usage indicator
-- **Fully responsive** — works on mobile and desktop
+- **Multi-provider OAuth**: sign in with GitHub or Google, with automatic account linking by email
+- **Create, edit & delete snippets**: save code with title, language, tags, and description
+- **Syntax-highlighted preview**: full-screen modal with Shiki-powered code highlighting
+- **Folder organization**: group snippets into folders with a collapsible sidebar
+- **Drag-and-drop**: drag snippets between folders to organize them
+- **Keyword search**: filter snippets instantly by title, tag, or language
+- **AI-powered semantic search**: describe what you're looking for in plain English and Claude finds the right snippet
+- **AI-generated descriptions**: auto-generate concise descriptions for any snippet with one click
+- **Copy to clipboard**: one click to copy any snippet
+- **Freemium limit**: free tier capped at 10 snippets with usage indicator
+- **Fully responsive**: works on mobile and desktop
 
 ## Tech Stack
 
@@ -36,9 +43,9 @@ Built as a portfolio project to demonstrate full-stack development with modern t
 
 Snippr uses the Anthropic Claude API for two core features:
 
-**Semantic search** — instead of matching exact keywords, you can describe what you're looking for in natural language ("authentication middleware that checks JWT tokens") and Claude finds the most relevant snippets from your library.
+**Semantic search**: instead of matching exact keywords, you can describe what you're looking for in natural language ("authentication middleware that checks JWT tokens") and Claude finds the most relevant snippets from your library.
 
-**Auto-generated descriptions** — paste a snippet and click ✦ Generate to have Claude write a concise one-line description of what the code does.
+**Auto-generated descriptions**: paste a snippet and click ✦ Generate to have Claude write a concise one-line description of what the code does.
 
 ## Getting Started
 
@@ -63,7 +70,7 @@ Snippr uses the Anthropic Claude API for two core features:
    npm install
 ```
 
-3. Set up environment variables — copy `.env.example` to `.env` and fill in your values
+3. Set up environment variables: copy `.env.example` to `.env` and fill in your values
 ```bash
    cp .env.example .env
 ```
@@ -115,11 +122,7 @@ src/
 ```
 ## Roadmap
 
-- Format code on paste
-- Public snippet sharing
-- Social feed with follows, likes, and comments
-- VS Code extension
-- Stripe integration for paid tier (unlimited snippets)
+See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## License
 
