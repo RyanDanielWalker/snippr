@@ -4,9 +4,12 @@ import GoogleProvider from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import { isProviderEmailVerified } from "@/lib/email-verification"
+import { withLowercaseEmails } from "@/lib/email-case"
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // Emails are stored and matched in lowercase so the same address from two
+  // providers links to one user. See docs/adr/0010-store-emails-lowercased.md.
+  adapter: withLowercaseEmails(PrismaAdapter(prisma)),
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,

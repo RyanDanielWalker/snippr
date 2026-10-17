@@ -35,11 +35,12 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0001](./0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
 | [0002](./0002-nextjs-full-stack-on-vercel.md) | Next.js App Router as a full-stack monolith on Vercel | Accepted |
 | [0003](./0003-supabase-postgres-with-prisma-5.md) | Supabase Postgres through the session pooler, with Prisma 5 | Accepted |
-| [0004](./0004-nextauth-database-sessions-and-account-linking.md) | NextAuth v4 with database sessions and email account linking | Accepted, amended by 0009 |
+| [0004](./0004-nextauth-database-sessions-and-account-linking.md) | NextAuth v4 with database sessions and email account linking | Accepted, amended by 0009 and 0010 |
 | [0005](./0005-ai-features-as-synchronous-claude-calls.md) | AI features as synchronous Claude calls; search as LLM re-ranking | Accepted, revisit |
 | [0006](./0006-folders-as-optional-one-to-many.md) | Folders as an optional one-to-many relation with `SET NULL` on delete | Accepted |
 | [0007](./0007-dnd-kit-for-drag-and-drop.md) | dnd-kit for drag and drop | Accepted |
 | [0008](./0008-ten-snippet-free-tier-cap.md) | Ten-snippet free tier cap | Accepted, revisit |
 | [0009](./0009-require-verified-email-for-new-accounts.md) | Require a verified email when a sign-in account is first attached | Accepted |
+| [0010](./0010-store-emails-lowercased.md) | Store and match emails in lowercase | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
