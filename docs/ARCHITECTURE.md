@@ -203,6 +203,7 @@ src/
 ├── lib/
 │   ├── auth.ts                 NextAuth config, verified-email check
 │   ├── email-verification.ts   Provider email verification (tested)
+│   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type
