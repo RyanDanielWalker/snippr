@@ -16,7 +16,8 @@ Quick, high-value fixes and the groundwork everything else builds on.
 - [x] Make snippet PATCH a true partial update: it writes `folderId ?? null`, so a request that leaves out `folderId` quietly moves the snippet to Unorganized. Today's callers always send it, so nothing breaks yet
 - [x] Require a verified email when a sign-in account is first attached ([0009](./adr/0009-require-verified-email-for-new-accounts.md))
 - [x] Pass `authOptions` in the login page's session check ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md))
-- [ ] Store emails lowercased: NextAuth matches emails case-sensitively, so `Me@x.com` from one provider and `me@x.com` from another create two users instead of linking
+- [x] Store emails lowercased: NextAuth matches emails case-sensitively, so `Me@x.com` from one provider and `me@x.com` from another create two users instead of linking ([0010](./adr/0010-store-emails-lowercased.md))
+- [ ] Run the one-time email cleanup in [0010](./adr/0010-store-emails-lowercased.md) against production. Until it runs, a user stored with capitals who signs in with a new provider gets a second account
 - [ ] Rate-limit the AI endpoints ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
 - [x] Remove unused dependencies: `@prisma/adapter-pg`, `pg`, `@types/pg`, `@dnd-kit/sortable`
 - [x] Remove the unused Next.js starter files from `public/`
@@ -43,6 +44,7 @@ What an engineer looks for when they open the repo.
 - [ ] End-to-end tests for the critical flows (sign in, create, search, move to folder)
 - [ ] GitHub Actions CI: lint, typecheck, test on every push
 - [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md))
+- [ ] Unique index on `lower(email)` so the database refuses case-only duplicate users, once migrations exist ([0010](./adr/0010-store-emails-lowercased.md))
 - [ ] Separate databases for production and everything else
 - [ ] Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
 
