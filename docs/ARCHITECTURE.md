@@ -1,0 +1,216 @@
+# Architecture
+
+This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
+
+*Last reviewed: 2026-10-17*
+
+## The short version
+
+Snippr is a single Next.js 16 application deployed on Vercel. Pages render on the server and read from a Supabase Postgres database through Prisma. The browser changes data by calling a small set of JSON endpoints in the same app. Two of those endpoints call the Anthropic API for AI search and AI-written descriptions. Users sign in with GitHub or Google through NextAuth, and every database query is scoped to the signed-in user.
+
+## System overview
+
+```mermaid
+flowchart LR
+    Browser["Browser<br/>React client components"]
+
+    subgraph Vercel["Vercel: snippr.dev"]
+        Pages["Server Components<br/>/, /login, /dashboard"]
+        API["Route Handlers<br/>/api/snippets, /api/folders,<br/>/api/snippets/search, /api/snippets/describe"]
+        Auth["NextAuth<br/>/api/auth/*"]
+    end
+
+    DB[("Supabase Postgres<br/>via session pooler")]
+    Claude["Anthropic API"]
+    OAuth["GitHub and Google OAuth"]
+
+    Browser -- "page requests" --> Pages
+    Browser -- "fetch JSON" --> API
+    Browser -- "sign in" --> Auth
+    Pages -- "Prisma" --> DB
+    API -- "Prisma" --> DB
+    API -- "messages.create" --> Claude
+    Auth -- "Prisma adapter" --> DB
+    Auth -- "OAuth redirect" --> OAuth
+```
+
+| Piece | What it does | Decision |
+| --- | --- | --- |
+| Next.js App Router | Serves pages and the API from one app | [0002](./adr/0002-nextjs-full-stack-on-vercel.md) |
+| Prisma 5 + Supabase Postgres | Stores users, sessions, snippets, folders | [0003](./adr/0003-supabase-postgres-with-prisma-5.md) |
+| NextAuth v4 | GitHub and Google sign-in, database sessions | [0004](./adr/0004-nextauth-database-sessions-and-account-linking.md) |
+| Anthropic API | AI search and AI descriptions | [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md) |
+| dnd-kit | Drag snippets onto folders | [0007](./adr/0007-dnd-kit-for-drag-and-drop.md) |
+| Shiki | Syntax highlighting in the preview modal | n/a |
+
+## How a request flows
+
+### Loading the dashboard (read path)
+
+1. The browser requests `/dashboard`.
+2. `src/app/dashboard/page.tsx` is a **Server Component**: it runs only on the server. It calls `getServerSession(authOptions)`, which reads the session cookie and looks the session up in Postgres. No session means a redirect to `/login`.
+3. It loads the user's snippets and folders (with snippet counts) in parallel with `Promise.all`.
+4. It passes that data as props to `DashboardClient`, a **Client Component** that runs in the browser and owns all the interactive state: search text, AI mode, selected folder, sidebar collapse, the new-snippet modal, and drag state. Each `SnippetCard` owns its own preview and edit modals.
+
+Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded. Only AI search makes a network call.
+
+### Changing data (write path)
+
+```mermaid
+sequenceDiagram
+    participant UI as Client component
+    participant RH as Route Handler
+    participant NA as NextAuth
+    participant DB as Postgres
+
+    UI->>RH: fetch("/api/snippets", PATCH, JSON body)
+    RH->>NA: getServerSession(authOptions)
+    NA->>DB: look up session token
+    DB-->>NA: session + user id
+    RH->>DB: find snippet by id
+    RH->>RH: snippet.userId === session user id?
+    RH->>DB: update snippet
+    RH-->>UI: 200 + updated snippet
+    UI->>UI: router.refresh()
+```
+
+`router.refresh()` asks Next.js to re-run the Server Components for the current page and send down fresh data, without a full page reload and without losing client state like the open sidebar. That's how the dashboard picks up changes: the client never edits its own copy of the list.
+
+### Authorization model
+
+Every Route Handler follows the same pattern:
+
+1. **Who are you?** Resolve the session. No user id means `401`.
+2. **Is it yours?** For any record addressed by id, load it and compare its `userId` to the session's. Mismatch or missing means `403`.
+3. **Do the work,** scoped by `userId`.
+
+Lists are always filtered with `where: { userId }`, so one user can never see another's data. Known gap: when a snippet is created or updated, the `folderId` it points to isn't checked against the same rule ([0006](./adr/0006-folders-as-optional-one-to-many.md)).
+
+## Data model
+
+```mermaid
+erDiagram
+    User ||--o{ Account : "signs in via"
+    User ||--o{ Session : "has"
+    User ||--o{ Snippet : "owns"
+    User ||--o{ Folder : "owns"
+    Folder |o--o{ Snippet : "groups"
+
+    User {
+        string id PK
+        string email UK
+        string name
+        string image
+    }
+    Account {
+        string id PK
+        string userId FK
+        string provider "github or google"
+        string providerAccountId
+    }
+    Session {
+        string id PK
+        string sessionToken UK
+        string userId FK
+        datetime expires
+    }
+    Folder {
+        string id PK
+        string name
+        string userId FK
+    }
+    Snippet {
+        string id PK
+        string title
+        string code
+        string language
+        string_array tags
+        string description
+        string userId FK
+        string folderId FK "nullable"
+    }
+```
+
+- **Deleting a user** cascades to everything they own.
+- **Deleting a folder** sets `folderId` to null on its snippets. Code is never deleted as a side effect.
+- `Account`, `Session`, and `VerificationToken` are the standard NextAuth adapter tables. `VerificationToken` is unused because there's no email sign-in.
+- The schema is applied with `prisma db push`; there is no migration history yet.
+
+## Authentication
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant S as Snippr (NextAuth)
+    participant P as GitHub or Google
+    participant DB as Postgres
+
+    B->>S: click "Continue with GitHub"
+    S-->>B: redirect to provider
+    B->>P: approve access
+    P-->>B: redirect to /api/auth/callback/github
+    B->>S: callback with code
+    S->>P: exchange code for profile + email
+    S->>DB: find Account, or link to User with same email, or create User
+    S->>DB: create Session row
+    S-->>B: set session cookie, redirect to /dashboard
+```
+
+The cookie only holds a random session token. All user data stays in the database. See [0004](./adr/0004-nextauth-database-sessions-and-account-linking.md) for how account linking works and the open issue with GitHub email verification.
+
+## AI features
+
+Both features call Claude synchronously from a Route Handler. The API key never reaches the browser.
+
+- **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets.
+- **AI descriptions** (`POST /api/snippets/describe`): sends the code and language and asks for one sentence under 15 words.
+
+Limits and trade-offs are in [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md).
+
+## Code map
+
+```
+prisma/
+└── schema.prisma               Data model (source of truth)
+src/
+├── app/
+│   ├── page.tsx                "/" redirects to /dashboard or /login
+│   ├── login/page.tsx          Sign-in page
+│   ├── dashboard/page.tsx      Server Component: auth check + data load
+│   ├── layout.tsx              Root layout, fonts, metadata
+│   ├── globals.css             Tailwind v4 entry + global styles
+│   └── api/
+│       ├── auth/[...nextauth]/ NextAuth handler
+│       ├── folders/            Folder CRUD
+│       └── snippets/
+│           ├── route.ts        Snippet CRUD + free tier cap
+│           ├── search/         AI search
+│           └── describe/       AI descriptions
+├── components/
+│   ├── DashboardClient.tsx     Interactive dashboard, DnD context
+│   ├── FolderSidebar.tsx       Collapsible sidebar, drop targets
+│   ├── SnippetCard.tsx         Draggable card
+│   ├── SnippetModal.tsx        Shiki-highlighted preview
+│   ├── NewSnippetModal.tsx     Create form
+│   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard
+│   └── LoginButton.tsx         OAuth buttons
+├── lib/
+│   ├── auth.ts                 NextAuth config
+│   └── prisma.ts               Prisma client singleton
+└── types/next-auth.d.ts        Adds user.id to the Session type
+```
+
+## Deployment and environments
+
+| Environment | Where | Deploys from | Database |
+| --- | --- | --- | --- |
+| Production | snippr.dev | `main` | Supabase project `Snippr` |
+| Local | `localhost:3000` | your machine | same Supabase project, via `.env` |
+
+Secrets live in Vercel environment variables, marked Sensitive, and in a local `.env` that is never committed. `.env.example` lists every required variable. See [DEVELOPMENT.md](./DEVELOPMENT.md).
+
+**Worth knowing:** local development points at the production database today. Every environment shares one set of data. Separating them is on the roadmap.
+
+## Known limitations
+
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: no automated tests or CI, no input validation at the API boundary, the Supabase Data API exposure, and the GitHub account-linking gap.
