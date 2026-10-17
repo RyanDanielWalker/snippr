@@ -17,7 +17,8 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind v4, Prisma 5 
 
 ## Commands
 
-- `npm run dev`, `npm run build`, `npm run lint`
+- `npm run dev`, `npm run build`, `npm run lint`, `npm run typecheck`, `npm test`
+- Tests live next to the code they test as `*.test.ts` (Vitest, Node environment)
 - `npx prisma db push` applies schema changes (no migrations yet)
 - `npx prisma studio` browses the database
 

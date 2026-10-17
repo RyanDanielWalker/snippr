@@ -41,6 +41,9 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run build` | `prisma generate`, then a production build |
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript type check, no output files |
+| `npm test` | Run the test suite once (Vitest) |
+| `npm run test:watch` | Re-run tests as files change |
 | `npx prisma studio` | Browse the database in a local web UI |
 | `npx prisma db push` | Sync the database to `prisma/schema.prisma` |
 
@@ -88,7 +91,7 @@ If a change involves a decision that's hard to reverse, not obvious from the cod
 A change is ready to push when:
 
 - [ ] It works locally, and risky changes have been checked with a production build.
-- [ ] Lint passes (and, once they exist, typecheck and tests).
+- [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass.
 - [ ] New API input is validated and every record lookup checks ownership.
 - [ ] Docs are updated if behavior, setup, or architecture changed.
 - [ ] Significant decisions have an ADR.
