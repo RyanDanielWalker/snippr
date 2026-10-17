@@ -1,7 +1,18 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { canUseFolder } from "@/lib/folder-ownership";
 import { NextResponse } from "next/server";
+
+function findFolderOwner(id: string) {
+  return prisma.folder.findUnique({ where: { id }, select: { userId: true } });
+}
+
+// Same response for a missing folder and someone else's, so it can't be
+// used to probe which folder ids exist.
+function folderNotFound() {
+  return NextResponse.json({ error: "Folder not found" }, { status: 403 });
+}
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -33,6 +44,10 @@ export async function POST(req: Request) {
   const { title, code, language, description, tags, folderId } =
     await req.json();
 
+  if (!(await canUseFolder(folderId, session.user.id, findFolderOwner))) {
+    return folderNotFound();
+  }
+
   const snippet = await prisma.snippet.create({
     data: {
       title,
@@ -58,6 +73,10 @@ export async function PATCH(req: Request) {
   const snippet = await prisma.snippet.findUnique({ where: { id } });
   if (!snippet || snippet.userId !== session.user.id) {
     return NextResponse.json({}, { status: 403 });
+  }
+
+  if (!(await canUseFolder(folderId, session.user.id, findFolderOwner))) {
+    return folderNotFound();
   }
 
   const updated = await prisma.snippet.update({
