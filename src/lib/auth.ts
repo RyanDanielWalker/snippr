@@ -62,5 +62,8 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
+    // Failed sign-ins land back on /login with ?error=<code>, which the login
+    // page turns into a readable message (src/lib/sign-in-errors.ts).
+    error: "/login",
   },
 }
