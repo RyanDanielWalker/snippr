@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canUseFolder } from "@/lib/folder-ownership";
+import { snippetUpdateData } from "@/lib/snippet-update";
 import { NextResponse } from "next/server";
 
 function findFolderOwner(id: string) {
@@ -67,29 +68,22 @@ export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
-  const { id, title, code, language, description, tags, folderId } =
-    await req.json();
+  const body = await req.json();
+  const { id } = body;
 
   const snippet = await prisma.snippet.findUnique({ where: { id } });
   if (!snippet || snippet.userId !== session.user.id) {
     return NextResponse.json({}, { status: 403 });
   }
 
-  if (!(await canUseFolder(folderId, session.user.id, findFolderOwner))) {
+  // Only the fields the request sent get written; see snippet-update.ts.
+  const data = snippetUpdateData(body);
+
+  if (!(await canUseFolder(data.folderId, session.user.id, findFolderOwner))) {
     return folderNotFound();
   }
 
-  const updated = await prisma.snippet.update({
-    where: { id },
-    data: {
-      title,
-      code,
-      language,
-      description,
-      tags,
-      folderId: folderId ?? null,
-    },
-  });
+  const updated = await prisma.snippet.update({ where: { id }, data });
 
   return NextResponse.json(updated);
 }

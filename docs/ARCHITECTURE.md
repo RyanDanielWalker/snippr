@@ -74,6 +74,8 @@ sequenceDiagram
     UI->>UI: router.refresh()
 ```
 
+PATCH is a partial update: fields the request leaves out stay as they are, and `folderId: null` is how you move a snippet to Unorganized (`src/lib/snippet-update.ts`).
+
 `router.refresh()` asks Next.js to re-run the Server Components for the current page and send down fresh data, without a full page reload and without losing client state like the open sidebar. That's how the dashboard picks up changes: the client never edits its own copy of the list.
 
 ### Authorization model
@@ -205,6 +207,7 @@ src/
 │   ├── email-verification.ts   Provider email verification (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
+│   ├── snippet-update.ts       Partial-update fields for snippet PATCH (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type
 ```
