@@ -18,7 +18,7 @@ Quick, high-value fixes and the groundwork everything else builds on.
 - [x] Pass `authOptions` in the login page's session check ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md))
 - [ ] Store emails lowercased: NextAuth matches emails case-sensitively, so `Me@x.com` from one provider and `me@x.com` from another create two users instead of linking
 - [ ] Rate-limit the AI endpoints ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
-- [ ] Remove unused dependencies: `@prisma/adapter-pg`, `pg`, `@types/pg`, `@dnd-kit/sortable`
+- [x] Remove unused dependencies: `@prisma/adapter-pg`, `pg`, `@types/pg`, `@dnd-kit/sortable`
 - [ ] Remove the unused Next.js starter files from `public/`
 
 ## Phase 1: Make it visitable
