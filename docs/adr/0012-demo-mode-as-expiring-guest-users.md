@@ -37,10 +37,11 @@ NextAuth v4 has no built-in anonymous sign-in for database sessions. Its Credent
 
 - **Good:** Visitors try the real thing, including AI, in one click. Almost no existing code changed, because a guest is just a user. The demo inherits the security model instead of needing its own.
 - **Bad: anonymous writes to the production database.** Bounded by the per-IP limit and the cap, but real. The IP limit is per network, so a shared office or university network shares 5 demos an hour, and someone with many IPs can get past it.
+- **Bad: snippet and folder size aren't validated yet, and guests make that cheaper to exploit.** Nothing limits how long a snippet's code is or how many folders a user makes. That used to take an OAuth account; now one IP can make 5 guests an hour, each with up to 10 snippets of several megabytes. The validation item in Phase 2 closes it.
 - **Bad: AI spend is bounded per guest, not overall.** Worst case is about 20 Claude calls an hour per guest, times however many guests are active.
 - **Bad: cleanup only happens when someone starts a demo.** If nobody does, expired guests sit in the database. They can't sign in, so the cost is only storage.
 - **Bad: the session cookie is set by our code, not NextAuth's.** Its name copies NextAuth's secure-cookie rule (`usesSecureCookies`, tested). A NextAuth upgrade that changes the rule would make demos silently land signed out.
-- **Bad: a guest who forces a sign-in without signing out first** gets a generic "Sign-in didn't go through" message. The UI never sends them down that path.
+- **Bad: a guest who forces a sign-in without signing out first** is quietly sent back to the dashboard, still a guest. The link is refused, NextAuth redirects to `/login?error=Callback`, and the login page sends anyone with a session on to the dashboard. The UI never sends them down that path.
 - **Deploy order matters.** `npx prisma db push` has to create `User.guestExpiresAt` and `DemoStart` before this code deploys. Otherwise every signed-in page and API call fails, because Prisma asks for the new column whenever it loads a user.
 - **Follow-ups:**
   - Revisit the snippet cap and its UX for guests ([0008](./0008-ten-snippet-free-tier-cap.md)), which is already the next roadmap item.

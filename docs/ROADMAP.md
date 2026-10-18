@@ -37,7 +37,7 @@ Right now a visitor sees two OAuth buttons and nothing else. Nobody evaluating t
 
 What an engineer looks for when they open the repo.
 
-- [ ] Runtime validation (zod) on every Route Handler, schemas shared with the client ([0002](./adr/0002-nextjs-full-stack-on-vercel.md))
+- [ ] Runtime validation (zod) on every Route Handler, schemas shared with the client ([0002](./adr/0002-nextjs-full-stack-on-vercel.md)). Include length limits on snippet fields and a cap on folders: demo guests can be created without an account, so oversized writes are cheap to make ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
 - [ ] Consistent API errors: one error shape, correct status codes, no `alert()`
 - [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
 - [ ] Structured output for AI search instead of parsing free text ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
