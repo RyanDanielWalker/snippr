@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
-import { checkRateLimit } from "@/lib/rate-limit"
+import { aiRateLimitRule, checkRateLimit } from "@/lib/rate-limit"
 import { incrementAiUsage, tooManyRequests } from "@/lib/ai-usage"
 
 // A search is a sentence, not an essay (see docs/adr/0011).
@@ -32,7 +32,13 @@ export async function POST(req: Request) {
 
   if (snippets.length === 0) return NextResponse.json([])
 
-  const limit = await checkRateLimit(session.user.id, "search", incrementAiUsage)
+  const limit = await checkRateLimit(
+    session.user.id,
+    "search",
+    incrementAiUsage,
+    new Date(),
+    aiRateLimitRule("search", session.user.isGuest),
+  )
   if (!limit.allowed) return tooManyRequests(limit.retryAfterSeconds)
 
   const snippetList = snippets.map((s, i) => (

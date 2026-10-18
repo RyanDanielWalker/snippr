@@ -19,6 +19,17 @@ export const AI_RATE_LIMITS: Record<RateLimitBucket, RateLimitRule> = {
   search: { limit: 30, windowMs: HOUR },
 };
 
+// Demo guests are anonymous and cost the same per call, so they get less
+// (see docs/adr/0012).
+export const GUEST_AI_RATE_LIMITS: Record<RateLimitBucket, RateLimitRule> = {
+  describe: { limit: 10, windowMs: HOUR },
+  search: { limit: 10, windowMs: HOUR },
+};
+
+export function aiRateLimitRule(bucket: RateLimitBucket, isGuest: boolean): RateLimitRule {
+  return (isGuest ? GUEST_AI_RATE_LIMITS : AI_RATE_LIMITS)[bucket];
+}
+
 /**
  * Adds one to the user's count for this bucket and window, creating the
  * counter at 1 if it doesn't exist, and returns the new count. Must be

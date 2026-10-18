@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   AI_RATE_LIMITS,
+  aiRateLimitRule,
   checkFixedWindow,
   checkRateLimit,
   windowStart,
@@ -107,6 +108,15 @@ describe("checkRateLimit", () => {
     await expect(checkRateLimit("user-me", "search", increment, now)).resolves.toMatchObject({
       allowed: false,
     });
+  });
+});
+
+describe("aiRateLimitRule", () => {
+  it("gives guests a lower limit than members for each endpoint", () => {
+    for (const bucket of ["describe", "search"] as const) {
+      expect(aiRateLimitRule(bucket, false)).toBe(AI_RATE_LIMITS[bucket]);
+      expect(aiRateLimitRule(bucket, true).limit).toBeLessThan(AI_RATE_LIMITS[bucket].limit);
+    }
   });
 });
 

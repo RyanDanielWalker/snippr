@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { aiRateLimitRule, checkRateLimit } from "@/lib/rate-limit";
 import { incrementAiUsage, tooManyRequests } from "@/lib/ai-usage";
 
 // Roughly 5,000 tokens. Plenty for a snippet; stops a paste of a whole file
@@ -26,7 +26,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const limit = await checkRateLimit(session.user.id, "describe", incrementAiUsage);
+  const limit = await checkRateLimit(
+    session.user.id,
+    "describe",
+    incrementAiUsage,
+    new Date(),
+    aiRateLimitRule("describe", session.user.isGuest),
+  );
   if (!limit.allowed) return tooManyRequests(limit.retryAfterSeconds);
 
   const message = await client.messages.create({
