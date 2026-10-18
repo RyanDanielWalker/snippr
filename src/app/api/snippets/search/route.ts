@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   if (!query) return NextResponse.json([])
   if (typeof query !== "string" || query.length > MAX_QUERY_LENGTH) {
     return NextResponse.json(
-      { error: "That search is too long. Keep it under 1,000 characters." },
+      { error: "That search is too long. The limit is 1,000 characters." },
       { status: 413 },
     )
   }

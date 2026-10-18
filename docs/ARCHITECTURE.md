@@ -238,4 +238,4 @@ Secrets live in Vercel environment variables, marked Sensitive, and in a local `
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: no automated tests or CI, no input validation at the API boundary, and the remaining Phase 0 security items.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: thin test coverage and no CI, no input validation at the API boundary, and the remaining Phase 0 security items.
