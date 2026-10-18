@@ -192,7 +192,7 @@ prisma/
 └── schema.prisma               Data model (source of truth)
 src/
 ├── app/
-│   ├── page.tsx                "/" redirects to /dashboard or /login
+│   ├── page.tsx                Landing page; signed-in users go to /dashboard
 │   ├── login/page.tsx          Sign-in page
 │   ├── dashboard/page.tsx      Server Component: auth check + data load
 │   ├── layout.tsx              Root layout, fonts, metadata
@@ -207,7 +207,8 @@ src/
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context
 │   ├── FolderSidebar.tsx       Collapsible sidebar, drop targets
-│   ├── SnippetCard.tsx         Draggable card
+│   ├── SnippetCard.tsx         Draggable card with edit, delete, copy
+│   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── SnippetModal.tsx        Shiki-highlighted preview
 │   ├── NewSnippetModal.tsx     Create form
 │   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard
@@ -218,6 +219,7 @@ src/
 │   ├── email-case.ts           Lowercases emails in the NextAuth adapter (tested)
 │   ├── email-verification.ts   Provider email verification (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
+│   ├── landing-samples.ts      Sample snippets for the landing page (tested)
 │   ├── rate-limit.ts           AI rate-limit windows and decisions (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   ├── snippet-update.ts       Partial-update fields for snippet PATCH (tested)

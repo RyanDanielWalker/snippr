@@ -27,8 +27,8 @@ Quick, high-value fixes and the groundwork everything else builds on.
 
 Right now a visitor sees two OAuth buttons and nothing else. Nobody evaluating the project should have to hand over a GitHub login to see it.
 
-- [ ] Landing page at `/` that shows the product
-- [ ] Demo mode: try Snippr in one click, without signing in
+- [x] Landing page at `/` that shows the product
+- [ ] Demo mode: try Snippr in one click, without signing in. Add a "Try the demo" button next to the landing page's sign-in button when it ships
 - [ ] Revisit the 10-snippet cap and its UX alongside demo mode ([0008](./adr/0008-ten-snippet-free-tier-cap.md))
 - [ ] Open Graph image and metadata so shared links look intentional
 
