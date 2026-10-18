@@ -86,9 +86,13 @@ export default function NewSnippetModal({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: form.code, language: form.language }),
     });
-    const data = await res.json();
-    setForm((f) => ({ ...f, description: data.description }));
+    const data = await res.json().catch(() => null);
     setGenerating(false);
+    if (!res.ok) {
+      alert(data?.error ?? "Couldn't write a description. Try again.");
+      return;
+    }
+    setForm((f) => ({ ...f, description: data.description }));
   }
 
   return (

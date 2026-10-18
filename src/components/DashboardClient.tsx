@@ -46,6 +46,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   const [aiMode, setAiMode] = useState(false);
   const [aiResults, setAiResults] = useState<Snippet[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [draggedSnippet, setDraggedSnippet] = useState<Snippet | null>(null);
@@ -92,6 +93,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     if (!search.trim()) return;
     setAiLoading(true);
     setAiResults(null);
+    setAiError(null);
 
     try {
       const res = await fetch("/api/snippets/search", {
@@ -101,6 +103,10 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
       });
 
       if (!res.ok) {
+        // Rate limits and oversized queries come back with a message worth
+        // showing; anything else falls through to "No matching snippets."
+        const data = await res.json().catch(() => null);
+        if (data?.error) setAiError(data.error);
         setAiResults([]);
         return;
       }
@@ -121,6 +127,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   function handleModeToggle() {
     setAiMode((v) => !v);
     setAiResults(null);
+    setAiError(null);
     setSearch("");
   }
 
@@ -303,7 +310,9 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
               {!aiLoading && displaySnippets.length === 0 && (
                 <div className="text-center py-24 text-gray-500">
                   <p className="text-lg">
-                    {aiMode && aiResults !== null
+                    {aiMode && aiError
+                      ? aiError
+                      : aiMode && aiResults !== null
                       ? "No matching snippets found."
                       : search
                         ? "No snippets match your search."
