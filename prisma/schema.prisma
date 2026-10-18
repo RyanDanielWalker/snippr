@@ -17,6 +17,7 @@ model User {
   sessions      Session[]
   snippets      Snippet[]
   folders       Folder[]
+  aiUsage       AiUsage[]
   createdAt     DateTime  @default(now())
 }
 
@@ -42,6 +43,16 @@ model Snippet {
   folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// One row per user, AI endpoint, and rate-limit window. See docs/adr/0011.
+model AiUsage {
+  userId      String
+  bucket      String
+  windowStart DateTime
+  count       Int      @default(0)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([userId, bucket, windowStart])
 }
 
 model Account {
