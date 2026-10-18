@@ -22,7 +22,7 @@ export type DemoSeed = { folders: string[]; snippets: DemoSnippet[] };
 /**
  * What a new guest starts with: the landing page samples, so the search
  * shown there works in the demo too, plus one unfiled snippet so
- * Unorganized isn't empty. Leaves room under the 10-snippet cap to add more.
+ * Unorganized isn't empty. Leaves room under the guest snippet cap to add more.
  */
 export function demoSeed(): DemoSeed {
   const snippets: DemoSnippet[] = [

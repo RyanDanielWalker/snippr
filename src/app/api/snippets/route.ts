@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canUseFolder } from "@/lib/folder-ownership";
 import { snippetUpdateData } from "@/lib/snippet-update";
+import { snippetCap, snippetCapMessage } from "@/lib/snippet-cap";
 import { NextResponse } from "next/server";
 
 function findFolderOwner(id: string) {
@@ -35,10 +36,12 @@ export async function POST(req: Request) {
     where: { userId: session.user.id },
   });
 
-  if (snippetCount >= 10) {
+  // 409, not 403: the request is fine, the library is full (docs/adr/0013).
+  const cap = snippetCap(session.user.isGuest);
+  if (snippetCount >= cap) {
     return NextResponse.json(
-      { error: "Free plan limit reached. Maximum 10 snippets allowed." },
-      { status: 403 },
+      { error: snippetCapMessage(cap, session.user.isGuest) },
+      { status: 409 },
     );
   }
 

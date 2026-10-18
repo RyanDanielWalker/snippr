@@ -10,6 +10,7 @@ import {
   type DemoStore,
 } from "./demo";
 import { GUEST_LIFETIME_MS } from "./guest";
+import { SNIPPET_CAPS } from "./snippet-cap";
 
 const now = new Date("2026-10-18T14:45:00.000Z");
 
@@ -93,8 +94,8 @@ describe("demoSeed", () => {
     expect(new Set(seed.folders).size).toBe(seed.folders.length);
   });
 
-  it("leaves room under the 10-snippet cap", () => {
-    expect(seed.snippets.length).toBeLessThanOrEqual(5);
+  it("leaves room under the guest snippet cap", () => {
+    expect(seed.snippets.length).toBeLessThanOrEqual(SNIPPET_CAPS.guest / 2);
   });
 
   it("keeps something in Unorganized", () => {
