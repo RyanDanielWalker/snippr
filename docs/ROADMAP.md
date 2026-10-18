@@ -29,7 +29,7 @@ Right now a visitor sees two OAuth buttons and nothing else. Nobody evaluating t
 
 - [x] Landing page at `/` that shows the product
 - [x] Demo mode: try Snippr in one click, without signing in ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
-- [ ] Run `npx prisma db push` against production **before** pushing the demo mode commits. It adds `User.guestExpiresAt` and the `DemoStart` table; until they exist, every signed-in page and API call fails ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
+- [x] Run `npx prisma db push` against production **before** pushing the demo mode commits. It adds `User.guestExpiresAt` and the `DemoStart` table; until they exist, every signed-in page and API call fails ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
 - [ ] Revisit the 10-snippet cap and its UX alongside demo mode ([0008](./adr/0008-ten-snippet-free-tier-cap.md)). Guests start with 4 snippets, so they hit the cap after adding 6
 - [ ] Open Graph image and metadata so shared links look intentional
 
@@ -45,7 +45,7 @@ What an engineer looks for when they open the repo.
 - [ ] Unit and integration tests for API logic (ownership, validation, cap)
 - [ ] End-to-end tests for the critical flows (sign in, create, search, move to folder)
 - [ ] GitHub Actions CI: lint, typecheck, test on every push
-- [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md))
+- [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md)). Apply migrations as part of the deploy, so schema and code can't go out in the wrong order. Twice now (the `AiUsage` table and demo mode's columns) the code went live before `db push`, and production errored until it ran
 - [ ] Unique index on `lower(email)` so the database refuses case-only duplicate users, once migrations exist ([0010](./adr/0010-store-emails-lowercased.md))
 - [ ] Separate databases for production and everything else
 - [ ] A daily ceiling on AI calls across all demo guests. Today the limit is per guest, so total guest spend grows with the number of guests ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
