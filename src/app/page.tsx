@@ -64,11 +64,11 @@ export default async function Home() {
             Example of AI search
           </h2>
           <div className="rounded-2xl border border-gray-800 bg-gray-900/40 p-4 md:p-6">
-            <div className="flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
+            <div className="flex items-start gap-3 bg-gray-900 border border-gray-800 rounded-lg px-4 py-3">
               <span className="text-xs text-blue-400 bg-blue-950 px-2 py-1 rounded-md shrink-0">
                 ✦ AI
               </span>
-              <span className="text-gray-200 truncate">
+              <span className="text-gray-200">
                 {searchExample.query}
               </span>
             </div>
