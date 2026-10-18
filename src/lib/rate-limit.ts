@@ -45,15 +45,32 @@ export function windowStart(now: Date, windowMs: number): Date {
  * only effect is that the count keeps climbing past the limit, which
  * changes nothing.
  */
-export async function checkRateLimit(
+export function checkRateLimit(
   userId: string,
   bucket: RateLimitBucket,
   increment: IncrementUsage,
   now: Date = new Date(),
   rule: RateLimitRule = AI_RATE_LIMITS[bucket],
 ): Promise<RateLimitResult> {
+  return checkFixedWindow(
+    (start) => increment({ userId, bucket, windowStart: start }),
+    rule,
+    now,
+  );
+}
+
+/**
+ * The fixed-window decision on its own, for any counter: `increment` adds
+ * one to whatever is being counted in the window starting at the date it's
+ * given, and returns the new count.
+ */
+export async function checkFixedWindow(
+  increment: (windowStart: Date) => Promise<number>,
+  rule: RateLimitRule,
+  now: Date = new Date(),
+): Promise<RateLimitResult> {
   const start = windowStart(now, rule.windowMs);
-  const count = await increment({ userId, bucket, windowStart: start });
+  const count = await increment(start);
   if (count <= rule.limit) return { allowed: true };
 
   const resetsAt = start.getTime() + rule.windowMs;

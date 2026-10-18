@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { AI_RATE_LIMITS, checkRateLimit, windowStart, type IncrementUsage } from "./rate-limit";
+import {
+  AI_RATE_LIMITS,
+  checkFixedWindow,
+  checkRateLimit,
+  windowStart,
+  type IncrementUsage,
+} from "./rate-limit";
 
 const HOUR = 60 * 60 * 1000;
 const rule = { limit: 3, windowMs: HOUR };
@@ -100,6 +106,26 @@ describe("checkRateLimit", () => {
     increment.mockResolvedValue(AI_RATE_LIMITS.search.limit + 1);
     await expect(checkRateLimit("user-me", "search", increment, now)).resolves.toMatchObject({
       allowed: false,
+    });
+  });
+});
+
+describe("checkFixedWindow", () => {
+  const now = new Date("2026-10-18T14:45:00.000Z");
+
+  it("passes the window start to the counter", async () => {
+    const increment = vi.fn(async () => 1);
+    await checkFixedWindow(increment, rule, now);
+    expect(increment).toHaveBeenCalledWith(new Date("2026-10-18T14:00:00.000Z"));
+  });
+
+  it("allows a count at the limit and rejects one past it", async () => {
+    await expect(checkFixedWindow(async () => rule.limit, rule, now)).resolves.toEqual({
+      allowed: true,
+    });
+    await expect(checkFixedWindow(async () => rule.limit + 1, rule, now)).resolves.toEqual({
+      allowed: false,
+      retryAfterSeconds: 15 * 60,
     });
   });
 });
