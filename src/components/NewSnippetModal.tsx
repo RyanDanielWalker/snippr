@@ -34,6 +34,7 @@ export default function NewSnippetModal({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     code: "",
@@ -52,6 +53,7 @@ export default function NewSnippetModal({
   async function handleSubmit() {
     if (!form.title || !form.code) return;
     setLoading(true);
+    setError(null);
 
     const res = await fetch("/api/snippets", {
       method: "POST",
@@ -66,9 +68,11 @@ export default function NewSnippetModal({
       }),
     });
 
-    if (res.status === 403) {
-      const data = await res.json();
-      alert(data.error);
+    // Stay open on any failure, so nothing typed is lost. The cap (409) and
+    // a folder you can't use (403) both send a message worth showing.
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? "Couldn't save that snippet. Try again.");
       setLoading(false);
       return;
     }
@@ -212,6 +216,15 @@ export default function NewSnippetModal({
           onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
           className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
         />
+
+        {error && (
+          <p
+            role="alert"
+            className="text-sm text-red-300 bg-red-950/60 border border-red-900 rounded-lg px-4 py-3"
+          >
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-3 pt-2">
           <button

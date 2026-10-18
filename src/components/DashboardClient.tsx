@@ -15,6 +15,7 @@ import {
 import SnippetCard from "@/components/SnippetCard";
 import NewSnippetModal from "@/components/NewSnippetModal";
 import FolderSidebar from "@/components/FolderSidebar";
+import { snippetCap, snippetCapMessage, snippetCapStatus } from "@/lib/snippet-cap";
 
 type Snippet = {
   id: string;
@@ -40,6 +41,8 @@ type Props = {
 };
 
 export default function DashboardClient({ snippets, folders, user }: Props) {
+  const cap = snippetCap(user.isGuest);
+  const capStatus = snippetCapStatus(snippets.length, cap);
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
@@ -261,17 +264,17 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
             />
 
             <div className="flex-1 min-w-0">
-              {snippets.length >= 8 && (
+              {capStatus !== "ok" && (
                 <div
                   className={`text-xs px-4 py-2 rounded-lg mb-4 ${
-                    snippets.length >= 10
+                    capStatus === "full"
                       ? "bg-red-950 text-red-400"
                       : "bg-yellow-950 text-yellow-500"
                   }`}
                 >
-                  {snippets.length >= 10
-                    ? "You've reached the 10 snippet limit on the free plan."
-                    : `${snippets.length}/10 snippets used on the free plan.`}
+                  {capStatus === "full"
+                    ? snippetCapMessage(cap, user.isGuest)
+                    : `${snippets.length} of ${cap} snippets used.`}
                 </div>
               )}
 
@@ -318,7 +321,13 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
 
                 <button
                   onClick={() => setShowModal(true)}
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shrink-0"
+                  disabled={capStatus === "full"}
+                  title={
+                    capStatus === "full"
+                      ? snippetCapMessage(cap, user.isGuest)
+                      : undefined
+                  }
+                  className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
                 >
                   + New snippet
                 </button>
