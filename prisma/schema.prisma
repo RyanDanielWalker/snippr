@@ -18,7 +18,11 @@ model User {
   snippets      Snippet[]
   folders       Folder[]
   aiUsage       AiUsage[]
+  // Set only for demo guests: after this the guest is signed out and can be
+  // deleted, along with everything it owns. See docs/adr/0012.
+  guestExpiresAt DateTime?
   createdAt     DateTime  @default(now())
+  @@index([guestExpiresAt])
 }
 
 model Folder {

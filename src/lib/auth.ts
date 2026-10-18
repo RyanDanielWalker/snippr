@@ -5,11 +5,14 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import { isProviderEmailVerified } from "@/lib/email-verification"
 import { withLowercaseEmails } from "@/lib/email-case"
+import { isGuest, withGuestRules } from "@/lib/guest"
 
 export const authOptions: NextAuthOptions = {
   // Emails are stored and matched in lowercase so the same address from two
   // providers links to one user. See docs/adr/0010-store-emails-lowercased.md.
-  adapter: withLowercaseEmails(PrismaAdapter(prisma)),
+  // Demo guests expire and can't have a sign-in account attached; see
+  // src/lib/guest.ts and docs/adr/0012.
+  adapter: withGuestRules(withLowercaseEmails(PrismaAdapter(prisma))),
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
@@ -59,6 +62,7 @@ export const authOptions: NextAuthOptions = {
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id
+        session.user.isGuest = isGuest(user)
       }
       return session
     },
