@@ -24,7 +24,8 @@ Built as a portfolio project to demonstrate full-stack development with modern t
 - **AI-powered semantic search**: describe what you're looking for in plain English and Claude finds the right snippet
 - **AI-generated descriptions**: auto-generate concise descriptions for any snippet with one click
 - **Copy to clipboard**: one click to copy any snippet
-- **Freemium limit**: free tier capped at 10 snippets with usage indicator
+- **Demo mode**: try it without signing in; the demo deletes itself after 24 hours
+- **Snippet limit**: 50 per account (10 in the demo), with a warning as you get close
 - **Fully responsive**: works on mobile and desktop
 
 ## Tech Stack

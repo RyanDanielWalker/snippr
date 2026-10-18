@@ -64,7 +64,7 @@ export default async function Home({
             <DemoButton />
           </div>
           <p className="mt-4 text-sm text-gray-500">
-            Sign in with GitHub or Google, free for up to 10 snippets. Or try
+            Sign in with GitHub or Google, free for up to 50 snippets. Or try
             the demo, no account needed. It deletes itself after 24 hours.
           </p>
           {demoBusy && (
