@@ -59,6 +59,15 @@ model AiUsage {
   @@id([userId, bucket, windowStart])
 }
 
+// One row per hashed client IP and hour, counting demos started there.
+// Limits how fast anyone can create guest users. See docs/adr/0012.
+model DemoStart {
+  ipHash      String
+  windowStart DateTime
+  count       Int      @default(0)
+  @@id([ipHash, windowStart])
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String

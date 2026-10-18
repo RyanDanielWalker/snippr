@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import SnippetCardView from "@/components/SnippetCardView";
+import DemoButton from "@/components/DemoButton";
 import { landingSamples, searchExample } from "@/lib/landing-samples";
 
 const features = [
@@ -20,9 +21,16 @@ const features = [
   },
 ];
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ demo?: string | string[] }>;
+}) {
   const session = await getServerSession(authOptions);
   if (session) redirect("/dashboard");
+
+  // Set by startDemoAction when one network starts too many demos in an hour.
+  const demoBusy = (await searchParams).demo === "busy";
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-300">
@@ -53,10 +61,21 @@ export default async function Home() {
             >
               Sign in to start
             </Link>
-            <span className="text-sm text-gray-500">
-              GitHub or Google. Free for up to 10 snippets.
-            </span>
+            <DemoButton />
           </div>
+          <p className="mt-4 text-sm text-gray-500">
+            Sign in with GitHub or Google, free for up to 10 snippets. Or try
+            the demo, no account needed. It deletes itself after 24 hours.
+          </p>
+          {demoBusy && (
+            <p
+              role="alert"
+              className="mt-4 text-sm text-red-300 bg-red-950/60 border border-red-900 rounded-lg px-4 py-3"
+            >
+              A lot of demos have started from your network in the last hour.
+              Try again later, or sign in.
+            </p>
+          )}
         </section>
 
         <section aria-labelledby="example-heading" className="pb-16">
