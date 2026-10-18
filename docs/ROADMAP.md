@@ -17,7 +17,7 @@ Quick, high-value fixes and the groundwork everything else builds on.
 - [x] Require a verified email when a sign-in account is first attached ([0009](./adr/0009-require-verified-email-for-new-accounts.md))
 - [x] Pass `authOptions` in the login page's session check ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md))
 - [x] Store emails lowercased: NextAuth matches emails case-sensitively, so `Me@x.com` from one provider and `me@x.com` from another create two users instead of linking ([0010](./adr/0010-store-emails-lowercased.md))
-- [ ] Run the one-time email cleanup in [0010](./adr/0010-store-emails-lowercased.md) against production. Until it runs, a user stored with capitals who signs in with a new provider gets a second account
+- [x] Run the one-time email cleanup in [0010](./adr/0010-store-emails-lowercased.md) against production. Until it runs, a user stored with capitals who signs in with a new provider gets a second account
 - [x] Rate-limit the AI endpoints ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md), [0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
 - [x] Create the `AiUsage` table in production with `npx prisma db push` **before** pushing the rate-limit commits. Until it exists, AI search and descriptions return 500 ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
 - [x] Remove unused dependencies: `@prisma/adapter-pg`, `pg`, `@types/pg`, `@dnd-kit/sortable`
