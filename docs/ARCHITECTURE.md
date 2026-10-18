@@ -2,7 +2,7 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-17 (after ADR 0010)*
+*Last reviewed: 2026-10-18 (after ADR 0011)*
 
 ## The short version
 
@@ -96,6 +96,7 @@ erDiagram
     User ||--o{ Session : "has"
     User ||--o{ Snippet : "owns"
     User ||--o{ Folder : "owns"
+    User ||--o{ AiUsage : "is counted in"
     Folder |o--o{ Snippet : "groups"
 
     User {
@@ -121,6 +122,12 @@ erDiagram
         string name
         string userId FK
     }
+    AiUsage {
+        string userId PK, FK
+        string bucket PK "describe or search"
+        datetime windowStart PK "start of the hour"
+        int count
+    }
     Snippet {
         string id PK
         string title
@@ -135,6 +142,7 @@ erDiagram
 
 - **Deleting a user** cascades to everything they own.
 - **Deleting a folder** sets `folderId` to null on its snippets. Code is never deleted as a side effect.
+- `AiUsage` counts AI calls per user, endpoint, and hour for rate limiting ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
 - `Account`, `Session`, and `VerificationToken` are the standard NextAuth adapter tables. `VerificationToken` is unused because there's no email sign-in.
 - The schema is applied with `prisma db push`; there is no migration history yet.
 
@@ -173,7 +181,9 @@ Both features call Claude synchronously from a Route Handler. The API key never 
 - **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets.
 - **AI descriptions** (`POST /api/snippets/describe`): sends the code and language and asks for one sentence under 15 words.
 
-Limits and trade-offs are in [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md).
+Each user gets 30 calls an hour per feature. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. Oversized input gets a `413` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
+
+Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md).
 
 ## Code map
 
@@ -192,8 +202,8 @@ src/
 │       ├── folders/            Folder CRUD
 │       └── snippets/
 │           ├── route.ts        Snippet CRUD + free tier cap
-│           ├── search/         AI search
-│           └── describe/       AI descriptions
+│           ├── search/         AI search, rate-limited
+│           └── describe/       AI descriptions, rate-limited
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context
 │   ├── FolderSidebar.tsx       Collapsible sidebar, drop targets
@@ -203,10 +213,12 @@ src/
 │   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
+│   ├── ai-usage.ts             Atomic AI usage counter (SQL) and the 429 response
 │   ├── auth.ts                 NextAuth config, verified-email check
 │   ├── email-case.ts           Lowercases emails in the NextAuth adapter (tested)
 │   ├── email-verification.ts   Provider email verification (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
+│   ├── rate-limit.ts           AI rate-limit windows and decisions (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   ├── snippet-update.ts       Partial-update fields for snippet PATCH (tested)
 │   └── prisma.ts               Prisma client singleton

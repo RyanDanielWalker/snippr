@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-10-17*
+*Last updated: 2026-10-18*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -18,7 +18,8 @@ Quick, high-value fixes and the groundwork everything else builds on.
 - [x] Pass `authOptions` in the login page's session check ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md))
 - [x] Store emails lowercased: NextAuth matches emails case-sensitively, so `Me@x.com` from one provider and `me@x.com` from another create two users instead of linking ([0010](./adr/0010-store-emails-lowercased.md))
 - [ ] Run the one-time email cleanup in [0010](./adr/0010-store-emails-lowercased.md) against production. Until it runs, a user stored with capitals who signs in with a new provider gets a second account
-- [ ] Rate-limit the AI endpoints ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
+- [x] Rate-limit the AI endpoints ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md), [0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
+- [ ] Create the `AiUsage` table in production with `npx prisma db push` **before** pushing the rate-limit commits. Until it exists, AI search and descriptions return 500 ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
 - [x] Remove unused dependencies: `@prisma/adapter-pg`, `pg`, `@types/pg`, `@dnd-kit/sortable`
 - [x] Remove the unused Next.js starter files from `public/`
 
@@ -46,6 +47,7 @@ What an engineer looks for when they open the repo.
 - [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md))
 - [ ] Unique index on `lower(email)` so the database refuses case-only duplicate users, once migrations exist ([0010](./adr/0010-store-emails-lowercased.md))
 - [ ] Separate databases for production and everything else
+- [ ] Delete old `AiUsage` rows on a schedule. Each active user adds up to two rows an hour, which is nothing today ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
 - [ ] Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
 
 ## Phase 3: Make it look designed
