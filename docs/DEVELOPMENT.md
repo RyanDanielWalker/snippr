@@ -52,6 +52,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 - **This is Next.js 16.** It has breaking changes from older versions and from what most tutorials and AI tools assume. When in doubt, check the docs bundled in `node_modules/next/dist/docs/`.
 - **`NEXTAUTH_URL` must match the port you're actually on.** If port 3000 is taken, Next.js silently moves to 3001 and OAuth callbacks break. Free the port (`lsof -i :3000`) instead of chasing the mismatch.
 - **Your local `.env` points at the production database today.** Be careful with destructive actions until environments are separated (see the [roadmap](./ROADMAP.md)).
+- **"Try the demo" works locally, but it writes to whatever database `.env` points at,** which today is production. Each IP can start 5 demos an hour, and if the dev server doesn't pass an IP, every local request shares one bucket.
 - **`firebase-messaging-sw.js` 404s in the terminal** come from a browser extension, not from Snippr. Ignore them.
 
 ## How work gets done

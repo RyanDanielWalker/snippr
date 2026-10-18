@@ -43,5 +43,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0009](./0009-require-verified-email-for-new-accounts.md) | Require a verified email when a sign-in account is first attached | Accepted |
 | [0010](./0010-store-emails-lowercased.md) | Store and match emails in lowercase | Accepted |
 | [0011](./0011-rate-limit-ai-endpoints-in-postgres.md) | Rate-limit the AI endpoints with a fixed-window counter in Postgres | Accepted |
+| [0012](./0012-demo-mode-as-expiring-guest-users.md) | Run demo mode as expiring guest users | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

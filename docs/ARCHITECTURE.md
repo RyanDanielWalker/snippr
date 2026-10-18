@@ -2,11 +2,11 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-18 (after ADR 0011)*
+*Last reviewed: 2026-10-18 (after ADR 0012)*
 
 ## The short version
 
-Snippr is a single Next.js 16 application deployed on Vercel. Pages render on the server and read from a Supabase Postgres database through Prisma. The browser changes data by calling a small set of JSON endpoints in the same app. Two of those endpoints call the Anthropic API for AI search and AI-written descriptions. Users sign in with GitHub or Google through NextAuth, and every database query is scoped to the signed-in user.
+Snippr is a single Next.js 16 application deployed on Vercel. Pages render on the server and read from a Supabase Postgres database through Prisma. The browser changes data by calling a small set of JSON endpoints in the same app. Two of those endpoints call the Anthropic API for AI search and AI-written descriptions. Users sign in with GitHub or Google through NextAuth, or start a 24-hour demo as a guest without signing in. Every database query is scoped to the signed-in user.
 
 ## System overview
 
@@ -15,7 +15,7 @@ flowchart LR
     Browser["Browser<br/>React client components"]
 
     subgraph Vercel["Vercel: snippr.dev"]
-        Pages["Server Components<br/>/, /login, /dashboard"]
+        Pages["Server Components<br/>/, /login, /dashboard<br/>+ start-demo Server Action"]
         API["Route Handlers<br/>/api/snippets, /api/folders,<br/>/api/snippets/search, /api/snippets/describe"]
         Auth["NextAuth<br/>/api/auth/*"]
     end
@@ -41,6 +41,7 @@ flowchart LR
 | NextAuth v4 | GitHub and Google sign-in, database sessions | [0004](./adr/0004-nextauth-database-sessions-and-account-linking.md) |
 | Anthropic API | AI search and AI descriptions | [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md) |
 | dnd-kit | Drag snippets onto folders | [0007](./adr/0007-dnd-kit-for-drag-and-drop.md) |
+| Demo mode | Expiring guest users, no sign-in needed | [0012](./adr/0012-demo-mode-as-expiring-guest-users.md) |
 | Shiki | Syntax highlighting in the preview modal | n/a |
 
 ## How a request flows
@@ -104,6 +105,12 @@ erDiagram
         string email UK
         string name
         string image
+        datetime guestExpiresAt "set only for demo guests"
+    }
+    DemoStart {
+        string ipHash PK "HMAC of the visitor's IP"
+        datetime windowStart PK "start of the hour"
+        int count
     }
     Account {
         string id PK
@@ -143,6 +150,7 @@ erDiagram
 - **Deleting a user** cascades to everything they own.
 - **Deleting a folder** sets `folderId` to null on its snippets. Code is never deleted as a side effect.
 - `AiUsage` counts AI calls per user, endpoint, and hour for rate limiting ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
+- `DemoStart` counts demos started per IP and hour. It isn't linked to any user ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)).
 - `Account`, `Session`, and `VerificationToken` are the standard NextAuth adapter tables. `VerificationToken` is unused because there's no email sign-in.
 - The schema is applied with `prisma db push`; there is no migration history yet.
 
@@ -174,6 +182,17 @@ sequenceDiagram
 
 The cookie only holds a random session token. All user data stays in the database. Accounts with the same email are linked into one user ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md)), with emails stored and matched in lowercase so casing differences between providers don't split an account ([0010](./adr/0010-store-emails-lowercased.md)). To make that safe, a provider account being attached for the first time must come with an email the provider has verified ([0009](./adr/0009-require-verified-email-for-new-accounts.md)). Failed sign-ins return to `/login` with an error code that the page turns into a readable message.
 
+### Demo guests
+
+"Try the demo" on the landing page skips OAuth entirely ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)):
+
+1. The form posts to a Server Action, `startDemoAction` (`src/app/actions/start-demo.ts`). Next.js rejects it unless it came from our own pages.
+2. It counts the start against the visitor's IP (5 an hour, stored as a hash) and deletes guests that have expired.
+3. In one transaction it creates a `User` with `guestExpiresAt` 24 hours out, a few seeded folders and snippets, and a `Session` row.
+4. It sets the same session cookie NextAuth would and redirects to `/dashboard`. From there the guest is an ordinary signed-in user.
+
+An adapter wrapper (`src/lib/guest.ts`) enforces the rest. Once `guestExpiresAt` has passed, the guest's session counts as no session, even though NextAuth will have pushed the session row's own expiry out. Guests also can't have a GitHub or Google account attached; the dashboard's "Sign in to keep your own" signs the guest out first. The session carries `isGuest`, which the dashboard uses for its banner and the AI handlers use to pick the guest limit.
+
 ## AI features
 
 Both features call Claude synchronously from a Route Handler. The API key never reaches the browser.
@@ -181,7 +200,7 @@ Both features call Claude synchronously from a Route Handler. The API key never 
 - **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets.
 - **AI descriptions** (`POST /api/snippets/describe`): sends the code and language and asks for one sentence under 15 words.
 
-Each user gets 30 calls an hour per feature. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. Oversized input gets a `413` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
+Each user gets 30 calls an hour per feature, or 10 for demo guests. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. Oversized input gets a `413` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
 
 Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md).
 
@@ -194,6 +213,7 @@ src/
 ├── app/
 │   ├── page.tsx                Landing page; signed-in users go to /dashboard
 │   ├── login/page.tsx          Sign-in page
+│   ├── actions/start-demo.ts   Server Action: create a guest and sign in as it
 │   ├── dashboard/page.tsx      Server Component: auth check + data load
 │   ├── layout.tsx              Root layout, fonts, metadata
 │   ├── globals.css             Tailwind v4 entry + global styles
@@ -210,17 +230,21 @@ src/
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── SnippetModal.tsx        Shiki-highlighted preview
+│   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── NewSnippetModal.tsx     Create form
 │   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
 │   ├── ai-usage.ts             Atomic AI usage counter (SQL) and the 429 response
 │   ├── auth.ts                 NextAuth config, verified-email check
+│   ├── demo.ts                 Starting a demo: seed, IP limit, cookie name (tested)
+│   ├── demo-store.ts           Database side of starting a demo
 │   ├── email-case.ts           Lowercases emails in the NextAuth adapter (tested)
 │   ├── email-verification.ts   Provider email verification (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
+│   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
-│   ├── rate-limit.ts           AI rate-limit windows and decisions (tested)
+│   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   ├── snippet-update.ts       Partial-update fields for snippet PATCH (tested)
 │   └── prisma.ts               Prisma client singleton
@@ -240,4 +264,4 @@ Secrets live in Vercel environment variables, marked Sensitive, and in a local `
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: thin test coverage and no CI, no input validation at the API boundary, and the remaining Phase 0 security items.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: thin test coverage and no CI, no input validation at the API boundary, and one database shared by every environment. Demo guests also write anonymously to that database, bounded by the per-IP limit and the snippet cap.

@@ -28,8 +28,9 @@ Quick, high-value fixes and the groundwork everything else builds on.
 Right now a visitor sees two OAuth buttons and nothing else. Nobody evaluating the project should have to hand over a GitHub login to see it.
 
 - [x] Landing page at `/` that shows the product
-- [ ] Demo mode: try Snippr in one click, without signing in. Add a "Try the demo" button next to the landing page's sign-in button when it ships
-- [ ] Revisit the 10-snippet cap and its UX alongside demo mode ([0008](./adr/0008-ten-snippet-free-tier-cap.md))
+- [x] Demo mode: try Snippr in one click, without signing in ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
+- [ ] Run `npx prisma db push` against production **before** pushing the demo mode commits. It adds `User.guestExpiresAt` and the `DemoStart` table; until they exist, every signed-in page and API call fails ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
+- [ ] Revisit the 10-snippet cap and its UX alongside demo mode ([0008](./adr/0008-ten-snippet-free-tier-cap.md)). Guests start with 4 snippets, so they hit the cap after adding 6
 - [ ] Open Graph image and metadata so shared links look intentional
 
 ## Phase 2: Make it reviewable
@@ -47,6 +48,7 @@ What an engineer looks for when they open the repo.
 - [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md))
 - [ ] Unique index on `lower(email)` so the database refuses case-only duplicate users, once migrations exist ([0010](./adr/0010-store-emails-lowercased.md))
 - [ ] Separate databases for production and everything else
+- [ ] A daily ceiling on AI calls across all demo guests. Today the limit is per guest, so total guest spend grows with the number of guests ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
 - [ ] Delete old `AiUsage` rows on a schedule. Each active user adds up to two rows an hour, which is nothing today ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
 - [ ] Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
 
@@ -81,7 +83,6 @@ These need a call before the related work starts. Each one becomes an ADR.
 
 | Decision | Options | Needed for |
 | --- | --- | --- |
-| How demo mode works | Shared read-only demo account; per-visitor sandbox that resets; fully client-side demo with fake data | Phase 1 |
 | MCP transport | Local (stdio, runs on your machine); remote (HTTP, anyone can connect with a token) | Phase 4 |
 | Embedding provider | Voyage AI (Anthropic's recommended partner); OpenAI; open model | Phase 4 |
 | Design direction | To be explored with mockups | Phase 3 |
@@ -95,3 +96,4 @@ Good ideas that don't serve the current goal. Not deleted, just not now.
 - VS Code extension
 - Stripe and a paid tier
 - Format code on paste
+- Keep your demo snippets when you sign up. Needs a deliberate merge, not NextAuth account linking ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
