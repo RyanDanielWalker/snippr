@@ -29,6 +29,7 @@ export default async function DashboardPage() {
       user={{
         email: session.user.email ?? "",
         image: session.user.image ?? "",
+        isGuest: session.user.isGuest,
       }}
     />
   )

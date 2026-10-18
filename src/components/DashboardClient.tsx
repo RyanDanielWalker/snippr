@@ -36,7 +36,7 @@ type Folder = {
 type Props = {
   snippets: Snippet[];
   folders: Folder[];
-  user: { email: string; image: string };
+  user: { email: string; image: string; isGuest: boolean };
 };
 
 export default function DashboardClient({ snippets, folders, user }: Props) {
@@ -206,20 +206,43 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold">Snippr</h1>
           <div className="flex items-center gap-4">
-            <span className="text-gray-400 text-sm">{user.email}</span>
-            <img
-              src={user.image}
-              alt="avatar"
-              className="w-8 h-8 rounded-full"
-            />
+            <span className="text-gray-400 text-sm">
+              {user.isGuest ? "Demo" : user.email}
+            </span>
+            {user.image && (
+              <img
+                src={user.image}
+                alt="avatar"
+                className="w-8 h-8 rounded-full"
+              />
+            )}
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() =>
+                signOut({ callbackUrl: user.isGuest ? "/" : "/login" })
+              }
               className="text-xs text-gray-500 hover:text-white transition"
             >
-              Sign out
+              {user.isGuest ? "Leave demo" : "Sign out"}
             </button>
           </div>
         </div>
+
+        {user.isGuest && (
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm bg-blue-950/50 border border-blue-900 text-blue-200 rounded-lg px-4 py-3 mb-8">
+            <span>
+              This is a demo. It and everything in it is deleted 24 hours
+              after you started.
+            </span>
+            {/* Signs out first: signing in on top of a guest session would
+                try to attach your account to the guest (docs/adr/0012). */}
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="text-white underline underline-offset-4 hover:text-blue-100"
+            >
+              Sign in to keep your own
+            </button>
+          </div>
+        )}
 
         <DndContext
           sensors={sensors}
