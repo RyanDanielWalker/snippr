@@ -39,10 +39,11 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0005](./0005-ai-features-as-synchronous-claude-calls.md) | AI features as synchronous Claude calls; search as LLM re-ranking | Accepted, revisit |
 | [0006](./0006-folders-as-optional-one-to-many.md) | Folders as an optional one-to-many relation with `SET NULL` on delete | Accepted |
 | [0007](./0007-dnd-kit-for-drag-and-drop.md) | dnd-kit for drag and drop | Accepted |
-| [0008](./0008-ten-snippet-free-tier-cap.md) | Ten-snippet free tier cap | Accepted, revisit |
+| [0008](./0008-ten-snippet-free-tier-cap.md) | Ten-snippet free tier cap | Superseded by 0013 |
 | [0009](./0009-require-verified-email-for-new-accounts.md) | Require a verified email when a sign-in account is first attached | Accepted |
 | [0010](./0010-store-emails-lowercased.md) | Store and match emails in lowercase | Accepted |
 | [0011](./0011-rate-limit-ai-endpoints-in-postgres.md) | Rate-limit the AI endpoints with a fixed-window counter in Postgres | Accepted |
 | [0012](./0012-demo-mode-as-expiring-guest-users.md) | Run demo mode as expiring guest users | Accepted |
+| [0013](./0013-snippet-cap-of-50-for-members-and-10-for-guests.md) | Cap libraries at 50 snippets for members and 10 for guests, with a 409 | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

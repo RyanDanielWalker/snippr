@@ -2,7 +2,7 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-18 (after ADR 0012)*
+*Last reviewed: 2026-10-18 (after ADR 0013)*
 
 ## The short version
 
@@ -88,6 +88,8 @@ Every Route Handler follows the same pattern:
 3. **Do the work,** scoped by `userId`.
 
 Lists are always filtered with `where: { userId }`, so one user can never see another's data. Foreign keys in a request body get the same rule: when a snippet is created or updated, its `folderId` must be null or a folder you own, or the request gets a `403` (`src/lib/folder-ownership.ts`; history in [0006](./adr/0006-folders-as-optional-one-to-many.md)).
+
+Creating a snippet when the library is full returns `409`: 50 snippets for members, 10 for demo guests ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)).
 
 ## Data model
 
@@ -221,7 +223,7 @@ src/
 │       ├── auth/[...nextauth]/ NextAuth handler
 │       ├── folders/            Folder CRUD
 │       └── snippets/
-│           ├── route.ts        Snippet CRUD + free tier cap
+│           ├── route.ts        Snippet CRUD + snippet cap
 │           ├── search/         AI search, rate-limited
 │           └── describe/       AI descriptions, rate-limited
 ├── components/
@@ -246,6 +248,7 @@ src/
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
+│   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippet-update.ts       Partial-update fields for snippet PATCH (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type

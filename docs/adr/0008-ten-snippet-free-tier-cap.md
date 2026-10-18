@@ -1,6 +1,6 @@
 # 0008. Cap free accounts at ten snippets
 
-- **Status:** Accepted, revisit when demo mode ships
+- **Status:** Superseded by [0013](./0013-snippet-cap-of-50-for-members-and-10-for-guests.md)
 - **Date:** Decided 2026-04-15, recorded 2026-10-17
 - **Related:** `src/app/api/snippets/route.ts`, [0005](./0005-ai-features-as-synchronous-claude-calls.md)
 

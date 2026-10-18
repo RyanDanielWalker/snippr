@@ -30,7 +30,7 @@ Right now a visitor sees two OAuth buttons and nothing else. Nobody evaluating t
 - [x] Landing page at `/` that shows the product
 - [x] Demo mode: try Snippr in one click, without signing in ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
 - [x] Run `npx prisma db push` against production **before** pushing the demo mode commits. It adds `User.guestExpiresAt` and the `DemoStart` table; until they exist, every signed-in page and API call fails ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
-- [ ] Revisit the 10-snippet cap and its UX alongside demo mode ([0008](./adr/0008-ten-snippet-free-tier-cap.md)). Guests start with 4 snippets, so they hit the cap after adding 6
+- [x] Revisit the 10-snippet cap and its UX alongside demo mode ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)). Now 50 for members, 10 for guests, `409` when full
 - [ ] Open Graph image and metadata so shared links look intentional
 
 ## Phase 2: Make it reviewable
@@ -38,7 +38,7 @@ Right now a visitor sees two OAuth buttons and nothing else. Nobody evaluating t
 What an engineer looks for when they open the repo.
 
 - [ ] Runtime validation (zod) on every Route Handler, schemas shared with the client ([0002](./adr/0002-nextjs-full-stack-on-vercel.md)). Include length limits on snippet fields and a cap on folders: demo guests can be created without an account, so oversized writes are cheap to make ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
-- [ ] Consistent API errors: one error shape, correct status codes, no `alert()`
+- [ ] Consistent API errors: one error shape, correct status codes, no `alert()`. Creating a snippet already shows errors inline; editing, deleting, and describing still use `alert()` or fail silently
 - [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
 - [ ] Structured output for AI search instead of parsing free text ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
 - [x] Test runner (Vitest) with `npm test`
@@ -70,7 +70,7 @@ Today it reads as default Tailwind dark mode. It should look like someone made c
 The parts that make Snippr more than a CRUD app.
 
 - [ ] **MCP server:** expose search, get, and save as tools so Claude, Cursor, or any MCP client can use your snippet library directly
-- [ ] **Embedding-based semantic search** with pgvector, replacing whole-library prompts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
+- [ ] **Embedding-based semantic search** with pgvector, replacing whole-library prompts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). Removes the cost reason for the snippet cap, so revisit [0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md) then
 
 ## Phase 5: Tell the story
 
