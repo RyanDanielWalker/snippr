@@ -66,12 +66,13 @@ export default function NewSnippetModal({
           .map((t) => t.trim())
           .filter(Boolean),
       }),
-    });
+    }).catch(() => null);
 
     // Stay open on any failure, so nothing typed is lost. The cap (409) and
-    // a folder you can't use (403) both send a message worth showing.
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
+    // a folder you can't use (403) both send a message worth showing; a
+    // dropped connection (no response at all) gets the generic one.
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => null);
       setError(data?.error ?? "Couldn't save that snippet. Try again.");
       setLoading(false);
       return;
