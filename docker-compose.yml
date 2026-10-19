@@ -1,0 +1,24 @@
+# Local Postgres for development and tests. Production uses Supabase; see
+# docs/adr/0015-local-postgres-in-docker-for-development.md.
+services:
+  postgres:
+    # Match the major version production runs (Supabase dashboard →
+    # Settings → Infrastructure).
+    image: postgres:17
+    environment:
+      POSTGRES_USER: snippr
+      POSTGRES_PASSWORD: snippr
+      POSTGRES_DB: snippr
+    ports:
+      # Bound to localhost so nothing else on the network can reach it.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U snippr -d snippr"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  postgres-data:
