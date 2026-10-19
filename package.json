@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:db": "vitest run --config vitest.db.config.mts",
     "test:e2e": "playwright test",
     "e2e:db": "node scripts/e2e-db.mjs",
     "db:up": "docker compose up -d --wait",

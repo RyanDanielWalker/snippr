@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
@@ -10,5 +10,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "scripts/**/*.test.ts"],
+    // Tests that need Postgres run with `npm run test:db` (docs/adr/0020),
+    // so `npm test` never needs a database.
+    exclude: [...configDefaults.exclude, "**/*.db.test.ts"],
   },
 });
