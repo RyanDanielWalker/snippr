@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDroppable } from "@dnd-kit/core";
 import { FOLDER_NAME_MAX } from "@/lib/field-limits";
+import { callApi } from "@/lib/api-client";
 
 type Folder = {
   id: string;
@@ -66,6 +67,7 @@ export default function FolderSidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,33 +82,47 @@ export default function FolderSidebar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpenId]);
 
-  async function handleCreate() {
-    if (!newName.trim()) {
-      setCreating(false);
-      setNewName("");
-      return;
-    }
-    await fetch("/api/folders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName }),
-    });
+  function cancelCreate() {
     setCreating(false);
     setNewName("");
+    setError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setError(null);
+  }
+
+  // On failure, create and rename keep the input open with what was typed,
+  // so the name can be fixed or the folder cap's message read.
+  async function handleCreate() {
+    if (!newName.trim()) {
+      cancelCreate();
+      return;
+    }
+    const result = await callApi("/api/folders", "POST", { name: newName });
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    cancelCreate();
     router.refresh();
   }
 
   async function handleRename(id: string) {
     if (!editingName.trim()) {
-      setEditingId(null);
+      cancelEdit();
       return;
     }
-    await fetch("/api/folders", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, name: editingName }),
+    const result = await callApi("/api/folders", "PATCH", {
+      id,
+      name: editingName,
     });
-    setEditingId(null);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    cancelEdit();
     setEditingName("");
     router.refresh();
   }
@@ -116,13 +132,14 @@ export default function FolderSidebar({
       !confirm("Delete this folder? Snippets inside will become unorganized.")
     )
       return;
-    await fetch("/api/folders", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    if (selectedFolderId === id) onSelectFolder(null);
     setMenuOpenId(null);
+    setError(null);
+    const result = await callApi("/api/folders", "DELETE", { id });
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    if (selectedFolderId === id) onSelectFolder(null);
     router.refresh();
   }
 
@@ -130,6 +147,7 @@ export default function FolderSidebar({
     setEditingId(folder.id);
     setEditingName(folder.name);
     setMenuOpenId(null);
+    setError(null);
   }
 
   if (collapsed) {
@@ -219,7 +237,7 @@ export default function FolderSidebar({
               onBlur={() => handleRename(folder.id)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleRename(folder.id);
-                if (e.key === "Escape") setEditingId(null);
+                if (e.key === "Escape") cancelEdit();
               }}
               autoFocus
               className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500"
@@ -271,6 +289,12 @@ export default function FolderSidebar({
         </div>
       ))}
 
+      {error && (
+        <p role="alert" className="px-3 py-2 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+
       {creating ? (
         <input
           type="text"
@@ -280,10 +304,7 @@ export default function FolderSidebar({
           onBlur={handleCreate}
           onKeyDown={(e) => {
             if (e.key === "Enter") handleCreate();
-            if (e.key === "Escape") {
-              setCreating(false);
-              setNewName("");
-            }
+            if (e.key === "Escape") cancelCreate();
           }}
           autoFocus
           placeholder="Folder name"
@@ -291,7 +312,10 @@ export default function FolderSidebar({
         />
       ) : (
         <button
-          onClick={() => setCreating(true)}
+          onClick={() => {
+            setCreating(true);
+            setError(null);
+          }}
           className="w-full text-left px-3 py-2 text-sm text-gray-500 hover:text-white transition"
         >
           + New folder

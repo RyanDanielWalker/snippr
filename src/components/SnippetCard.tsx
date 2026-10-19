@@ -7,6 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import EditSnippetModal from "@/components/EditSnippetModal";
 import SnippetModal from "@/components/SnippetModal";
 import SnippetCardView from "@/components/SnippetCardView";
+import { callApi } from "@/lib/api-client";
 
 type Snippet = {
   id: string;
@@ -35,6 +36,7 @@ export default function SnippetCard({
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showEdit, setShowEdit] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -65,11 +67,14 @@ export default function SnippetCard({
       return;
     }
     setDeleting(true);
-    await fetch("/api/snippets", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: snippet.id }),
-    });
+    setDeleteError(null);
+    const result = await callApi("/api/snippets", "DELETE", { id: snippet.id });
+    if (!result.ok) {
+      setDeleting(false);
+      setConfirmDelete(false);
+      setDeleteError(result.error);
+      return;
+    }
     router.refresh();
   }
 
@@ -107,39 +112,46 @@ export default function SnippetCard({
         folderName={folderName}
         className="hover:border-gray-700 transition cursor-grab active:cursor-grabbing"
         footer={
-          <div className="flex justify-between items-center pt-1 mt-auto">
-            <div className="flex items-center gap-4">
+          <div className="pt-1 mt-auto space-y-2">
+            {deleteError && (
+              <p role="alert" className="text-xs text-red-400">
+                {deleteError}
+              </p>
+            )}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleDelete}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  disabled={deleting}
+                  className={`text-xs transition ${
+                    confirmDelete
+                      ? "text-red-400 hover:text-red-300"
+                      : "text-gray-600 hover:text-red-400"
+                  }`}
+                >
+                  {deleting
+                    ? "Deleting..."
+                    : confirmDelete
+                      ? "Click again to confirm"
+                      : "Delete"}
+                </button>
+                <button
+                  onClick={handleEdit}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="text-xs text-gray-600 hover:text-white transition"
+                >
+                  Edit
+                </button>
+              </div>
               <button
-                onClick={handleDelete}
+                onClick={copy}
                 onPointerDown={(e) => e.stopPropagation()}
-                disabled={deleting}
-                className={`text-xs transition ${
-                  confirmDelete
-                    ? "text-red-400 hover:text-red-300"
-                    : "text-gray-600 hover:text-red-400"
-                }`}
+                className="text-xs text-gray-500 hover:text-white transition"
               >
-                {deleting
-                  ? "Deleting..."
-                  : confirmDelete
-                    ? "Click again to confirm"
-                    : "Delete"}
-              </button>
-              <button
-                onClick={handleEdit}
-                onPointerDown={(e) => e.stopPropagation()}
-                className="text-xs text-gray-600 hover:text-white transition"
-              >
-                Edit
+                {copied ? "✓ Copied" : "Copy"}
               </button>
             </div>
-            <button
-              onClick={copy}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="text-xs text-gray-500 hover:text-white transition"
-            >
-              {copied ? "✓ Copied" : "Copy"}
-            </button>
           </div>
         }
       />

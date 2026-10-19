@@ -17,6 +17,7 @@ import NewSnippetModal from "@/components/NewSnippetModal";
 import FolderSidebar from "@/components/FolderSidebar";
 import { snippetCap, snippetCapMessage, snippetCapStatus } from "@/lib/snippet-cap";
 import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
+import { callApi } from "@/lib/api-client";
 
 type Snippet = {
   id: string;
@@ -51,12 +52,16 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   const [aiResults, setAiResults] = useState<Snippet[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [draggedSnippet, setDraggedSnippet] = useState<Snippet | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  // Skips the server render so DndContext's generated ids can't mismatch.
+  // A stable DndContext id will replace this (roadmap, Phase 3).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -67,7 +72,10 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   );
 
   useEffect(() => {
+    // localStorage only exists in the browser, so this can't be the initial
+    // state without the server and browser renders disagreeing.
     const stored = localStorage.getItem("sidebarCollapsed");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored === "true") setSidebarCollapsed(true);
   }, []);
 
@@ -99,29 +107,16 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     setAiResults(null);
     setAiError(null);
 
-    try {
-      const res = await fetch("/api/snippets/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: search }),
-      });
-
-      if (!res.ok) {
-        // Rate limits and oversized queries come back with a message worth
-        // showing; anything else falls through to "No matching snippets."
-        const data = await res.json().catch(() => null);
-        if (data?.error) setAiError(data.error);
-        setAiResults([]);
-        return;
-      }
-
-      const data = await res.json();
-      setAiResults(data);
-    } catch {
+    const result = await callApi<Snippet[]>("/api/snippets/search", "POST", {
+      query: search,
+    });
+    setAiLoading(false);
+    if (!result.ok) {
+      setAiError(result.error);
       setAiResults([]);
-    } finally {
-      setAiLoading(false);
+      return;
     }
+    setAiResults(result.data);
   }
 
   function handleSearchKeyDown(e: React.KeyboardEvent) {
@@ -154,19 +149,21 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     const newFolderId = dropTargetId === "unorganized" ? null : dropTargetId;
     if (snippet.folderId === newFolderId) return;
 
-    await fetch("/api/snippets", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: snippet.id,
-        title: snippet.title,
-        code: snippet.code,
-        language: snippet.language,
-        description: snippet.description,
-        tags: snippet.tags,
-        folderId: newFolderId,
-      }),
+    setMoveError(null);
+    const result = await callApi("/api/snippets", "PATCH", {
+      id: snippet.id,
+      title: snippet.title,
+      code: snippet.code,
+      language: snippet.language,
+      description: snippet.description,
+      tags: snippet.tags,
+      folderId: newFolderId,
     });
+    // Nothing moved on screen yet, so there's nothing to undo; just say so.
+    if (!result.ok) {
+      setMoveError(result.error);
+      return;
+    }
 
     router.refresh();
   }
@@ -276,6 +273,22 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                   {capStatus === "full"
                     ? snippetCapMessage(cap, user.isGuest)
                     : `${snippets.length} of ${cap} snippets used.`}
+                </div>
+              )}
+
+              {moveError && (
+                <div
+                  role="alert"
+                  className="flex items-start justify-between gap-4 text-sm text-red-300 bg-red-950/60 border border-red-900 rounded-lg px-4 py-3 mb-4"
+                >
+                  <span>Couldn&apos;t move that snippet. {moveError}</span>
+                  <button
+                    onClick={() => setMoveError(null)}
+                    className="text-red-400 hover:text-white shrink-0"
+                    aria-label="Dismiss"
+                  >
+                    ✕
+                  </button>
                 </div>
               )}
 

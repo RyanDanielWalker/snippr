@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LANGUAGES, SNIPPET_LIMITS } from "@/lib/field-limits";
+import { callApi } from "@/lib/api-client";
 
 type Snippet = {
   id: string;
@@ -31,6 +32,8 @@ export default function EditSnippetModal({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [describeError, setDescribeError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: snippet.title,
     code: snippet.code,
@@ -52,20 +55,24 @@ export default function EditSnippetModal({
   async function handleSubmit() {
     if (!form.title || !form.code) return;
     setLoading(true);
+    setError(null);
 
-    await fetch("/api/snippets", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: snippet.id,
-        ...form,
-        folderId: form.folderId || null,
-        tags: form.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-      }),
+    const result = await callApi("/api/snippets", "PATCH", {
+      id: snippet.id,
+      ...form,
+      folderId: form.folderId || null,
+      tags: form.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
     });
+
+    // Stay open on any failure, so the edits aren't lost.
+    if (!result.ok) {
+      setError(result.error);
+      setLoading(false);
+      return;
+    }
 
     setLoading(false);
     onClose();
@@ -75,18 +82,18 @@ export default function EditSnippetModal({
   async function handleGenerateDescription() {
     if (!form.code) return;
     setGenerating(true);
-    const res = await fetch("/api/snippets/describe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: form.code, language: form.language }),
-    });
-    const data = await res.json().catch(() => null);
+    setDescribeError(null);
+    const result = await callApi<{ description: string }>(
+      "/api/snippets/describe",
+      "POST",
+      { code: form.code, language: form.language },
+    );
     setGenerating(false);
-    if (!res.ok) {
-      alert(data?.error ?? "Couldn't write a description. Try again.");
+    if (!result.ok) {
+      setDescribeError(result.error);
       return;
     }
-    setForm((f) => ({ ...f, description: data.description }));
+    setForm((f) => ({ ...f, description: result.data.description }));
   }
 
   return (
@@ -200,6 +207,11 @@ export default function EditSnippetModal({
             {generating ? "..." : "✦ Generate"}
           </button>
         </div>
+        {describeError && (
+          <p role="alert" className="-mt-2 text-xs text-red-400">
+            {describeError}
+          </p>
+        )}
 
         <input
           type="text"
@@ -208,6 +220,15 @@ export default function EditSnippetModal({
           onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
           className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
         />
+
+        {error && (
+          <p
+            role="alert"
+            className="text-sm text-red-300 bg-red-950/60 border border-red-900 rounded-lg px-4 py-3"
+          >
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-3 pt-2">
           <button

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LANGUAGES, SNIPPET_LIMITS } from "@/lib/field-limits";
+import { callApi } from "@/lib/api-client";
 
 type Folder = {
   id: string;
@@ -22,6 +23,7 @@ export default function NewSnippetModal({
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [describeError, setDescribeError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     code: "",
@@ -42,25 +44,18 @@ export default function NewSnippetModal({
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/snippets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        folderId: form.folderId || null,
-        tags: form.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-      }),
-    }).catch(() => null);
+    const result = await callApi("/api/snippets", "POST", {
+      ...form,
+      folderId: form.folderId || null,
+      tags: form.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+    });
 
-    // Stay open on any failure, so nothing typed is lost. The cap (409) and
-    // a folder you can't use (403) both send a message worth showing; a
-    // dropped connection (no response at all) gets the generic one.
-    if (!res?.ok) {
-      const data = await res?.json().catch(() => null);
-      setError(data?.error ?? "Couldn't save that snippet. Try again.");
+    // Stay open on any failure, so nothing typed is lost.
+    if (!result.ok) {
+      setError(result.error);
       setLoading(false);
       return;
     }
@@ -73,18 +68,18 @@ export default function NewSnippetModal({
   async function handleGenerateDescription() {
     if (!form.code) return;
     setGenerating(true);
-    const res = await fetch("/api/snippets/describe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: form.code, language: form.language }),
-    });
-    const data = await res.json().catch(() => null);
+    setDescribeError(null);
+    const result = await callApi<{ description: string }>(
+      "/api/snippets/describe",
+      "POST",
+      { code: form.code, language: form.language },
+    );
     setGenerating(false);
-    if (!res.ok) {
-      alert(data?.error ?? "Couldn't write a description. Try again.");
+    if (!result.ok) {
+      setDescribeError(result.error);
       return;
     }
-    setForm((f) => ({ ...f, description: data.description }));
+    setForm((f) => ({ ...f, description: result.data.description }));
   }
 
   return (
@@ -198,6 +193,11 @@ export default function NewSnippetModal({
             {generating ? "..." : "✦ Generate"}
           </button>
         </div>
+        {describeError && (
+          <p role="alert" className="-mt-2 text-xs text-red-400">
+            {describeError}
+          </p>
+        )}
 
         <input
           type="text"
