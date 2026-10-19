@@ -19,13 +19,14 @@ Built as a portfolio project to demonstrate full-stack development with modern t
 - **Create, edit & delete snippets**: save code with title, language, tags, and description
 - **Syntax-highlighted preview**: full-screen modal with Shiki-powered code highlighting
 - **Folder organization**: group snippets into folders with a collapsible sidebar
-- **Drag-and-drop**: drag snippets between folders to organize them
+- **Drag-and-drop**: drag snippets between folders to organize them (with a mouse; on a phone, Edit moves them)
 - **Keyword search**: filter snippets instantly by title, tag, or language
 - **AI-powered semantic search**: describe what you're looking for in plain English and Claude finds the right snippet
 - **AI-generated descriptions**: auto-generate concise descriptions for any snippet with one click
 - **Copy to clipboard**: one click to copy any snippet
 - **Demo mode**: try it without signing in; the demo deletes itself after 24 hours
 - **Snippet limit**: 50 per account (10 in the demo), with a warning as you get close
+- **Works on a phone**: the folders move into a drawer and nothing scrolls sideways
 
 ## Tech Stack
 

@@ -57,7 +57,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 
 ## End-to-end tests
 
-`e2e/demo.spec.ts` drives Chromium through a demo: start one, add a snippet, search for it, drag it into a folder ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)).
+`e2e/demo.spec.ts` drives Chromium through a demo: start one, add a snippet, search for it, drag it into a folder ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)). `e2e/phone.spec.ts` opens a demo at 375px wide and checks that nothing scrolls sideways and the folder drawer opens and closes.
 
 ```bash
 npx playwright install chromium   # once
