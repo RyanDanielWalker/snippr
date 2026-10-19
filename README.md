@@ -53,8 +53,8 @@ Snippr uses the Anthropic Claude API for two core features:
 
 ### Prerequisites
 
-- Node.js 18+
-- A Supabase account
+- Node.js 20.12+
+- Docker Desktop, for the local database
 - A GitHub OAuth app
 - A Google OAuth app
 - An Anthropic API key
@@ -77,9 +77,10 @@ Snippr uses the Anthropic Claude API for two core features:
    cp .env.example .env
 ```
 
-4. Push the database schema
+4. Start the local database and create the tables
 ```bash
-   npx prisma db push
+   npm run db:up
+   npm run db:push
 ```
 
 5. Run the dev server

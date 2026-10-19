@@ -46,5 +46,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0012](./0012-demo-mode-as-expiring-guest-users.md) | Run demo mode as expiring guest users | Accepted |
 | [0013](./0013-snippet-cap-of-50-for-members-and-10-for-guests.md) | Cap libraries at 50 snippets for members and 10 for guests, with a 409 | Accepted |
 | [0014](./0014-validate-request-bodies-with-zod.md) | Validate every request body with zod, with field limits and a folder cap | Accepted |
+| [0015](./0015-local-postgres-in-docker-for-development.md) | Develop against a local Postgres in Docker, and refuse remote databases by default | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

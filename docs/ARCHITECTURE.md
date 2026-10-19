@@ -211,8 +211,12 @@ Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-feat
 ## Code map
 
 ```
+docker-compose.yml              Local Postgres for development
 prisma/
 └── schema.prisma               Data model (source of truth)
+scripts/
+├── check-db.mjs                Stops database scripts aimed at a remote database
+└── db-guard.mjs                The rules it follows (tested)
 src/
 ├── app/
 │   ├── page.tsx                Landing page; signed-in users go to /dashboard
@@ -266,12 +270,12 @@ src/
 | Environment | Where | Deploys from | Database |
 | --- | --- | --- | --- |
 | Production | snippr.dev | `main` | Supabase project `Snippr` |
-| Local | `localhost:3000` | your machine | same Supabase project, via `.env` |
+| Local | `localhost:3000` | your machine | Postgres 17 in Docker (`docker-compose.yml`) |
 
 Secrets live in Vercel environment variables, marked Sensitive, and in a local `.env` that is never committed. `.env.example` lists every required variable. See [DEVELOPMENT.md](./DEVELOPMENT.md).
 
-**Worth knowing:** local development points at the production database today. Every environment shares one set of data. Separating them is on the roadmap.
+Production's `DATABASE_URL` lives only in Vercel. The npm scripts that connect (`dev`, `start`, `db:push`, `db:studio`) run `scripts/check-db.mjs` first, which refuses any database that isn't on this machine unless `ALLOW_REMOTE_DB=1` is set in the shell ([0015](./adr/0015-local-postgres-in-docker-for-development.md)).
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: thin test coverage and no CI, and one database shared by every environment. Demo guests also write anonymously to that database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: thin test coverage and no CI, and schema changes applied to production by hand. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.

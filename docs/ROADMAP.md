@@ -25,12 +25,14 @@ What an engineer looks for when they open the repo, plus the two fixes that keep
 
 - [x] Runtime validation (zod) on every Route Handler, with length limits on snippet fields and a cap on folders ([0014](./adr/0014-validate-request-bodies-with-zod.md)). The UI shares the limits and the language list, not the schemas
 - [x] Test runner (Vitest) with `npm test`
-- [ ] Separate databases for production and everything else. Local `.env` points at production today, so one wrong command changes real data. The end-to-end tests below need this first
+- [x] Separate databases for production and everything else ([0015](./adr/0015-local-postgres-in-docker-for-development.md)). Local development runs on Postgres in Docker, and the npm scripts that connect refuse a remote database unless `ALLOW_REMOTE_DB=1` is set
+- [ ] Point your own `.env` at the local database (`.env.example` has the URL), then `npm run db:up` and `npm run db:push`. Until then `npm run dev` refuses to start ([0015](./adr/0015-local-postgres-in-docker-for-development.md))
+- [ ] Two dashboard checks ([0015](./adr/0015-local-postgres-in-docker-for-development.md)). Vercel: if the Preview environment has a `DATABASE_URL`, preview deployments run against production, so remove it or point it elsewhere. Supabase (Settings → Infrastructure): confirm production runs Postgres 17, or change the image in `docker-compose.yml` to match
 - [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md)). Apply migrations as part of the deploy, so schema and code can't go out in the wrong order. Twice now (the `AiUsage` table and demo mode's columns) the code went live before `db push`, and production errored until it ran
 - [ ] Consistent API errors: one error shape, correct status codes, no `alert()`. Creating a snippet already shows errors inline; editing, deleting, and describing still use `alert()` or fail silently. So do folder create and rename, which now have a length limit and a `409` cap that nobody sees ([0014](./adr/0014-validate-request-bodies-with-zod.md))
 - [ ] Unit and integration tests for API logic (ownership, validation, cap)
 - [ ] One end-to-end test of the main flow through demo mode: start a demo, create a snippet, search, move it to a folder
-- [ ] GitHub Actions CI: lint, typecheck, test on every push
+- [ ] GitHub Actions CI: lint, typecheck, test on every push. Run the `docker-compose.yml` Postgres image as a service container for anything that needs a database
 - [ ] Check production for rows the new limits reject: a language outside the list, a title over 200 characters, more than 50 folders. Editing such a snippet fails until the field changes ([0014](./adr/0014-validate-request-bodies-with-zod.md))
 
 ### Phase 3: Make it look designed
