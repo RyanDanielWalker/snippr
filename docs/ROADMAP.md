@@ -39,9 +39,8 @@ What an engineer looks for when they open the repo, plus the two fixes that keep
 
 ### Phase 3: Make it look designed
 
-Today it reads as default Tailwind dark mode. It should look like someone made choices.
+Today it reads as default Tailwind dark mode. It should look like someone made choices. This phase does the work that's right whatever the look turns out to be. The visual identity itself waits for Phase 5, after the MCP server, because it needs the design direction decided with mockups first ([audit](./audits/2026-10-19.md), Direction, option C).
 
-- [ ] Visual identity: type, color, logo, a point of view. Redo the Open Graph image to match; today it borrows the landing page's gray and blue and only has Geist Regular, so the wordmark can't be bold
 - [ ] Fix the font: `globals.css` forces Arial and overrides the Geist font being loaded
 - [ ] Toasts, real loading states, and empty states
 - [ ] Syntax highlighting on the cards, not only in the preview
@@ -65,6 +64,9 @@ The part that makes Snippr more than a CRUD app.
 
 ### Phase 5: Tell the story
 
+The identity comes first, so the screenshots and the README show the finished look.
+
+- [ ] Visual identity: type, color, logo, a point of view, from the design direction decision below. Redo the Open Graph image to match; today it borrows the landing page's gray and blue and only has Geist Regular, so the wordmark can't be bold
 - [ ] README rebuilt around screenshots, a short demo GIF, and the architecture
 - [ ] A case study: what was built, what broke, what was decided, and why
 - [ ] Tag `v1.0`, then rewrite this roadmap around whatever comes next, if anything does
@@ -102,7 +104,7 @@ These need a call before the related work starts. Each one becomes an ADR.
 | --- | --- | --- |
 | MCP transport | Local (stdio, runs on your machine); remote (HTTP, anyone can connect with a token) | Phase 4 |
 | How an MCP client signs in | Personal access tokens; OAuth for MCP clients. Even a local stdio server has to reach your library on snippr.dev, so the API needs a way in besides NextAuth cookies either way, and the "resolve the session first" rule changes with it ([audit](./audits/2026-10-19.md)) | Phase 4 |
-| Design direction | To be explored with mockups | Phase 3 |
+| Design direction | To be explored with mockups | Phase 5 |
 
 ## Parked
 
