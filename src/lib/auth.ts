@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth"
+import { getServerSession, NextAuthOptions } from "next-auth"
 import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
@@ -73,4 +73,16 @@ export const authOptions: NextAuthOptions = {
     // page turns into a readable message (src/lib/sign-in-errors.ts).
     error: "/login",
   },
+}
+/** The signed-in user, or null when there's no session. */
+export type ApiUser = { id: string; isGuest: boolean } | null
+
+/**
+ * The signed-in user for a Route Handler, as the plain value the logic in
+ * src/lib/snippets.ts and src/lib/folders.ts takes (docs/adr/0018).
+ */
+export async function currentUser(): Promise<ApiUser> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return null
+  return { id: session.user.id, isGuest: session.user.isGuest }
 }

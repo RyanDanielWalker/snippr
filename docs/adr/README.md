@@ -49,5 +49,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0015](./0015-local-postgres-in-docker-for-development.md) | Develop against a local Postgres in Docker, and refuse remote databases by default | Accepted |
 | [0016](./0016-apply-migrations-in-the-production-build.md) | Track schema changes with `prisma migrate`, applied during the production build | Accepted |
 | [0017](./0017-one-error-shape-shown-inline.md) | Send every API error as `{ error }` and show it where it happened | Accepted |
+| [0018](./0018-route-handler-logic-in-lib-with-a-store.md) | Keep Route Handler logic in `src/lib`, with the database passed in as a store | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
