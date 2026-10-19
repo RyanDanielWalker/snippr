@@ -63,14 +63,6 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   const [draggedSnippet, setDraggedSnippet] = useState<Snippet | null>(null);
   const [movingIds, setMovingIds] = useState<ReadonlySet<string>>(new Set());
   const [, startMoving] = useTransition();
-  const [mounted, setMounted] = useState(false);
-
-  // Skips the server render so DndContext's generated ids can't mismatch.
-  // A stable DndContext id will replace this (roadmap, Phase 3).
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -218,18 +210,6 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
         })
       : null;
 
-  if (!mounted) {
-    return (
-      <main className="min-h-screen bg-gray-950 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold">Snippr</h1>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       {showModal && (
@@ -286,7 +266,11 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
           </div>
         )}
 
+        {/* A fixed id, because without one dnd-kit numbers the cards'
+            aria-describedby from a counter that keeps counting across
+            requests on the server, and the browser starts again at 0. */}
         <DndContext
+          id="dashboard-dnd"
           sensors={sensors}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
