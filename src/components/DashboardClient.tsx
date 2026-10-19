@@ -15,6 +15,7 @@ import {
 import SnippetCard from "@/components/SnippetCard";
 import NewSnippetModal from "@/components/NewSnippetModal";
 import FolderSidebar from "@/components/FolderSidebar";
+import { useToast } from "@/components/Toaster";
 import { snippetCap, snippetCapMessage, snippetCapStatus } from "@/lib/snippet-cap";
 import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
@@ -46,13 +47,13 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   const cap = snippetCap(user.isGuest);
   const capStatus = snippetCapStatus(snippets.length, cap);
   const router = useRouter();
+  const toast = useToast();
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
   const [aiMode, setAiMode] = useState(false);
   const [aiResults, setAiResults] = useState<Snippet[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [moveError, setMoveError] = useState<string | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [draggedSnippet, setDraggedSnippet] = useState<Snippet | null>(null);
@@ -149,7 +150,6 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     const newFolderId = dropTargetId === "unorganized" ? null : dropTargetId;
     if (snippet.folderId === newFolderId) return;
 
-    setMoveError(null);
     // Only the folder: PATCH is a partial update, and resending every field
     // would fail validation for an older snippet that predates the limits.
     const result = await callApi("/api/snippets", "PATCH", {
@@ -158,10 +158,15 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     });
     // Nothing moved on screen yet, so there's nothing to undo; just say so.
     if (!result.ok) {
-      setMoveError(result.error);
+      toast(`That snippet didn't move. ${result.error}`, "error");
       return;
     }
 
+    const destination =
+      newFolderId === null
+        ? "Unorganized"
+        : (folders.find((f) => f.id === newFolderId)?.name ?? "the folder");
+    toast(`Moved to ${destination}.`);
     router.refresh();
   }
 
@@ -270,22 +275,6 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                   {capStatus === "full"
                     ? snippetCapMessage(cap, user.isGuest)
                     : `${snippets.length} of ${cap} snippets used.`}
-                </div>
-              )}
-
-              {moveError && (
-                <div
-                  role="alert"
-                  className="flex items-start justify-between gap-4 text-sm text-red-300 bg-red-950/60 border border-red-900 rounded-lg px-4 py-3 mb-4"
-                >
-                  <span>That snippet didn&apos;t move. {moveError}</span>
-                  <button
-                    onClick={() => setMoveError(null)}
-                    className="text-red-400 hover:text-white shrink-0"
-                    aria-label="Dismiss"
-                  >
-                    ✕
-                  </button>
                 </div>
               )}
 

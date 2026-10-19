@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useDroppable } from "@dnd-kit/core";
 import { FOLDER_NAME_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
+import { useToast } from "@/components/Toaster";
 
 type Folder = {
   id: string;
@@ -62,6 +63,7 @@ export default function FolderSidebar({
   onToggleCollapse,
 }: Props) {
   const router = useRouter();
+  const toast = useToast();
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -140,6 +142,13 @@ export default function FolderSidebar({
       return;
     }
     if (selectedFolderId === id) onSelectFolder(null);
+    const hadSnippets =
+      (folders.find((f) => f.id === id)?._count.snippets ?? 0) > 0;
+    toast(
+      hadSnippets
+        ? "Folder deleted. Its snippets are in Unorganized now."
+        : "Folder deleted.",
+    );
     router.refresh();
   }
 

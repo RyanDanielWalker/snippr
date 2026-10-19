@@ -55,7 +55,9 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   });
   await page.mouse.up();
 
-  // The card now carries the folder's name, and the folder lists it.
+  // A toast says so, the card now carries the folder's name, and the folder
+  // lists it.
+  await expect(page.getByText("Moved to Frontend.")).toBeVisible();
   await expect(card("Slugify").getByText("Frontend", { exact: true })).toBeVisible();
   await frontend.click();
   await expect(page.getByRole("heading", { name: "Frontend", level: 2 })).toBeVisible();

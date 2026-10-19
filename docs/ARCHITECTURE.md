@@ -107,7 +107,7 @@ Every error is `{ error: string }` with a status code: the status is for program
 | `500` | Something broke on our side |
 | `502` | Claude didn't answer |
 
-In the browser, components call the API through `callApi` (`src/lib/api-client.ts`), which returns the data or a message to show, and show that message next to whatever was being done.
+In the browser, components call the API through `callApi` (`src/lib/api-client.ts`), which returns the data or a message to show. Errors you can fix show next to whatever was being done. Things that happen out of sight, like a drag to a folder or a finished delete, show a toast instead ([0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)).
 
 ## Data model
 
@@ -264,6 +264,7 @@ src/
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── SnippetModal.tsx        Shiki-highlighted preview
+│   ├── Toaster.tsx             ToastProvider and useToast(), dashboard only
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── NewSnippetModal.tsx     Create form
 │   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard
@@ -291,6 +292,7 @@ src/
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippets.ts             /api/snippets: ownership, cap, validation, in order (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
+│   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type
 vitest.db.config.mts            npm run test:db: *.db.test.ts against a local snippr_test

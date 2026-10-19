@@ -1,6 +1,6 @@
 # 0017. Send every API error as `{ error }` and show it where it happened
 
-- **Status:** Accepted
+- **Status:** Accepted, amended by [0021](./0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)
 - **Date:** 2026-10-19
 - **Related:** `src/lib/api-errors.ts`, `src/lib/api-client.ts`, [0005](./0005-ai-features-as-synchronous-claude-calls.md), [0011](./0011-rate-limit-ai-endpoints-in-postgres.md), [0014](./0014-validate-request-bodies-with-zod.md)
 

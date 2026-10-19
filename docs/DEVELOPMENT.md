@@ -152,6 +152,6 @@ A change is ready to push when:
 - [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`, and changes to a store pass `npm run test:db`. CI runs all of them after the push either way.
 - [ ] New API input goes through a schema in `src/lib/schemas.ts` (via `parseBody`), and every record lookup checks ownership.
 - [ ] New Route Handler logic lives in `src/lib` with the database passed in as a store, and has tests for its `401`, `400`, and ownership cases ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)).
-- [ ] New Route Handlers are wrapped in `withErrors`, send errors as `{ error }` through `src/lib/api-errors.ts`, and the interface calls them with `callApi` and shows the message ([0017](./adr/0017-one-error-shape-shown-inline.md)).
+- [ ] New Route Handlers are wrapped in `withErrors`, send errors as `{ error }` through `src/lib/api-errors.ts`, and the interface calls them with `callApi` and shows the message: inline if the user can fix it, a toast if it happened out of sight ([0017](./adr/0017-one-error-shape-shown-inline.md), [0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)).
 - [ ] Docs are updated if behavior, setup, or architecture changed.
 - [ ] Significant decisions have an ADR.

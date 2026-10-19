@@ -7,6 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import EditSnippetModal from "@/components/EditSnippetModal";
 import SnippetModal from "@/components/SnippetModal";
 import SnippetCardView from "@/components/SnippetCardView";
+import { useToast } from "@/components/Toaster";
 import { callApi } from "@/lib/api-client";
 
 type Snippet = {
@@ -33,6 +34,7 @@ export default function SnippetCard({
   folders: Folder[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -75,6 +77,7 @@ export default function SnippetCard({
       setDeleteError(result.error);
       return;
     }
+    toast("Snippet deleted.");
     router.refresh();
   }
 
