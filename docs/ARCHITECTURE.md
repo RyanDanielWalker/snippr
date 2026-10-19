@@ -240,7 +240,8 @@ scripts/
 ├── e2e-db.mjs                  Wipes and migrates the end-to-end database
 ├── e2e-guard.mjs               Keeps that to a local database named *_e2e (tested)
 ├── test-db-guard.mjs           The rule for any database a test run wipes (tested)
-└── test-db-reset.mjs           Wipes and migrates the store tests' database
+├── test-db-reset.mjs           Wipes and migrates the store tests' database
+└── test-db-worker-check.mjs    Re-checks it inside each test worker
 src/
 ├── app/
 │   ├── page.tsx                Landing page; signed-in users go to /dashboard

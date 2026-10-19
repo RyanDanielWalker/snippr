@@ -17,6 +17,7 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.db.test.ts"],
     globalSetup: "scripts/test-db-reset.mjs",
+    setupFiles: ["scripts/test-db-worker-check.mjs"],
     // Set before any test file loads, so the Prisma client in
     // src/lib/prisma.ts connects here and never reads DATABASE_URL from .env.
     env: { DATABASE_URL: database.url },
