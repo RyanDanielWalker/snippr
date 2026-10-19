@@ -47,12 +47,20 @@ Today it reads as default Tailwind dark mode. It should look like someone made c
 - [ ] Syntax highlighting on the cards, not only in the preview
 - [ ] Remove the dashboard's blank first render with a stable `DndContext` id ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
 - [ ] Mobile pass
+- [ ] Stop the README overclaiming until Phase 5 rebuilds it: drop "Fully responsive" until the mobile pass lands, fix the `YOUR_USERNAME` clone URL, and replace the stale project structure with a link to the ARCHITECTURE code map ([audit](./audits/2026-10-19.md), finding 1). The README is the first thing a visitor reads, so this can't wait for Phase 5
+- [ ] AI search results that update after an edit, move, or delete. Today they're copies that `router.refresh()` never touches, so a deleted result stays on screen stuck on "Deleting..." ([audit](./audits/2026-10-19.md), finding 2). Keep the result ids and look them up in the current snippets
+- [ ] One snippet form for New and Edit, and one `Snippet` and `Folder` type for the components instead of four copies each ([audit](./audits/2026-10-19.md), finding 6). Do it before restyling them, so there's one form to restyle
+- [ ] Show the failures the interface swallows today: a preview Shiki couldn't load, a copy that didn't copy ([audit](./audits/2026-10-19.md), finding 9). Goes with the toasts
+- [ ] One code style: add Prettier and format everything in one `style:` commit ([audit](./audits/2026-10-19.md), finding 10). Half the files skip semicolons, and the code is part of what's shown
+- [ ] Bring `ARCHITECTURE.md` up to date: its review date, the migration scripts and `prisma/migrations/` in the code map, and the stale "Not unit-tested" comment in `library-store.ts`. Move the finished Phase 2 to Done ([audit](./audits/2026-10-19.md), finding 5)
 
 ### Phase 4: The differentiator
 
 The part that makes Snippr more than a CRUD app.
 
-- [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). The MCP server's search tool will call it too. Move the `search` and `describe` handlers' logic into `src/lib` with the session, rate limit, and Claude call passed in, and test their `401`, `400`, and `429` order ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md))
+- [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). The MCP server's search tool will call it too. Move the `search` and `describe` handlers' logic into `src/lib` with the session, rate limit, and Claude call passed in, and test their `401`, `400`, and `429` order ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)). Also test `incrementAiUsage` against Postgres in `npm run test:db`: today its raw SQL runs in no test at all ([audit](./audits/2026-10-19.md), finding 7)
+- [ ] Indexes on the foreign keys the app filters and cascades by: `Snippet.userId`, `Snippet.folderId`, `Folder.userId`, `Session.userId`, `Account.userId` ([audit](./audits/2026-10-19.md), finding 3). One additive migration. Postgres doesn't create them on its own
+- [ ] Scope updates and deletes by `userId` in the query itself (`where: { id, userId }`), not only in the check before it ([audit](./audits/2026-10-19.md), finding 4). Before the MCP server, which adds new callers that could skip the check
 - [ ] **MCP server:** expose search, get, and save as tools so Claude, Cursor, or any MCP client can use your snippet library directly
 
 ### Phase 5: Tell the story
@@ -93,6 +101,7 @@ These need a call before the related work starts. Each one becomes an ADR.
 | Decision | Options | Needed for |
 | --- | --- | --- |
 | MCP transport | Local (stdio, runs on your machine); remote (HTTP, anyone can connect with a token) | Phase 4 |
+| How an MCP client signs in | Personal access tokens; OAuth for MCP clients. Even a local stdio server has to reach your library on snippr.dev, so the API needs a way in besides NextAuth cookies either way, and the "resolve the session first" rule changes with it ([audit](./audits/2026-10-19.md)) | Phase 4 |
 | Design direction | To be explored with mockups | Phase 3 |
 
 ## Parked
@@ -110,11 +119,11 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - Delete old `AiUsage` rows on a schedule. Each active user adds up to two rows an hour, which is nothing today ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
 - Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
 - Command palette (⌘K) and keyboard shortcuts
-- Give the dashboard's controls accessible names and roles (the cards are `div`s with dnd-kit's `role="button"`, and the sidebar's `⋯` menu button has no label). The end-to-end test finds cards by `aria-roledescription` and folders by text for now; it can switch to roles once they exist ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md))
+- Give the dashboard's controls accessible names and roles (the cards are `div`s with dnd-kit's `role="button"`, and the sidebar's `⋯` menu button has no label). The end-to-end test finds cards by `aria-roledescription` and folders by text for now; it can switch to roles once they exist ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)). The snippet modals' inputs have only placeholders, no labels, so add those too ([audit](./audits/2026-10-19.md))
 - Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
 - End-to-end tests beyond the main flow, including real OAuth sign-in
 - Replace the folder delete `confirm()` with a confirmation in the page, like the snippet card's "Click again to confirm". The browser dialog works; it just doesn't look like Snippr
-- A failed folder create or rename tries again when the input loses focus, because blur saves too. Harmless (the same error comes back) but a little odd. Fix with the Phase 3 loading states
+- A failed folder create or rename tries again when the input loses focus, because blur saves too. Harmless (the same error comes back) but a little odd. The same blur makes a double submit possible: press Enter, click away before the response, and two folders get created ([audit](./audits/2026-10-19.md), finding 8). Fix both with the Phase 3 loading states
 
 ### Not planned
 
