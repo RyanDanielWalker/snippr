@@ -120,6 +120,7 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - A daily ceiling on AI calls across all demo guests ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)). The per-guest and per-IP limits bound it for now. Check Anthropic spend after sharing the link widely, and pull this forward if it moves
 - Delete old `AiUsage` rows on a schedule. Each active user adds up to two rows an hour, which is nothing today ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
 - Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
+- Remember the collapsed sidebar in a cookie instead of `localStorage`, so the server can render it collapsed. Today it's drawn open and snaps shut once the page's JavaScript runs, which only shows on a slow connection
 - Command palette (⌘K) and keyboard shortcuts
 - Give the dashboard's controls accessible names and roles (the cards are `div`s with dnd-kit's `role="button"`, and the sidebar's `⋯` menu button has no label). The end-to-end test finds cards by `aria-roledescription` and folders by text for now; it can switch to roles once they exist ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)). The snippet modals' inputs have only placeholders, no labels, so add those too ([audit](./audits/2026-10-19.md))
 - Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
