@@ -150,13 +150,10 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     if (snippet.folderId === newFolderId) return;
 
     setMoveError(null);
+    // Only the folder: PATCH is a partial update, and resending every field
+    // would fail validation for an older snippet that predates the limits.
     const result = await callApi("/api/snippets", "PATCH", {
       id: snippet.id,
-      title: snippet.title,
-      code: snippet.code,
-      language: snippet.language,
-      description: snippet.description,
-      tags: snippet.tags,
       folderId: newFolderId,
     });
     // Nothing moved on screen yet, so there's nothing to undo; just say so.
