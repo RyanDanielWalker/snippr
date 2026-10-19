@@ -11,6 +11,8 @@ import {
 } from "./demo";
 import { GUEST_LIFETIME_MS } from "./guest";
 import { SNIPPET_CAPS } from "./snippet-cap";
+import { FOLDER_CAPS } from "./folder-cap";
+import { createFolderSchema, createSnippetSchema } from "./schemas";
 
 const now = new Date("2026-10-18T14:45:00.000Z");
 
@@ -100,6 +102,18 @@ describe("demoSeed", () => {
 
   it("keeps something in Unorganized", () => {
     expect(seed.snippets.some((s) => s.folderName === null)).toBe(true);
+  });
+
+  // The seed skips the API, so nothing else stops it from holding a snippet
+  // the guest then can't edit (see docs/adr/0014).
+  it("only seeds what the API would accept", () => {
+    for (const { title, code, language, description, tags } of seed.snippets) {
+      expect(createSnippetSchema.safeParse({ title, code, language, description, tags }).error).toBeUndefined();
+    }
+    for (const name of seed.folders) {
+      expect(createFolderSchema.safeParse({ name }).error).toBeUndefined();
+    }
+    expect(seed.folders.length).toBeLessThan(FOLDER_CAPS.guest);
   });
 });
 
