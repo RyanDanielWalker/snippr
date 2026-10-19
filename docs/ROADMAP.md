@@ -42,7 +42,7 @@ What an engineer looks for when they open the repo, plus the two fixes that keep
 Today it reads as default Tailwind dark mode. It should look like someone made choices. This phase does the work that's right whatever the look turns out to be. The visual identity itself waits for Phase 5, after the MCP server, because it needs the design direction decided with mockups first ([audit](./audits/2026-10-19.md), Direction, option C).
 
 - [x] Fix the font: `globals.css` forces Arial and overrides the Geist font being loaded
-- [ ] Toasts, real loading states, and empty states
+- [x] Toasts, real loading states, and empty states ([0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)). Toasts for what happens out of sight (moves, deletes), errors you can fix stay inline. Saves stay pending until the refreshed list is on screen, which also fixed the folder input making two folders. Each kind of empty dashboard says something different (`src/lib/empty-state.ts`)
 - [ ] Syntax highlighting on the cards, not only in the preview
 - [ ] Remove the dashboard's blank first render with a stable `DndContext` id ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
 - [ ] Mobile pass. Then put "works on mobile" back in the README's feature list

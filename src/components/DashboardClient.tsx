@@ -19,6 +19,7 @@ import { useToast } from "@/components/Toaster";
 import { snippetCap, snippetCapMessage, snippetCapStatus } from "@/lib/snippet-cap";
 import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
+import { emptyState } from "@/lib/empty-state";
 
 type Snippet = {
   id: string;
@@ -195,6 +196,24 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
         ? "Unorganized"
         : (folders.find((f) => f.id === selectedFolderId)?.name ?? null);
 
+  const empty =
+    displaySnippets.length === 0
+      ? emptyState({
+          librarySize: snippets.length,
+          view:
+            selectedFolderId === null
+              ? "all"
+              : selectedFolderId === "unorganized"
+                ? "unorganized"
+                : "folder",
+          search,
+          aiMode,
+          aiSearched: aiResults !== null,
+          aiError,
+          canCreate: capStatus !== "full",
+        })
+      : null;
+
   if (!mounted) {
     return (
       <main className="min-h-screen bg-gray-950 text-white">
@@ -351,27 +370,28 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
               </div>
 
               {aiLoading && (
-                <div className="text-center py-24 text-gray-500">
+                <div role="status" className="text-center py-24 text-gray-500">
                   <p className="text-sm">Searching with AI...</p>
                 </div>
               )}
 
-              {!aiLoading && displaySnippets.length === 0 && (
+              {!aiLoading && empty && (
                 <div className="text-center py-24 text-gray-500">
-                  <p className="text-lg">
-                    {aiMode && aiError
-                      ? aiError
-                      : aiMode && aiResults !== null
-                      ? "No matching snippets found."
-                      : search
-                        ? "No snippets match your search."
-                        : "No snippets here yet."}
+                  <p
+                    role={empty.tone === "error" ? "alert" : undefined}
+                    className={`text-lg ${empty.tone === "error" ? "text-red-400" : ""}`}
+                  >
+                    {empty.title}
                   </p>
-                  <p className="text-sm mt-2">
-                    {!search &&
-                      !aiResults &&
-                      "Create your first one to get started."}
-                  </p>
+                  {empty.hint && <p className="text-sm mt-2">{empty.hint}</p>}
+                  {empty.offerNewSnippet && (
+                    <button
+                      onClick={() => setShowModal(true)}
+                      className="mt-6 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+                    >
+                      New snippet
+                    </button>
+                  )}
                 </div>
               )}
 
