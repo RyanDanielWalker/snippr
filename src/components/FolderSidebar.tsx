@@ -191,6 +191,7 @@ export default function FolderSidebar({
     setEditingName(folder.name);
     setMenuOpenId(null);
     setError(null);
+    setFailedName(null);
   }
 
   if (collapsed) {
@@ -368,6 +369,7 @@ export default function FolderSidebar({
           onClick={() => {
             setCreating(true);
             setError(null);
+            setFailedName(null);
           }}
           className="w-full text-left px-3 py-2 text-sm text-gray-500 hover:text-white transition"
         >
