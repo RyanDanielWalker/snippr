@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -29,14 +29,17 @@ type Folder = {
 export default function SnippetCard({
   snippet,
   folders,
+  moving = false,
 }: {
   snippet: Snippet;
   folders: Folder[];
+  /** A drag to a folder is on its way; see DashboardClient. */
+  moving?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [copied, setCopied] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [deleting, startDeleting] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showEdit, setShowEdit] = useState(false);
@@ -45,11 +48,12 @@ export default function SnippetCard({
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: snippet.id,
+      disabled: moving,
     });
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.3 : 1,
+    opacity: isDragging ? 0.3 : moving ? 0.5 : 1,
   };
 
   const folderName = folders.find((f) => f.id === snippet.folderId)?.name;
@@ -61,24 +65,29 @@ export default function SnippetCard({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  async function handleDelete(e: React.MouseEvent) {
+  function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
     if (!confirmDelete) {
       setConfirmDelete(true);
       setTimeout(() => setConfirmDelete(false), 3000);
       return;
     }
-    setDeleting(true);
     setDeleteError(null);
-    const result = await callApi("/api/snippets", "DELETE", { id: snippet.id });
-    if (!result.ok) {
-      setDeleting(false);
-      setConfirmDelete(false);
-      setDeleteError(result.error);
-      return;
-    }
-    toast("Snippet deleted.");
-    router.refresh();
+    startDeleting(async () => {
+      const result = await callApi("/api/snippets", "DELETE", {
+        id: snippet.id,
+      });
+      if (!result.ok) {
+        setConfirmDelete(false);
+        setDeleteError(result.error);
+        return;
+      }
+      // The toast and the card's removal land in the same render.
+      startDeleting(() => {
+        toast("Snippet deleted.");
+        router.refresh();
+      });
+    });
   }
 
   function handleEdit(e: React.MouseEvent) {
@@ -113,6 +122,7 @@ export default function SnippetCard({
         onClick={() => !isDragging && setShowPreview(true)}
         snippet={snippet}
         folderName={folderName}
+        aria-busy={moving || deleting}
         className="hover:border-gray-700 transition cursor-grab active:cursor-grabbing"
         footer={
           <div className="pt-1 mt-auto space-y-2">

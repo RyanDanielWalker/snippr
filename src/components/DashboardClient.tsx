@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
@@ -57,6 +57,8 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [draggedSnippet, setDraggedSnippet] = useState<Snippet | null>(null);
+  const [movingIds, setMovingIds] = useState<ReadonlySet<string>>(new Set());
+  const [, startMoving] = useTransition();
   const [mounted, setMounted] = useState(false);
 
   // Skips the server render so DndContext's generated ids can't mismatch.
@@ -136,7 +138,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     if (snippet) setDraggedSnippet(snippet);
   }
 
-  async function handleDragEnd(event: DragEndEvent) {
+  function handleDragEnd(event: DragEndEvent) {
     setDraggedSnippet(null);
     const { active, over } = event;
     if (!over) return;
@@ -150,24 +152,38 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     const newFolderId = dropTargetId === "unorganized" ? null : dropTargetId;
     if (snippet.folderId === newFolderId) return;
 
-    // Only the folder: PATCH is a partial update, and resending every field
-    // would fail validation for an older snippet that predates the limits.
-    const result = await callApi("/api/snippets", "PATCH", {
-      id: snippet.id,
-      folderId: newFolderId,
-    });
-    // Nothing moved on screen yet, so there's nothing to undo; just say so.
-    if (!result.ok) {
-      toast(`That snippet didn't move. ${result.error}`, "error");
-      return;
-    }
-
     const destination =
       newFolderId === null
         ? "Unorganized"
         : (folders.find((f) => f.id === newFolderId)?.name ?? "the folder");
-    toast(`Moved to ${destination}.`);
-    router.refresh();
+    const doneMoving = () =>
+      setMovingIds((ids) => {
+        const next = new Set(ids);
+        next.delete(snippet.id);
+        return next;
+      });
+
+    setMovingIds((ids) => new Set(ids).add(snippet.id));
+    startMoving(async () => {
+      // Only the folder: PATCH is a partial update, and resending every field
+      // would fail validation for an older snippet that predates the limits.
+      const result = await callApi("/api/snippets", "PATCH", {
+        id: snippet.id,
+        folderId: newFolderId,
+      });
+      // Nothing moved on screen yet, so there's nothing to undo; just say so.
+      if (!result.ok) {
+        doneMoving();
+        toast(`That snippet didn't move. ${result.error}`, "error");
+        return;
+      }
+      // The card stops looking busy as its new folder shows up.
+      startMoving(() => {
+        doneMoving();
+        toast(`Moved to ${destination}.`);
+        router.refresh();
+      });
+    });
   }
 
   const displaySnippets = aiMode && aiResults !== null ? aiResults : filtered;
@@ -366,6 +382,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                       key={snippet.id}
                       snippet={snippet}
                       folders={folders}
+                      moving={movingIds.has(snippet.id)}
                     />
                   ))}
                 </div>

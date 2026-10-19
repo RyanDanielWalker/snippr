@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LANGUAGES, SNIPPET_LIMITS } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
@@ -30,7 +30,7 @@ export default function EditSnippetModal({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [saving, startSaving] = useTransition();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [describeError, setDescribeError] = useState<string | null>(null);
@@ -52,31 +52,34 @@ export default function EditSnippetModal({
     form.tags !== originalTags ||
     form.folderId !== (snippet.folderId ?? "");
 
-  async function handleSubmit() {
-    if (!form.title || !form.code) return;
-    setLoading(true);
+  function handleSubmit() {
+    if (!form.title || !form.code || saving) return;
     setError(null);
 
-    const result = await callApi("/api/snippets", "PATCH", {
-      id: snippet.id,
-      ...form,
-      folderId: form.folderId || null,
-      tags: form.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
+    startSaving(async () => {
+      const result = await callApi("/api/snippets", "PATCH", {
+        id: snippet.id,
+        ...form,
+        folderId: form.folderId || null,
+        tags: form.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+      });
+
+      // Stay open on any failure, so the edits aren't lost.
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      // Close in the same render as the refreshed list, so "Saving..." lasts
+      // until the snippet is on screen.
+      startSaving(() => {
+        onClose();
+        router.refresh();
+      });
     });
-
-    // Stay open on any failure, so the edits aren't lost.
-    if (!result.ok) {
-      setError(result.error);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(false);
-    onClose();
-    router.refresh();
   }
 
   async function handleGenerateDescription() {
@@ -239,10 +242,10 @@ export default function EditSnippetModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={loading || !form.title || !form.code || !hasChanges}
+            disabled={saving || !form.title || !form.code || !hasChanges}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Saving..." : "Save changes"}
+            {saving ? "Saving..." : "Save changes"}
           </button>
         </div>
       </div>

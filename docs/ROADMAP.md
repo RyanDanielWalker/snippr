@@ -125,7 +125,6 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
 - End-to-end tests beyond the main flow, including real OAuth sign-in
 - Replace the folder delete `confirm()` with a confirmation in the page, like the snippet card's "Click again to confirm". The browser dialog works; it just doesn't look like Snippr
-- A failed folder create or rename tries again when the input loses focus, because blur saves too. Harmless (the same error comes back) but a little odd. The same blur makes a double submit possible: press Enter, click away before the response, and two folders get created ([audit](./audits/2026-10-19.md), finding 8). Fix both with the Phase 3 loading states
 
 ### Not planned
 

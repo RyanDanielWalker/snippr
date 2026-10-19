@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useDroppable } from "@dnd-kit/core";
 import { FOLDER_NAME_MAX } from "@/lib/field-limits";
-import { callApi } from "@/lib/api-client";
+import { callApi, type ApiResult } from "@/lib/api-client";
+import { folderNameAction } from "@/lib/folder-name-input";
 import { useToast } from "@/components/Toaster";
 
 type Folder = {
@@ -70,6 +71,12 @@ export default function FolderSidebar({
   const [editingName, setEditingName] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [failedName, setFailedName] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Pending until the refreshed list is on screen, not just until the API
+  // answers, so the input can't take a second save in between.
+  const [saving, startSaving] = useTransition();
+  const [, startDeleting] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -88,68 +95,95 @@ export default function FolderSidebar({
     setCreating(false);
     setNewName("");
     setError(null);
+    setFailedName(null);
   }
 
   function cancelEdit() {
     setEditingId(null);
+    setEditingName("");
     setError(null);
+    setFailedName(null);
   }
 
   // On failure, create and rename keep the input open with what was typed,
-  // so the name can be fixed or the folder cap's message read.
-  async function handleCreate() {
-    if (!newName.trim()) {
-      cancelCreate();
+  // so the name can be fixed or the folder cap's message read. On success
+  // the input closes in the same render as the refreshed list.
+  function saveName(
+    name: string,
+    trigger: "enter" | "blur",
+    request: () => Promise<ApiResult<unknown>>,
+    done: () => void,
+    currentName?: string,
+  ) {
+    const action = folderNameAction({ name, saving, failedName, currentName }, trigger);
+    if (action === "ignore") return;
+    if (action === "cancel") {
+      done();
       return;
     }
-    const result = await callApi("/api/folders", "POST", { name: newName });
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    cancelCreate();
-    router.refresh();
-  }
-
-  async function handleRename(id: string) {
-    if (!editingName.trim()) {
-      cancelEdit();
-      return;
-    }
-    const result = await callApi("/api/folders", "PATCH", {
-      id,
-      name: editingName,
+    setError(null);
+    startSaving(async () => {
+      const result = await request();
+      if (!result.ok) {
+        setError(result.error);
+        setFailedName(name);
+        return;
+      }
+      startSaving(() => {
+        done();
+        router.refresh();
+      });
     });
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    cancelEdit();
-    setEditingName("");
-    router.refresh();
   }
 
-  async function handleDelete(id: string) {
+  function handleCreate(trigger: "enter" | "blur") {
+    saveName(
+      newName,
+      trigger,
+      () => callApi("/api/folders", "POST", { name: newName }),
+      cancelCreate,
+    );
+  }
+
+  function handleRename(folder: Folder, trigger: "enter" | "blur") {
+    saveName(
+      editingName,
+      trigger,
+      () =>
+        callApi("/api/folders", "PATCH", { id: folder.id, name: editingName }),
+      cancelEdit,
+      folder.name,
+    );
+  }
+
+  function handleDelete(id: string) {
     if (
       !confirm("Delete this folder? Snippets inside will become unorganized.")
     )
       return;
     setMenuOpenId(null);
     setError(null);
-    const result = await callApi("/api/folders", "DELETE", { id });
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    if (selectedFolderId === id) onSelectFolder(null);
-    const hadSnippets =
-      (folders.find((f) => f.id === id)?._count.snippets ?? 0) > 0;
-    toast(
-      hadSnippets
-        ? "Folder deleted. Its snippets are in Unorganized now."
-        : "Folder deleted.",
-    );
-    router.refresh();
+    setDeletingId(id);
+    startDeleting(async () => {
+      const result = await callApi("/api/folders", "DELETE", { id });
+      if (!result.ok) {
+        setDeletingId(null);
+        setError(result.error);
+        return;
+      }
+      const hadSnippets =
+        (folders.find((f) => f.id === id)?._count.snippets ?? 0) > 0;
+      startDeleting(() => {
+        setDeletingId(null);
+        if (selectedFolderId === id) onSelectFolder(null);
+        toast(
+          hadSnippets
+            ? "Folder deleted. Its snippets are in Unorganized now."
+            : "Folder deleted.",
+        );
+        router.refresh();
+      });
+    });
   }
 
   function startEdit(folder: Folder) {
@@ -236,20 +270,28 @@ export default function FolderSidebar({
       </div>
 
       {folders.map((folder) => (
-        <div key={folder.id} className="relative group">
+        <div
+          key={folder.id}
+          aria-busy={deletingId === folder.id}
+          className={`relative group transition ${
+            deletingId === folder.id ? "opacity-40 pointer-events-none" : ""
+          }`}
+        >
           {editingId === folder.id ? (
             <input
               type="text"
               maxLength={FOLDER_NAME_MAX}
               value={editingName}
               onChange={(e) => setEditingName(e.target.value)}
-              onBlur={() => handleRename(folder.id)}
+              onBlur={() => handleRename(folder, "blur")}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleRename(folder.id);
-                if (e.key === "Escape") cancelEdit();
+                if (e.key === "Enter") handleRename(folder, "enter");
+                if (e.key === "Escape" && !saving) cancelEdit();
               }}
+              readOnly={saving}
+              aria-busy={saving}
               autoFocus
-              className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500 read-only:opacity-60"
             />
           ) : (
             <DroppableFolder
@@ -310,14 +352,16 @@ export default function FolderSidebar({
           maxLength={FOLDER_NAME_MAX}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          onBlur={handleCreate}
+          onBlur={() => handleCreate("blur")}
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleCreate();
-            if (e.key === "Escape") cancelCreate();
+            if (e.key === "Enter") handleCreate("enter");
+            if (e.key === "Escape" && !saving) cancelCreate();
           }}
+          readOnly={saving}
+          aria-busy={saving}
           autoFocus
           placeholder="Folder name"
-          className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500 read-only:opacity-60"
         />
       ) : (
         <button
