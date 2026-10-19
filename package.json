@@ -4,14 +4,16 @@
   "private": true,
   "scripts": {
     "build": "prisma generate && next build",
-    "dev": "next dev",
-    "start": "next start",
+    "dev": "node scripts/check-db.mjs && next dev",
+    "start": "node scripts/check-db.mjs && next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:up": "docker compose up -d --wait",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "db:push": "node scripts/check-db.mjs && prisma db push",
+    "db:studio": "node scripts/check-db.mjs && prisma studio"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
