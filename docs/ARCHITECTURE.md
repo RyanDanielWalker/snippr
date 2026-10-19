@@ -227,7 +227,8 @@ Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-feat
 ## Code map
 
 ```
-docker-compose.yml              Local Postgres for development and end-to-end tests
+.github/workflows/ci.yml        CI: lint, types, unit tests, migrations, store tests, e2e
+docker-compose.yml              Local Postgres for development and tests
 e2e/
 └── demo.spec.ts                End-to-end test: demo, create, search, drag into a folder
 playwright.config.ts            Runs it against a production build on port 3100
@@ -237,7 +238,9 @@ scripts/
 ├── check-db.mjs                Stops database scripts aimed at a remote database
 ├── db-guard.mjs                The rules it follows (tested)
 ├── e2e-db.mjs                  Wipes and migrates the end-to-end database
-└── e2e-guard.mjs               Keeps that to a local database named *_e2e (tested)
+├── e2e-guard.mjs               Keeps that to a local database named *_e2e (tested)
+├── test-db-guard.mjs           The rule for any database a test run wipes (tested)
+└── test-db-reset.mjs           Wipes and migrates the store tests' database
 src/
 ├── app/
 │   ├── page.tsx                Landing page; signed-in users go to /dashboard
@@ -279,7 +282,7 @@ src/
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
-│   ├── library-store.ts        Database side of snippets.ts and folders.ts
+│   ├── library-store.ts        Database side of snippets.ts and folders.ts (tested against Postgres)
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
 │   ├── request-body.ts         Reads a JSON body and checks it against a schema, or returns a 400 (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
@@ -289,6 +292,7 @@ src/
 │   ├── schemas.ts              zod schemas for every request body (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type
+vitest.db.config.mts            npm run test:db: *.db.test.ts against a local snippr_test
 ```
 
 ## Deployment and environments
@@ -297,11 +301,14 @@ src/
 | --- | --- | --- | --- |
 | Production | snippr.dev | `main` | Supabase project `Snippr` |
 | Local | `localhost:3000` | your machine | Postgres 17 in Docker (`docker-compose.yml`) |
+| CI | GitHub Actions | nothing; runs on every push | Postgres 17 service container, empty every run |
 
 Secrets live in Vercel environment variables, marked Sensitive, and in a local `.env` that is never committed. `.env.example` lists every required variable. See [DEVELOPMENT.md](./DEVELOPMENT.md).
+
+Every push runs `.github/workflows/ci.yml`. Vercel builds at the same time, and its Deployment Checks hold a production build until both CI jobs pass ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). That's a Vercel dashboard setting; until it's switched on (roadmap, Phase 2), CI only reports.
 
 Production's `DATABASE_URL` lives only in Vercel. Production builds use it to apply pending migrations before `next build`; preview and local builds skip that step ([0016](./adr/0016-apply-migrations-in-the-production-build.md)). The npm scripts that connect (`dev`, `start`, `db:migrate`, `db:studio`) run `scripts/check-db.mjs` first, which refuses any database that isn't on this machine unless `ALLOW_REMOTE_DB=1` is set in the shell ([0015](./adr/0015-local-postgres-in-docker-for-development.md)).
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: no CI, and only one test that runs the Prisma queries against a real database, the end-to-end demo flow ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)), which has to be run by hand. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: the AI handlers have no tests yet, and AI search has no end-to-end coverage, both waiting on the shared AI module in Phase 4. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.

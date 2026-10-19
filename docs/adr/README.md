@@ -51,5 +51,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0017](./0017-one-error-shape-shown-inline.md) | Send every API error as `{ error }` and show it where it happened | Accepted |
 | [0018](./0018-route-handler-logic-in-lib-with-a-store.md) | Keep Route Handler logic in `src/lib`, with the database passed in as a store | Accepted |
 | [0019](./0019-end-to-end-tests-with-playwright-on-their-own-database.md) | Run end-to-end tests with Playwright, on a production build and their own database | Accepted |
+| [0020](./0020-ci-on-github-actions-gating-production-deploys.md) | Run CI on GitHub Actions, test the stores against Postgres, and hold deploys until it passes | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

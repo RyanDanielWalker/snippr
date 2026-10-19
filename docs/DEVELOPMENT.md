@@ -51,6 +51,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run typecheck` | TypeScript type check, no output files |
 | `npm test` | Run the test suite once (Vitest) |
 | `npm run test:watch` | Re-run tests as files change |
+| `npm run test:db` | The store tests, against a real Postgres. Resets the `snippr_test` database first |
 | `npm run test:e2e` | The end-to-end test in a real browser. Resets the e2e database, builds, and serves on port 3100 first, so it takes a minute or two |
 | `npm run e2e:db` | Wipe the e2e database and apply every migration. `test:e2e` runs it for you |
 
@@ -67,6 +68,23 @@ npm run test:e2e
 It runs against `snippr_e2e`, a second database in the same Docker Postgres, and wipes it before every run. Your dev data isn't touched. Set `E2E_DATABASE_URL` to use another database; it has to be local and its name has to end in `_e2e`. It reads `NEXTAUTH_SECRET` from `.env`. AI search isn't covered yet, so no Claude calls and no API key needed.
 
 On a failure, `npx playwright show-trace test-results/<test>/trace.zip` replays it step by step.
+
+## Store tests
+
+`npm test` never touches a database. The Prisma stores in `src/lib/library-store.ts` get their own tests, in `*.db.test.ts` files, that run against Postgres, because a fake store can't tell when a real query forgets its `userId` ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)).
+
+```bash
+npm run db:up
+npm run test:db
+```
+
+It wipes and migrates `snippr_test`, a third database in the same Docker Postgres, then runs the tests. Set `TEST_DATABASE_URL` to use another database; it has to be local and its name has to end in `_test`.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push. One job runs lint, typecheck, and `npm test`. The other starts Postgres, applies the migrations to an empty database with `prisma migrate deploy`, then runs `test:db` and `test:e2e`. If the end-to-end test fails, the run's **Artifacts** section has a `playwright-trace` to download and open with `npx playwright show-trace`.
+
+Once Vercel's Deployment Checks are switched on (roadmap, Phase 2), they hold a production deploy until both jobs pass, so a red run means the previous version stays live. Fix it and push again, or, if it's urgent and the failure is the test's fault, promote the build by hand in Vercel.
 
 ## Gotchas
 
@@ -129,7 +147,7 @@ If a change involves a decision that's hard to reverse, not obvious from the cod
 A change is ready to push when:
 
 - [ ] It works locally, and risky changes have been checked with a production build.
-- [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`.
+- [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`, and changes to a store pass `npm run test:db`. CI runs all of them after the push either way.
 - [ ] New API input goes through a schema in `src/lib/schemas.ts` (via `parseBody`), and every record lookup checks ownership.
 - [ ] New Route Handler logic lives in `src/lib` with the database passed in as a store, and has tests for its `401`, `400`, and ownership cases ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)).
 - [ ] New Route Handlers are wrapped in `withErrors`, send errors as `{ error }` through `src/lib/api-errors.ts`, and the interface calls them with `callApi` and shows the message ([0017](./adr/0017-one-error-shape-shown-inline.md)).
