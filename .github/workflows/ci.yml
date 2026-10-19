@@ -2,7 +2,8 @@
 # tests that need Postgres. See docs/adr/0020.
 #
 # Vercel deploys on its own. Its Deployment Checks hold a production deploy
-# until both jobs here pass.
+# until both jobs here pass, matched by each job's `name:`. Rename a job and
+# production waits forever, so update Vercel in the same push.
 
 name: CI
 

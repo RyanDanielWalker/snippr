@@ -84,7 +84,9 @@ It wipes and migrates `snippr_test`, a third database in the same Docker Postgre
 
 `.github/workflows/ci.yml` runs on every push. One job runs lint, typecheck, and `npm test`. The other starts Postgres, applies the migrations to an empty database with `prisma migrate deploy`, then runs `test:db` and `test:e2e`. If the end-to-end test fails, the run's **Artifacts** section has a `playwright-trace` to download and open with `npx playwright show-trace`.
 
-Once Vercel's Deployment Checks are switched on (roadmap, Phase 2), they hold a production deploy until both jobs pass, so a red run means the previous version stays live. Fix it and push again, or, if it's urgent and the failure is the test's fault, promote the build by hand in Vercel.
+Vercel's Deployment Checks hold a production deploy until both jobs pass, so a red run means the previous version stays live. Fix it and push again, or, if it's urgent and the failure is the test's fault, promote the build by hand in Vercel.
+
+Vercel finds the checks by the jobs' `name:` in `ci.yml`. Renaming a job means production waits for a check that never reports, so change the name in Vercel's Deployment Checks in the same push.
 
 ## Gotchas
 
