@@ -93,6 +93,22 @@ Lists are always filtered with `where: { userId }`, so one user can never see an
 
 Creating a snippet when the library is full returns `409`: 50 snippets for members, 10 for demo guests ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)). Folders work the same way, with the same numbers ([0014](./adr/0014-validate-request-bodies-with-zod.md)). Field limits (200-character titles, 20,000 characters of code, and so on) are listed in 0014 and kept in `src/lib/field-limits.ts`, which the UI imports too.
 
+### Errors
+
+Every error is `{ error: string }` with a status code: the status is for programs, the message is for people and is shown as is ([0017](./adr/0017-one-error-shape-shown-inline.md)). Each handler is wrapped in `withErrors` (`src/lib/api-errors.ts`), so anything that throws is logged on the server and answered with `500`, or `502` when the Claude call failed, instead of Next's empty `500`.
+
+| Status | Meaning |
+| --- | --- |
+| `400` | The body is the wrong shape |
+| `401` | Not signed in |
+| `403` | The record is missing or someone else's |
+| `409` | The library or folder list is full |
+| `429` | Too many AI calls this hour, with `Retry-After` |
+| `500` | Something broke on our side |
+| `502` | Claude didn't answer |
+
+In the browser, components call the API through `callApi` (`src/lib/api-client.ts`), which returns the data or a message to show, and show that message next to whatever was being done.
+
 ## Data model
 
 ```mermaid
@@ -244,7 +260,9 @@ src/
 │   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
-│   ├── ai-usage.ts             Atomic AI usage counter (SQL) and the 429 response
+│   ├── ai-usage.ts             Atomic AI usage counter (SQL)
+│   ├── api-client.ts           callApi: how components call the API and read its errors (tested)
+│   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
 │   ├── auth.ts                 NextAuth config, verified-email check
 │   ├── demo.ts                 Starting a demo: seed, IP limit, cookie name (tested)
 │   ├── demo-store.ts           Database side of starting a demo

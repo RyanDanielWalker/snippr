@@ -30,7 +30,7 @@ What an engineer looks for when they open the repo, plus the two fixes that keep
 - [ ] Two dashboard checks ([0015](./adr/0015-local-postgres-in-docker-for-development.md)). Vercel: if the Preview environment has a `DATABASE_URL`, preview deployments run against production, so remove it or point it elsewhere. Supabase (Settings → Infrastructure): confirm production runs Postgres 17, or change the image in `docker-compose.yml` to match
 - [x] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md), [0016](./adr/0016-apply-migrations-in-the-production-build.md)). Production builds apply migrations before `next build`, so schema and code can't go out in the wrong order. Twice before (the `AiUsage` table and demo mode's columns) the code went live before `db push`, and production errored until it ran
 - [x] Baseline production **before** pushing the migrations commits ([0016](./adr/0016-apply-migrations-in-the-production-build.md)). Until it's done, every production build fails with `P3005` and the current version stays live. Put production's URL from Vercel in the shell without it landing in your history (`read -rs PROD`, paste, Enter). Check production matches the schema: `npx prisma migrate diff --from-url "$PROD" --to-schema-datamodel prisma/schema.prisma --exit-code` should print nothing and `echo $?` should say 0. If it prints SQL, stop: production has drifted and the baseline needs another look. Then `DATABASE_URL="$PROD" npx prisma migrate resolve --applied 0_init`, which only records the baseline as applied
-- [ ] Consistent API errors: one error shape, correct status codes, no `alert()`. Creating a snippet already shows errors inline; editing, deleting, and describing still use `alert()` or fail silently. So do folder create and rename, which now have a length limit and a `409` cap that nobody sees ([0014](./adr/0014-validate-request-bodies-with-zod.md))
+- [x] Consistent API errors: one error shape, correct status codes, no `alert()` ([0017](./adr/0017-one-error-shape-shown-inline.md)). Every error is `{ error }`, anything that throws becomes a `500` (or `502` for Claude), and every action in the interface shows its error inline
 - [ ] Unit and integration tests for API logic (ownership, validation, cap)
 - [ ] One end-to-end test of the main flow through demo mode: start a demo, create a snippet, search, move it to a folder
 - [ ] GitHub Actions CI: lint, typecheck, test on every push. Run the `docker-compose.yml` Postgres image as a service container for anything that needs a database, and run `prisma migrate deploy` against it to prove the migrations apply from scratch
@@ -111,6 +111,8 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - Command palette (⌘K) and keyboard shortcuts
 - Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
 - End-to-end tests beyond the main flow, including real OAuth sign-in
+- Replace the folder delete `confirm()` with a confirmation in the page, like the snippet card's "Click again to confirm". The browser dialog works; it just doesn't look like Snippr
+- A failed folder create or rename tries again when the input loses focus, because blur saves too. Harmless (the same error comes back) but a little odd. Fix with the Phase 3 loading states
 
 ### Not planned
 
