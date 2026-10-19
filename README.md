@@ -80,7 +80,7 @@ Snippr uses the Anthropic Claude API for two core features:
 4. Start the local database and create the tables
 ```bash
    npm run db:up
-   npm run db:push
+   npm run db:migrate
 ```
 
 5. Run the dev server

@@ -20,7 +20,7 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind v4, Prisma 5 
 - `npm run dev`, `npm run build`, `npm run lint`, `npm run typecheck`, `npm test`
 - Tests live next to the code they test as `*.test.ts` (Vitest, Node environment)
 - `npm run db:up` / `npm run db:down` start and stop the local Postgres in Docker
-- `npm run db:push` applies schema changes (no migrations yet); `npm run db:studio` browses the database
+- `npm run db:migrate` creates and applies migrations locally; production builds apply them on deploy (ADR 0016). Migrations must work with the code already live: add first, remove in a later push. `npm run db:studio` browses the database
 
 ## Rules for changes
 
@@ -41,4 +41,4 @@ Direct, a little dry, human. No em dashes. No marketing filler ("seamless," "pow
 - Supabase's direct connection host is IPv6-only on the free tier; `DATABASE_URL` must use the session pooler.
 - Prisma is pinned to 5.x on purpose (see ADR 0003). Don't upgrade it as a side effect of another change.
 - `npm run build` runs `prisma generate` first because Vercel caches `node_modules`.
-- `dev`, `start`, `db:push`, and `db:studio` refuse a `DATABASE_URL` that isn't local (`scripts/check-db.mjs`, ADR 0015). Don't get around it with `ALLOW_REMOTE_DB` or by running `npx prisma` directly. Production's URL belongs in Vercel only.
+- `dev`, `start`, `db:migrate`, and `db:studio` refuse a `DATABASE_URL` that isn't local (`scripts/check-db.mjs`, ADR 0015). Don't get around it with `ALLOW_REMOTE_DB` or by running `npx prisma` directly. Production's URL belongs in Vercel only.

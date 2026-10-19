@@ -17,7 +17,7 @@ cd snippr
 npm install
 cp .env.example .env      # then fill in the values below
 npm run db:up             # start the local Postgres
-npm run db:push           # create the tables in it
+npm run db:migrate        # create the tables in it
 npm run dev               # http://localhost:3000
 ```
 
@@ -41,11 +41,11 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | Command | Does |
 | --- | --- |
 | `npm run dev` | Dev server with hot reload |
-| `npm run build` | `prisma generate`, then a production build |
+| `npm run build` | `prisma generate`, then a production build. On Vercel's production builds, applies pending migrations first |
 | `npm run start` | Serve the production build |
 | `npm run db:up` | Start the local Postgres in Docker and wait until it's ready |
 | `npm run db:down` | Stop it, keeping the data |
-| `npm run db:push` | Sync the database to `prisma/schema.prisma` |
+| `npm run db:migrate` | Apply migrations to the local database. After editing `prisma/schema.prisma`, also writes the new migration |
 | `npm run db:studio` | Browse the database in a local web UI |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript type check, no output files |
@@ -56,7 +56,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 
 - **This is Next.js 16.** It has breaking changes from older versions and from what most tutorials and AI tools assume. When in doubt, check the docs bundled in `node_modules/next/dist/docs/`.
 - **`NEXTAUTH_URL` must match the port you're actually on.** If port 3000 is taken, Next.js silently moves to 3001 and OAuth callbacks break. Free the port (`lsof -i :3000`) instead of chasing the mismatch.
-- **`dev`, `start`, `db:push`, and `db:studio` refuse a database that isn't on your machine.** They check `DATABASE_URL` in the shell and in every `.env` file first ([0015](./adr/0015-local-postgres-in-docker-for-development.md)). If you mean it, say so: `ALLOW_REMOTE_DB=1 npm run db:push`. The check ignores that variable in `.env`, on purpose. Running `npx prisma ...` directly skips the check, so use the npm scripts.
+- **`dev`, `start`, `db:migrate`, and `db:studio` refuse a database that isn't on your machine.** They check `DATABASE_URL` in the shell and in every `.env` file first ([0015](./adr/0015-local-postgres-in-docker-for-development.md)). If you mean it, say so: `ALLOW_REMOTE_DB=1 npm run db:studio`. The check ignores that variable in `.env`, on purpose. Running `npx prisma ...` directly skips the check, so use the npm scripts.
 - **`docker: unknown command: docker compose`** means Docker Desktop's command-line plugins aren't linked. Docker Desktop installs them; its Settings → Advanced page controls where. Reinstalling the CLI tools from there fixes it.
 - **"Try the demo" works locally.** Each IP can start 5 demos an hour, and if the dev server doesn't pass an IP, every local request shares one bucket. `docker compose down -v` resets it along with everything else.
 - **`firebase-messaging-sw.js` 404s in the terminal** come from a browser extension, not from Snippr. Ignore them.
@@ -89,15 +89,20 @@ Small and frequent, using [Conventional Commits](https://www.conventionalcommits
 
 The subject line says *what* changed. The body, when there is one, says *why*. One logical change per commit, so any single commit can be reviewed, reverted, or explained on its own.
 
-### Changing the production schema
+### Changing the schema
 
-Until migrations run as part of the deploy (see the [roadmap](./ROADMAP.md)), a schema change reaches production by hand, **before** pushing the code that needs it:
+Schema changes are migrations: SQL files in `prisma/migrations/`, committed with the code that needs them ([0016](./adr/0016-apply-migrations-in-the-production-build.md)).
 
-```bash
-ALLOW_REMOTE_DB=1 DATABASE_URL='<production URL from Vercel>' npm run db:push
-```
+1. Edit `prisma/schema.prisma`.
+2. `npm run db:migrate`. Prisma asks for a name, writes `prisma/migrations/<timestamp>_<name>/migration.sql`, and applies it to the local database.
+3. Read the SQL. It's what production will run.
+4. Commit the schema and the migration together.
 
-The quotes matter: the URL has characters the shell would otherwise read.
+When the push deploys, the production build runs `prisma migrate deploy` before `next build`. If the migration fails, the build fails and the previous version stays live. Preview builds never migrate.
+
+**Migrations must work with the code that's already live.** The migration runs first, and the old version keeps serving until the new build is ready. Add first, remove later: new columns are nullable or have a default, and a column or table is dropped only in a later push, after the code stopped using it. Renames are an add and a drop, in that order.
+
+If `db:migrate` says the local database has drifted and offers to reset it, that's a database made with the old `db push`. Saying yes wipes local data only.
 
 ### Decision records
 
