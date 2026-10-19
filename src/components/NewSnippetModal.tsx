@@ -2,20 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-const LANGUAGES = [
-  "typescript",
-  "javascript",
-  "python",
-  "rust",
-  "go",
-  "css",
-  "html",
-  "sql",
-  "bash",
-  "json",
-  "other",
-];
+import { LANGUAGES, SNIPPET_LIMITS } from "@/lib/field-limits";
 
 type Folder = {
   id: string;
@@ -121,6 +108,7 @@ export default function NewSnippetModal({
         <input
           type="text"
           placeholder="Title"
+          maxLength={SNIPPET_LIMITS.title}
           value={form.title}
           onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
           className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
@@ -195,6 +183,7 @@ export default function NewSnippetModal({
           <input
             type="text"
             placeholder="Description (optional)"
+            maxLength={SNIPPET_LIMITS.description}
             value={form.description}
             onChange={(e) =>
               setForm((f) => ({ ...f, description: e.target.value }))

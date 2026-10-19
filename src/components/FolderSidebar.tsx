@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDroppable } from "@dnd-kit/core";
+import { FOLDER_NAME_MAX } from "@/lib/field-limits";
 
 type Folder = {
   id: string;
@@ -212,6 +213,7 @@ export default function FolderSidebar({
           {editingId === folder.id ? (
             <input
               type="text"
+              maxLength={FOLDER_NAME_MAX}
               value={editingName}
               onChange={(e) => setEditingName(e.target.value)}
               onBlur={() => handleRename(folder.id)}
@@ -272,6 +274,7 @@ export default function FolderSidebar({
       {creating ? (
         <input
           type="text"
+          maxLength={FOLDER_NAME_MAX}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onBlur={handleCreate}

@@ -16,6 +16,7 @@ import SnippetCard from "@/components/SnippetCard";
 import NewSnippetModal from "@/components/NewSnippetModal";
 import FolderSidebar from "@/components/FolderSidebar";
 import { snippetCap, snippetCapMessage, snippetCapStatus } from "@/lib/snippet-cap";
+import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 
 type Snippet = {
   id: string;
@@ -288,6 +289,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 <div className="relative flex-1">
                   <input
                     type="text"
+                    maxLength={SEARCH_QUERY_MAX}
                     placeholder={
                       aiMode
                         ? "Describe what you're looking for..."
