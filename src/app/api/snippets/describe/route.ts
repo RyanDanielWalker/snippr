@@ -4,10 +4,8 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { aiRateLimitRule, checkRateLimit } from "@/lib/rate-limit";
 import { incrementAiUsage, tooManyRequests } from "@/lib/ai-usage";
-
-// Roughly 5,000 tokens. Plenty for a snippet; stops a paste of a whole file
-// from becoming a large bill (see docs/adr/0011).
-const MAX_CODE_LENGTH = 20_000;
+import { parseBody } from "@/lib/request-body";
+import { describeSchema } from "@/lib/schemas";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || "",
@@ -17,14 +15,13 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
-  const { code, language } = await req.json();
+  // The code limit, roughly 5,000 tokens, keeps a pasted file from
+  // becoming a large bill (see docs/adr/0011). The language comes from a
+  // fixed list because it goes into the prompt.
+  const body = await parseBody(req, describeSchema);
+  if (!body.ok) return body.response;
+  const { code, language } = body.data;
   if (!code) return NextResponse.json({ description: "" });
-  if (typeof code !== "string" || code.length > MAX_CODE_LENGTH) {
-    return NextResponse.json(
-      { error: "That snippet is too long to describe. The limit is 20,000 characters." },
-      { status: 413 },
-    );
-  }
 
   const limit = await checkRateLimit(
     session.user.id,

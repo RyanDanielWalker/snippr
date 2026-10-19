@@ -2,8 +2,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canUseFolder } from "@/lib/folder-ownership";
-import { snippetUpdateData } from "@/lib/snippet-update";
 import { snippetCap, snippetCapMessage } from "@/lib/snippet-cap";
+import { parseBody } from "@/lib/request-body";
+import {
+  createSnippetSchema,
+  deleteByIdSchema,
+  updateSnippetSchema,
+} from "@/lib/schemas";
 import { NextResponse } from "next/server";
 
 function findFolderOwner(id: string) {
@@ -32,6 +37,10 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
+  const body = await parseBody(req, createSnippetSchema);
+  if (!body.ok) return body.response;
+  const { title, code, language, description, tags, folderId } = body.data;
+
   const snippetCount = await prisma.snippet.count({
     where: { userId: session.user.id },
   });
@@ -44,9 +53,6 @@ export async function POST(req: Request) {
       { status: 409 },
     );
   }
-
-  const { title, code, language, description, tags, folderId } =
-    await req.json();
 
   if (!(await canUseFolder(folderId, session.user.id, findFolderOwner))) {
     return folderNotFound();
@@ -71,16 +77,16 @@ export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
-  const body = await req.json();
-  const { id } = body;
+  const body = await parseBody(req, updateSnippetSchema);
+  if (!body.ok) return body.response;
+  // The schema only lets editable fields through, and leaves out the ones
+  // the request didn't send, so `data` is a true partial update.
+  const { id, ...data } = body.data;
 
   const snippet = await prisma.snippet.findUnique({ where: { id } });
   if (!snippet || snippet.userId !== session.user.id) {
     return NextResponse.json({}, { status: 403 });
   }
-
-  // Only the fields the request sent get written; see snippet-update.ts.
-  const data = snippetUpdateData(body);
 
   if (!(await canUseFolder(data.folderId, session.user.id, findFolderOwner))) {
     return folderNotFound();
@@ -95,7 +101,9 @@ export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
 
-  const { id } = await req.json();
+  const body = await parseBody(req, deleteByIdSchema);
+  if (!body.ok) return body.response;
+  const { id } = body.data;
 
   const snippet = await prisma.snippet.findUnique({ where: { id } });
   if (!snippet || snippet.userId !== session.user.id) {

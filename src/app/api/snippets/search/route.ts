@@ -5,9 +5,8 @@ import { NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import { aiRateLimitRule, checkRateLimit } from "@/lib/rate-limit"
 import { incrementAiUsage, tooManyRequests } from "@/lib/ai-usage"
-
-// A search is a sentence, not an essay (see docs/adr/0011).
-const MAX_QUERY_LENGTH = 1_000
+import { parseBody } from "@/lib/request-body"
+import { searchSchema } from "@/lib/schemas"
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || "",
@@ -17,14 +16,10 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json([], { status: 401 })
 
-  const { query } = await req.json()
+  const body = await parseBody(req, searchSchema)
+  if (!body.ok) return body.response
+  const { query } = body.data
   if (!query) return NextResponse.json([])
-  if (typeof query !== "string" || query.length > MAX_QUERY_LENGTH) {
-    return NextResponse.json(
-      { error: "That search is too long. The limit is 1,000 characters." },
-      { status: 413 },
-    )
-  }
 
   const snippets = await prisma.snippet.findMany({
     where: { userId: session.user.id },
