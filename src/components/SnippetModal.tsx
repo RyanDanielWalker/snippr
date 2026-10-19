@@ -56,7 +56,7 @@ export default function SnippetModal({
         className="bg-gray-900 rounded-xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-gray-800"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 p-6 border-b border-gray-800">
+        <div className="flex items-start justify-between gap-4 p-4 sm:p-6 border-b border-gray-800">
           <div className="min-w-0">
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-white font-semibold text-xl truncate">
@@ -78,14 +78,14 @@ export default function SnippetModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 sm:p-6">
           <div
             className="shiki-wrapper rounded-lg overflow-hidden text-sm"
             dangerouslySetInnerHTML={{ __html: html }}
           />
         </div>
 
-        <div className="flex items-center justify-between gap-4 p-4 border-t border-gray-800">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-t border-gray-800">
           <div className="flex flex-wrap gap-2">
             {snippet.tags.map((tag) => (
               <span
@@ -96,7 +96,7 @@ export default function SnippetModal({
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto">
             <button
               onClick={onEdit}
               className="px-4 py-2 text-sm text-gray-300 hover:text-white transition shrink-0"

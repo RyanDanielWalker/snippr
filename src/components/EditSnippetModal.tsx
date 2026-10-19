@@ -99,15 +99,17 @@ export default function EditSnippetModal({
     setForm((f) => ({ ...f, description: result.data.description }));
   }
 
+  // m-auto rather than centering the overlay: a form taller than the screen
+  // (a phone with its keyboard up) then scrolls instead of losing its top.
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/70 flex overflow-y-auto z-50 p-4"
       onClick={() => {
         if (!hasChanges) onClose();
       }}
     >
       <div
-        className="bg-gray-900 rounded-xl w-full max-w-3xl p-6 space-y-4"
+        className="m-auto bg-gray-900 rounded-xl w-full max-w-3xl p-4 sm:p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
