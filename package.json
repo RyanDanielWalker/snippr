@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
-    "db:push": "node scripts/check-db.mjs && prisma db push",
+    "db:migrate": "node scripts/check-db.mjs && prisma migrate dev",
     "db:studio": "node scripts/check-db.mjs && prisma studio"
   },
   "dependencies": {
