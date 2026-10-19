@@ -31,7 +31,8 @@ Committed but not pushed:
 ## 2. Pick the item
 
 - If the arguments name an item, do that one.
-- Otherwise read `docs/ROADMAP.md` and take the first unchecked item in the earliest phase.
+- Otherwise read `docs/ROADMAP.md` and take the first unchecked item in the earliest phase of the 1.0 milestone. Parked items are never picked automatically.
+- If every 1.0 item is ticked, stop and say so. Don't start on Parked work without being asked.
 - Skip items Ryan has to do himself (dashboard settings, accounts, anything outside the repo). List them in one line so they don't get forgotten.
 - Say which item you picked and why, in one sentence.
 
@@ -56,7 +57,7 @@ Ryan writes the core of it himself. Build the scaffolding: types, function signa
 
 ## 5. Keep the docs true
 
-- Tick the roadmap item. Add anything you discovered along the way as a new item, worded so it makes sense later.
+- Tick the roadmap item. Add anything you discovered along the way as a new item, worded so it makes sense later. It goes under Parked unless 1.0 can't ship without it; say which in the report.
 - Fix `docs/ARCHITECTURE.md` or `docs/DEVELOPMENT.md` if this change made them wrong.
 - ADRs are append-only. A new decision or a change to an old one gets a new ADR that links back. Never edit an accepted one.
 
