@@ -31,9 +31,9 @@ What an engineer looks for when they open the repo, plus the two fixes that keep
 - [x] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md), [0016](./adr/0016-apply-migrations-in-the-production-build.md)). Production builds apply migrations before `next build`, so schema and code can't go out in the wrong order. Twice before (the `AiUsage` table and demo mode's columns) the code went live before `db push`, and production errored until it ran
 - [x] Baseline production **before** pushing the migrations commits ([0016](./adr/0016-apply-migrations-in-the-production-build.md)). Until it's done, every production build fails with `P3005` and the current version stays live. Put production's URL from Vercel in the shell without it landing in your history (`read -rs PROD`, paste, Enter). Check production matches the schema: `npx prisma migrate diff --from-url "$PROD" --to-schema-datamodel prisma/schema.prisma --exit-code` should print nothing and `echo $?` should say 0. If it prints SQL, stop: production has drifted and the baseline needs another look. Then `DATABASE_URL="$PROD" npx prisma migrate resolve --applied 0_init`, which only records the baseline as applied
 - [x] Consistent API errors: one error shape, correct status codes, no `alert()` ([0017](./adr/0017-one-error-shape-shown-inline.md)). Every error is `{ error }`, anything that throws becomes a `500` (or `502` for Claude), and every action in the interface shows its error inline
-- [ ] Unit and integration tests for API logic (ownership, validation, cap)
+- [x] Unit tests for API logic (ownership, validation, cap) ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)). The snippet and folder rules moved to `src/lib/snippets.ts` and `src/lib/folders.ts` and are tested against an in-memory store with two users. The AI handlers' tests come with the shared AI module in Phase 4
 - [ ] One end-to-end test of the main flow through demo mode: start a demo, create a snippet, search, move it to a folder
-- [ ] GitHub Actions CI: lint, typecheck, test on every push. Run the `docker-compose.yml` Postgres image as a service container for anything that needs a database, and run `prisma migrate deploy` against it to prove the migrations apply from scratch
+- [ ] GitHub Actions CI: lint, typecheck, test on every push. Run the `docker-compose.yml` Postgres image as a service container for anything that needs a database, and run `prisma migrate deploy` against it to prove the migrations apply from scratch. Then a few integration tests for `src/lib/library-store.ts` against that database, since the unit tests' fake store can't tell if a Prisma query forgets its `userId` ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md))
 - [ ] Check production for rows the new limits reject: a language outside the list, a title over 200 characters, more than 50 folders. Editing such a snippet fails until the field changes ([0014](./adr/0014-validate-request-bodies-with-zod.md))
 
 ### Phase 3: Make it look designed
@@ -51,7 +51,7 @@ Today it reads as default Tailwind dark mode. It should look like someone made c
 
 The part that makes Snippr more than a CRUD app.
 
-- [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). The MCP server's search tool will call it too
+- [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). The MCP server's search tool will call it too. Move the `search` and `describe` handlers' logic into `src/lib` with the session, rate limit, and Claude call passed in, and test their `401`, `400`, and `429` order ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md))
 - [ ] **MCP server:** expose search, get, and save as tools so Claude, Cursor, or any MCP client can use your snippet library directly
 
 ### Phase 5: Tell the story

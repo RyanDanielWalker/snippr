@@ -82,7 +82,7 @@ PATCH is a partial update: fields the request leaves out stay as they are, and `
 
 ### Authorization model
 
-Every Route Handler follows the same pattern:
+Every Route Handler follows the same pattern. For snippets and folders it lives in `src/lib/snippets.ts` and `src/lib/folders.ts`, which get the database passed in as a store, so each step is tested against an in-memory one with two users; the route files only connect them to NextAuth and Prisma ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)). The AI handlers still do it inline:
 
 1. **Who are you?** Resolve the session. No user id means `401`.
 2. **Is it the right shape?** Check the body against its zod schema (`src/lib/schemas.ts`). Wrong types, missing fields, oversized fields, or malformed JSON mean `400` with an `error` message. Fields the schema doesn't list are dropped, so a body can't set `userId` ([0014](./adr/0014-validate-request-bodies-with-zod.md)).
@@ -244,9 +244,9 @@ src/
 │   ├── globals.css             Tailwind v4 entry + global styles
 │   └── api/
 │       ├── auth/[...nextauth]/ NextAuth handler
-│       ├── folders/            Folder CRUD + folder cap
+│       ├── folders/            Folder CRUD (logic in lib/folders.ts)
 │       └── snippets/
-│           ├── route.ts        Snippet CRUD + snippet cap
+│           ├── route.ts        Snippet CRUD (logic in lib/snippets.ts)
 │           ├── search/         AI search, rate-limited
 │           └── describe/       AI descriptions, rate-limited
 ├── components/
@@ -263,21 +263,24 @@ src/
 │   ├── ai-usage.ts             Atomic AI usage counter (SQL)
 │   ├── api-client.ts           callApi: how components call the API and read its errors (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
-│   ├── auth.ts                 NextAuth config, verified-email check
+│   ├── auth.ts                 NextAuth config, verified-email check, currentUser()
 │   ├── demo.ts                 Starting a demo: seed, IP limit, cookie name (tested)
 │   ├── demo-store.ts           Database side of starting a demo
 │   ├── email-case.ts           Lowercases emails in the NextAuth adapter (tested)
 │   ├── email-verification.ts   Provider email verification (tested)
 │   ├── field-limits.ts         Field limits and the language list, shared with the UI
 │   ├── folder-cap.ts           Folder cap: 50 per member, 10 per guest (tested)
+│   ├── folders.ts              /api/folders: ownership, cap, validation, in order (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
+│   ├── library-store.ts        Database side of snippets.ts and folders.ts
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
 │   ├── request-body.ts         Reads a JSON body and checks it against a schema, or returns a 400 (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   ├── site.ts                 Site URL, name, and description for metadata (tested)
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
+│   ├── snippets.ts             /api/snippets: ownership, cap, validation, in order (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type
@@ -296,4 +299,4 @@ Production's `DATABASE_URL` lives only in Vercel. Production builds use it to ap
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: thin test coverage and no CI. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: no CI, and no tests yet that run the Prisma queries against a real database. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.

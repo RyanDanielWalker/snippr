@@ -115,6 +115,7 @@ A change is ready to push when:
 - [ ] It works locally, and risky changes have been checked with a production build.
 - [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass.
 - [ ] New API input goes through a schema in `src/lib/schemas.ts` (via `parseBody`), and every record lookup checks ownership.
+- [ ] New Route Handler logic lives in `src/lib` with the database passed in as a store, and has tests for its `401`, `400`, and ownership cases ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)).
 - [ ] New Route Handlers are wrapped in `withErrors`, send errors as `{ error }` through `src/lib/api-errors.ts`, and the interface calls them with `callApi` and shows the message ([0017](./adr/0017-one-error-shape-shown-inline.md)).
 - [ ] Docs are updated if behavior, setup, or architecture changed.
 - [ ] Significant decisions have an ADR.
