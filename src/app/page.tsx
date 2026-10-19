@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { codeToHtml } from "shiki";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import SnippetCardView from "@/components/SnippetCardView";
 import DemoButton from "@/components/DemoButton";
 import { landingSamples, searchExample } from "@/lib/landing-samples";
+import { withCardHtml } from "@/lib/highlight";
 
 const features = [
   {
@@ -31,6 +33,7 @@ export default async function Home({
 
   // Set by startDemoAction when one network starts too many demos in an hour.
   const demoBusy = (await searchParams).demo === "busy";
+  const samples = await withCardHtml(landingSamples, codeToHtml);
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-300">
@@ -92,7 +95,7 @@ export default async function Home({
               </span>
             </div>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              {landingSamples.map(({ id, folderName, ...snippet }) => (
+              {samples.map(({ id, folderName, ...snippet }) => (
                 <SnippetCardView
                   key={id}
                   snippet={snippet}

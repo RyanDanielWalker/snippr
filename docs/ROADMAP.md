@@ -43,11 +43,11 @@ Today it reads as default Tailwind dark mode. It should look like someone made c
 
 - [x] Fix the font: `globals.css` forces Arial and overrides the Geist font being loaded
 - [x] Toasts, real loading states, and empty states ([0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)). Toasts for what happens out of sight (moves, deletes), errors you can fix stay inline. Saves stay pending until the refreshed list is on screen, which also fixed the folder input making two folders. Each kind of empty dashboard says something different (`src/lib/empty-state.ts`)
-- [ ] Syntax highlighting on the cards, not only in the preview
+- [x] Syntax highlighting on the cards, not only in the preview ([0022](./adr/0022-highlight-cards-on-the-server.md)). Done on the server for the dashboard and the landing page, first 20 lines only; a snippet Shiki can't color falls back to plain text
 - [ ] Remove the dashboard's blank first render with a stable `DndContext` id ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
 - [ ] Mobile pass. Then put "works on mobile" back in the README's feature list
 - [x] Stop the README overclaiming until Phase 5 rebuilds it: drop "Fully responsive" until the mobile pass lands, fix the `YOUR_USERNAME` clone URL, and replace the stale project structure with a link to the ARCHITECTURE code map ([audit](./audits/2026-10-19.md), finding 1). The README is the first thing a visitor reads, so this can't wait for Phase 5
-- [x] AI search results that update after an edit, move, or delete. Today they're copies that `router.refresh()` never touches, so a deleted result stays on screen stuck on "Deleting..." ([audit](./audits/2026-10-19.md), finding 2). Keep the result ids and look them up in the current snippets
+- [x] AI search results that update after an edit, move, or delete ([0022](./adr/0022-highlight-cards-on-the-server.md)). They were copies that `router.refresh()` never touched, so a deleted result stayed on screen stuck on "Deleting..." ([audit](./audits/2026-10-19.md), finding 2). Now the dashboard keeps the result ids and looks them up in the current snippets (`src/lib/ai-results.ts`)
 - [ ] One snippet form for New and Edit, and one `Snippet` and `Folder` type for the components instead of four copies each ([audit](./audits/2026-10-19.md), finding 6). Do it before restyling them, so there's one form to restyle
 - [ ] Show the failures the interface swallows today: a preview Shiki couldn't load, a copy that didn't copy ([audit](./audits/2026-10-19.md), finding 9). Goes with the toasts
 - [ ] One code style: add Prettier and format everything in one `style:` commit ([audit](./audits/2026-10-19.md), finding 10). Half the files skip semicolons, and the code is part of what's shown

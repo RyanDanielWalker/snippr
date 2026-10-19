@@ -31,6 +31,7 @@ type Snippet = {
   tags: string[];
   folderId?: string | null;
   createdAt: string;
+  codeHtml?: string | null;
 };
 
 type Folder = {

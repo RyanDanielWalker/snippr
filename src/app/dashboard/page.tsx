@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
+import { codeToHtml } from "shiki"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { withCardHtml } from "@/lib/highlight"
 import DashboardClient from "@/components/DashboardClient"
 import { ToastProvider } from "@/components/Toaster"
 
@@ -25,11 +27,14 @@ export default async function DashboardPage() {
       },
     }),
   ])
+  // Highlighted here so the cards arrive in color and the browser never
+  // loads Shiki for them (docs/adr/0022).
+  const cards = await withCardHtml(snippets, codeToHtml)
 
   return (
     <ToastProvider>
       <DashboardClient
-        snippets={JSON.parse(JSON.stringify(snippets))}
+        snippets={JSON.parse(JSON.stringify(cards))}
         folders={JSON.parse(JSON.stringify(folders))}
         user={{
           email: session.user.email ?? "",

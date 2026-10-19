@@ -46,3 +46,17 @@ select:disabled {
 .shiki-wrapper code {
   font-family: var(--font-mono), monospace;
 }
+
+/* Shiki's <pre> on a card. The wrapper in SnippetCardView draws the box, so
+   this only lays out the code to match the plain <pre> it replaces. */
+.snippet-code pre {
+  margin: 0;
+  padding: 1rem;
+  max-height: 10rem;
+  overflow: auto;
+  background: transparent !important;
+}
+
+.snippet-code code {
+  font-family: var(--font-mono), monospace;
+}

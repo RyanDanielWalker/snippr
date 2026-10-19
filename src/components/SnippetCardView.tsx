@@ -6,6 +6,8 @@ export type SnippetCardData = {
   language: string;
   description?: string | null;
   tags: string[];
+  /** The highlighted start of the code, from `withCardHtml` in lib/highlight. */
+  codeHtml?: string | null;
 };
 
 type Props = {
@@ -49,9 +51,17 @@ export default function SnippetCardView({
         </div>
       </div>
 
-      <pre className="bg-gray-950 rounded-lg p-4 text-sm text-gray-300 font-mono overflow-x-auto max-h-40">
-        <code>{snippet.code}</code>
-      </pre>
+      {snippet.codeHtml ? (
+        // Shiki escapes the code, so this is its markup and nothing else.
+        <div
+          className="snippet-code bg-gray-950 rounded-lg text-sm overflow-hidden"
+          dangerouslySetInnerHTML={{ __html: snippet.codeHtml }}
+        />
+      ) : (
+        <pre className="bg-gray-950 rounded-lg p-4 text-sm text-gray-300 font-mono overflow-x-auto max-h-40">
+          <code>{snippet.code}</code>
+        </pre>
+      )}
 
       {snippet.tags.length > 0 && (
         <div className="flex flex-wrap gap-2">

@@ -53,5 +53,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0019](./0019-end-to-end-tests-with-playwright-on-their-own-database.md) | Run end-to-end tests with Playwright, on a production build and their own database | Accepted |
 | [0020](./0020-ci-on-github-actions-gating-production-deploys.md) | Run CI on GitHub Actions, test the stores against Postgres, and hold deploys until it passes | Accepted |
 | [0021](./0021-hand-rolled-toasts-for-what-happens-out-of-sight.md) | Use hand-rolled toasts for what happens out of sight, and keep fixable errors inline | Accepted |
+| [0022](./0022-highlight-cards-on-the-server.md) | Highlight snippet cards on the server, and keep AI search results as ids | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

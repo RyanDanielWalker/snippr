@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { codeToHtml } from "shiki";
+import { SHIKI_THEME, shikiLanguage } from "@/lib/highlight";
 
 type Snippet = {
   id: string;
@@ -26,10 +27,9 @@ export default function SnippetModal({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const lang = snippet.language === "other" ? "text" : snippet.language;
     codeToHtml(snippet.code, {
-      lang,
-      theme: "github-dark",
+      lang: shikiLanguage(snippet.language),
+      theme: SHIKI_THEME,
     }).then(setHtml);
   }, [snippet.code, snippet.language]);
 

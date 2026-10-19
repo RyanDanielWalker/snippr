@@ -42,7 +42,7 @@ flowchart LR
 | Anthropic API | AI search and AI descriptions | [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md) |
 | dnd-kit | Drag snippets onto folders | [0007](./adr/0007-dnd-kit-for-drag-and-drop.md) |
 | Demo mode | Expiring guest users, no sign-in needed | [0012](./adr/0012-demo-mode-as-expiring-guest-users.md) |
-| Shiki | Syntax highlighting in the preview modal | n/a |
+| Shiki | Syntax highlighting: cards on the server, the preview modal in the browser | [0022](./adr/0022-highlight-cards-on-the-server.md) |
 | zod | Checks every API request body | [0014](./adr/0014-validate-request-bodies-with-zod.md) |
 
 ## How a request flows
@@ -51,7 +51,7 @@ flowchart LR
 
 1. The browser requests `/dashboard`.
 2. `src/app/dashboard/page.tsx` is a **Server Component**: it runs only on the server. It calls `getServerSession(authOptions)`, which reads the session cookie and looks the session up in Postgres. No session means a redirect to `/login`.
-3. It loads the user's snippets and folders (with snippet counts) in parallel with `Promise.all`.
+3. It loads the user's snippets and folders (with snippet counts) in parallel with `Promise.all`, then highlights the start of each snippet's code with Shiki for its card ([0022](./adr/0022-highlight-cards-on-the-server.md)).
 4. It passes that data as props to `DashboardClient`, a **Client Component** that runs in the browser and owns all the interactive state: search text, AI mode, selected folder, sidebar collapse, the new-snippet modal, and drag state. Each `SnippetCard` owns its own preview and edit modals.
 
 Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded. Only AI search makes a network call. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
@@ -263,7 +263,7 @@ src/
 │   ├── FolderSidebar.tsx       Collapsible sidebar, drop targets
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
-│   ├── SnippetModal.tsx        Shiki-highlighted preview
+│   ├── SnippetModal.tsx        Preview, highlighted in the browser
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard only
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── NewSnippetModal.tsx     Create form
@@ -286,6 +286,7 @@ src/
 │   ├── folders.ts              /api/folders: ownership, cap, validation, in order (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
+│   ├── highlight.ts            Highlights the start of each card's code, Shiki passed in (tested)
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
 │   ├── library-store.ts        Database side of snippets.ts and folders.ts (tested against Postgres)
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
