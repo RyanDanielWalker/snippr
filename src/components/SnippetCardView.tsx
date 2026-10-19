@@ -31,8 +31,8 @@ export default function SnippetCardView({
       className={`bg-gray-900 rounded-xl p-5 flex flex-col gap-3 border border-gray-800 ${className}`}
     >
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-white font-medium">{snippet.title}</h3>
+        <div className="min-w-0">
+          <h3 className="text-white font-medium break-words">{snippet.title}</h3>
           {snippet.description && (
             <p className="text-gray-500 text-sm mt-0.5">
               {snippet.description}

@@ -60,10 +60,15 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   const [aiError, setAiError] = useState<string | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Below md the sidebar is a drawer instead (see the wrapper around it).
+  const [foldersOpen, setFoldersOpen] = useState(false);
   const [draggedSnippet, setDraggedSnippet] = useState<Snippet | null>(null);
   const [movingIds, setMovingIds] = useState<ReadonlySet<string>>(new Set());
   const [, startMoving] = useTransition();
 
+  // Mouse drags only, in practice. On a touch screen the browser takes the same
+  // gesture as a scroll and cancels the pointer, so dragging never starts and
+  // the page still scrolls. A phone moves snippets with the folder field in Edit.
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -77,6 +82,30 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored === "true") setSidebarCollapsed(true);
   }, []);
+
+  useEffect(() => {
+    if (!foldersOpen) return;
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setFoldersOpen(false);
+    }
+    // Past md the sidebar is back in the page. Close the drawer rather than
+    // leave it floating over the desktop layout, say after rotating a tablet.
+    const wide = window.matchMedia("(min-width: 48rem)");
+    function handleWide() {
+      if (wide.matches) setFoldersOpen(false);
+    }
+    window.addEventListener("keydown", handleEsc);
+    wide.addEventListener("change", handleWide);
+    return () => {
+      window.removeEventListener("keydown", handleEsc);
+      wide.removeEventListener("change", handleWide);
+    };
+  }, [foldersOpen]);
+
+  function selectFolder(id: string | null) {
+    setSelectedFolderId(id);
+    setFoldersOpen(false);
+  }
 
   function toggleSidebar() {
     const newState = !sidebarCollapsed;
@@ -224,11 +253,18 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
         />
       )}
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <div className="flex items-center justify-between gap-4 mb-8">
           <h1 className="text-2xl font-bold">Snippr</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-400 text-sm">
+          <div className="flex items-center gap-4 min-w-0">
+            <button
+              onClick={() => setFoldersOpen(true)}
+              aria-expanded={foldersOpen}
+              className="md:hidden text-sm text-gray-300 hover:text-white bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5"
+            >
+              Folders
+            </button>
+            <span className="hidden sm:inline text-gray-400 text-sm truncate">
               {user.isGuest ? "Demo" : user.email}
             </span>
             {user.image && (
@@ -276,15 +312,34 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-8">
-            <FolderSidebar
-              folders={folders}
-              totalSnippets={snippets.length}
-              unorganizedCount={unorganizedCount}
-              selectedFolderId={selectedFolderId}
-              onSelectFolder={setSelectedFolderId}
-              collapsed={sidebarCollapsed}
-              onToggleCollapse={toggleSidebar}
-            />
+            {foldersOpen && (
+              <div
+                className="fixed inset-0 z-40 bg-black/70"
+                onClick={() => setFoldersOpen(false)}
+              />
+            )}
+            {/* One sidebar for every width: rendering a second copy for the
+                drawer would register each folder as a drop target twice. */}
+            <div
+              className={
+                foldersOpen
+                  ? "fixed inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-gray-950 border-r border-gray-800 p-4"
+                  : "hidden md:block"
+              }
+            >
+              <FolderSidebar
+                folders={folders}
+                totalSnippets={snippets.length}
+                unorganizedCount={unorganizedCount}
+                selectedFolderId={selectedFolderId}
+                onSelectFolder={selectFolder}
+                collapsed={sidebarCollapsed && !foldersOpen}
+                onToggleCollapse={
+                  foldersOpen ? () => setFoldersOpen(false) : toggleSidebar
+                }
+                drawer={foldersOpen}
+              />
+            </div>
 
             <div className="flex-1 min-w-0">
               {capStatus !== "ok" && (
@@ -307,7 +362,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 </h2>
               )}
 
-              <div className="flex items-center gap-3 mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-8">
                 <div className="relative flex-1">
                   <input
                     type="text"
@@ -323,7 +378,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                       if (!aiMode) setAiResultIds(null);
                     }}
                     onKeyDown={handleSearchKeyDown}
-                    className="w-full bg-gray-900 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 border border-gray-800"
+                    className={`w-full bg-gray-900 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 border border-gray-800 ${aiMode ? "pr-36" : ""}`}
                   />
                   {aiMode && (
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-blue-400">
@@ -332,29 +387,31 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                   )}
                 </div>
 
-                <button
-                  onClick={handleModeToggle}
-                  className={`px-4 py-2.5 rounded-lg text-sm font-medium transition shrink-0 border ${
-                    aiMode
-                      ? "bg-blue-600 text-white border-blue-500"
-                      : "bg-gray-900 text-gray-400 border-gray-800 hover:text-white"
-                  }`}
-                >
-                  ✦ AI search
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleModeToggle}
+                    className={`flex-1 sm:flex-none px-4 py-2.5 rounded-lg text-sm font-medium transition shrink-0 border ${
+                      aiMode
+                        ? "bg-blue-600 text-white border-blue-500"
+                        : "bg-gray-900 text-gray-400 border-gray-800 hover:text-white"
+                    }`}
+                  >
+                    ✦ AI search
+                  </button>
 
-                <button
-                  onClick={() => setShowModal(true)}
-                  disabled={capStatus === "full"}
-                  title={
-                    capStatus === "full"
-                      ? snippetCapMessage(cap, user.isGuest)
-                      : undefined
-                  }
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
-                >
-                  + New snippet
-                </button>
+                  <button
+                    onClick={() => setShowModal(true)}
+                    disabled={capStatus === "full"}
+                    title={
+                      capStatus === "full"
+                        ? snippetCapMessage(cap, user.isGuest)
+                        : undefined
+                    }
+                    className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+                  >
+                    + New snippet
+                  </button>
+                </div>
               </div>
 
               {aiLoading && (
@@ -384,7 +441,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
               )}
 
               {!aiLoading && displaySnippets.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {displaySnippets.map((snippet) => (
                     <SnippetCard
                       key={snippet.id}

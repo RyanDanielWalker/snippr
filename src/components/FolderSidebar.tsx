@@ -52,6 +52,8 @@ type Props = {
   onSelectFolder: (id: string | null) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  /** Shown as the phone drawer, where the chevron closes it instead. */
+  drawer?: boolean;
 };
 
 export default function FolderSidebar({
@@ -62,6 +64,7 @@ export default function FolderSidebar({
   onSelectFolder,
   collapsed,
   onToggleCollapse,
+  drawer = false,
 }: Props) {
   const router = useRouter();
   const toast = useToast();
@@ -228,7 +231,8 @@ export default function FolderSidebar({
         <button
           onClick={onToggleCollapse}
           className="text-gray-500 hover:text-white transition"
-          title="Collapse sidebar"
+          title={drawer ? "Close folders" : "Collapse sidebar"}
+          aria-label={drawer ? "Close folders" : "Collapse sidebar"}
         >
           <svg
             width="16"
@@ -301,19 +305,21 @@ export default function FolderSidebar({
               onClick={() => onSelectFolder(folder.id)}
             >
               <span className="truncate pr-6">{folder.name}</span>
-              <span className="text-xs text-gray-500 group-hover:opacity-0 transition">
+              <span className="text-xs text-gray-500 group-hover:opacity-0 pointer-coarse:mr-6 transition">
                 {folder._count.snippets}
               </span>
             </DroppableFolder>
           )}
 
+          {/* Hover reveals it with a mouse. A touch screen can't hover, so
+              there it's always shown, with the count moved aside for it. */}
           {editingId !== folder.id && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setMenuOpenId(menuOpenId === folder.id ? null : folder.id);
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white opacity-0 group-hover:opacity-100 transition px-1"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 pointer-coarse:px-2 transition px-1"
             >
               ⋯
             </button>

@@ -43,6 +43,12 @@ describe("DashboardClient on the server", () => {
     expect(serverRender()).toContain("Debounce");
   });
 
+  it("renders one folder sidebar for both the page and the phone drawer", () => {
+    // A second copy for the drawer would register every folder as a dnd-kit
+    // drop target twice, under the same ids.
+    expect(serverRender().match(/<aside/g)).toHaveLength(1);
+  });
+
   it("gives the cards the same accessibility ids on every request", () => {
     // dnd-kit's fallback ids come from a counter that lives as long as the
     // server process, so a second request would get different ones and stop
