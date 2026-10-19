@@ -278,7 +278,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                   role="alert"
                   className="flex items-start justify-between gap-4 text-sm text-red-300 bg-red-950/60 border border-red-900 rounded-lg px-4 py-3 mb-4"
                 >
-                  <span>Couldn&apos;t move that snippet. {moveError}</span>
+                  <span>That snippet didn&apos;t move. {moveError}</span>
                   <button
                     onClick={() => setMoveError(null)}
                     className="text-red-400 hover:text-white shrink-0"
