@@ -51,6 +51,22 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run typecheck` | TypeScript type check, no output files |
 | `npm test` | Run the test suite once (Vitest) |
 | `npm run test:watch` | Re-run tests as files change |
+| `npm run test:e2e` | The end-to-end test in a real browser. Resets the e2e database, builds, and serves on port 3100 first, so it takes a minute or two |
+| `npm run e2e:db` | Wipe the e2e database and apply every migration. `test:e2e` runs it for you |
+
+## End-to-end tests
+
+`e2e/demo.spec.ts` drives Chromium through a demo: start one, add a snippet, search for it, drag it into a folder ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)).
+
+```bash
+npx playwright install chromium   # once
+npm run db:up
+npm run test:e2e
+```
+
+It runs against `snippr_e2e`, a second database in the same Docker Postgres, and wipes it before every run. Your dev data isn't touched. Set `E2E_DATABASE_URL` to use another database; it has to be local and its name has to end in `_e2e`. It reads `NEXTAUTH_SECRET` from `.env`. AI search isn't covered yet, so no Claude calls and no API key needed.
+
+On a failure, `npx playwright show-trace test-results/<test>/trace.zip` replays it step by step.
 
 ## Gotchas
 
@@ -113,7 +129,7 @@ If a change involves a decision that's hard to reverse, not obvious from the cod
 A change is ready to push when:
 
 - [ ] It works locally, and risky changes have been checked with a production build.
-- [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass.
+- [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`.
 - [ ] New API input goes through a schema in `src/lib/schemas.ts` (via `parseBody`), and every record lookup checks ownership.
 - [ ] New Route Handler logic lives in `src/lib` with the database passed in as a store, and has tests for its `401`, `400`, and ownership cases ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)).
 - [ ] New Route Handlers are wrapped in `withErrors`, send errors as `{ error }` through `src/lib/api-errors.ts`, and the interface calls them with `callApi` and shows the message ([0017](./adr/0017-one-error-shape-shown-inline.md)).

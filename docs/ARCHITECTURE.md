@@ -227,12 +227,17 @@ Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-feat
 ## Code map
 
 ```
-docker-compose.yml              Local Postgres for development
+docker-compose.yml              Local Postgres for development and end-to-end tests
+e2e/
+└── demo.spec.ts                End-to-end test: demo, create, search, drag into a folder
+playwright.config.ts            Runs it against a production build on port 3100
 prisma/
 └── schema.prisma               Data model (source of truth)
 scripts/
 ├── check-db.mjs                Stops database scripts aimed at a remote database
-└── db-guard.mjs                The rules it follows (tested)
+├── db-guard.mjs                The rules it follows (tested)
+├── e2e-db.mjs                  Wipes and migrates the end-to-end database
+└── e2e-guard.mjs               Keeps that to a local database named *_e2e (tested)
 src/
 ├── app/
 │   ├── page.tsx                Landing page; signed-in users go to /dashboard
@@ -299,4 +304,4 @@ Production's `DATABASE_URL` lives only in Vercel. Production builds use it to ap
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: no CI, and no tests yet that run the Prisma queries against a real database. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: no CI, and only one test that runs the Prisma queries against a real database, the end-to-end demo flow ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)), which has to be run by hand. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
