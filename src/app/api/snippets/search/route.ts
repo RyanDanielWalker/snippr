@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import { aiRateLimitRule, checkRateLimit } from "@/lib/rate-limit"
-import { incrementAiUsage, tooManyRequests } from "@/lib/ai-usage"
+import { incrementAiUsage } from "@/lib/ai-usage"
+import { tooManyRequests, unauthorized, withErrors } from "@/lib/api-errors"
 import { parseBody } from "@/lib/request-body"
 import { searchSchema } from "@/lib/schemas"
 
@@ -12,9 +13,9 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || "",
 })
 
-export async function POST(req: Request) {
+export const POST = withErrors(async (req: Request) => {
   const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return NextResponse.json([], { status: 401 })
+  if (!session?.user?.id) return unauthorized()
 
   const body = await parseBody(req, searchSchema)
   if (!body.ok) return body.response
@@ -67,4 +68,4 @@ Return ONLY a JSON array of indices (e.g. [0, 2, 5]) of the most relevant snippe
   } catch {
     return NextResponse.json([])
   }
-}
+})

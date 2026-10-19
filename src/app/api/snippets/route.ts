@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canUseFolder } from "@/lib/folder-ownership";
 import { snippetCap, snippetCapMessage } from "@/lib/snippet-cap";
 import { parseBody } from "@/lib/request-body";
+import { apiError, unauthorized, withErrors } from "@/lib/api-errors";
 import {
   createSnippetSchema,
   deleteByIdSchema,
@@ -15,15 +16,19 @@ function findFolderOwner(id: string) {
   return prisma.folder.findUnique({ where: { id }, select: { userId: true } });
 }
 
-// Same response for a missing folder and someone else's, so it can't be
-// used to probe which folder ids exist.
+// Missing and someone else's get the same response, so neither can be used
+// to probe which ids exist.
 function folderNotFound() {
-  return NextResponse.json({ error: "Folder not found" }, { status: 403 });
+  return apiError(403, "Folder not found.");
 }
 
-export async function GET() {
+function snippetNotFound() {
+  return apiError(403, "Snippet not found.");
+}
+
+export const GET = withErrors(async () => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json([], { status: 401 });
+  if (!session?.user?.id) return unauthorized();
 
   const snippets = await prisma.snippet.findMany({
     where: { userId: session.user.id },
@@ -31,11 +36,11 @@ export async function GET() {
   });
 
   return NextResponse.json(snippets);
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withErrors(async (req: Request) => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
+  if (!session?.user?.id) return unauthorized();
 
   const body = await parseBody(req, createSnippetSchema);
   if (!body.ok) return body.response;
@@ -48,10 +53,7 @@ export async function POST(req: Request) {
   // 409, not 403: the request is fine, the library is full (docs/adr/0013).
   const cap = snippetCap(session.user.isGuest);
   if (snippetCount >= cap) {
-    return NextResponse.json(
-      { error: snippetCapMessage(cap, session.user.isGuest) },
-      { status: 409 },
-    );
+    return apiError(409, snippetCapMessage(cap, session.user.isGuest));
   }
 
   if (!(await canUseFolder(folderId, session.user.id, findFolderOwner))) {
@@ -71,11 +73,11 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json(snippet);
-}
+});
 
-export async function PATCH(req: Request) {
+export const PATCH = withErrors(async (req: Request) => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
+  if (!session?.user?.id) return unauthorized();
 
   const body = await parseBody(req, updateSnippetSchema);
   if (!body.ok) return body.response;
@@ -85,7 +87,7 @@ export async function PATCH(req: Request) {
 
   const snippet = await prisma.snippet.findUnique({ where: { id } });
   if (!snippet || snippet.userId !== session.user.id) {
-    return NextResponse.json({}, { status: 403 });
+    return snippetNotFound();
   }
 
   if (!(await canUseFolder(data.folderId, session.user.id, findFolderOwner))) {
@@ -95,11 +97,11 @@ export async function PATCH(req: Request) {
   const updated = await prisma.snippet.update({ where: { id }, data });
 
   return NextResponse.json(updated);
-}
+});
 
-export async function DELETE(req: Request) {
+export const DELETE = withErrors(async (req: Request) => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
+  if (!session?.user?.id) return unauthorized();
 
   const body = await parseBody(req, deleteByIdSchema);
   if (!body.ok) return body.response;
@@ -107,9 +109,9 @@ export async function DELETE(req: Request) {
 
   const snippet = await prisma.snippet.findUnique({ where: { id } });
   if (!snippet || snippet.userId !== session.user.id) {
-    return NextResponse.json({}, { status: 403 });
+    return snippetNotFound();
   }
 
   await prisma.snippet.delete({ where: { id } });
   return NextResponse.json({ success: true });
-}
+});

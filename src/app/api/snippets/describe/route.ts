@@ -3,7 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { aiRateLimitRule, checkRateLimit } from "@/lib/rate-limit";
-import { incrementAiUsage, tooManyRequests } from "@/lib/ai-usage";
+import { incrementAiUsage } from "@/lib/ai-usage";
+import { tooManyRequests, unauthorized, withErrors } from "@/lib/api-errors";
 import { parseBody } from "@/lib/request-body";
 import { describeSchema } from "@/lib/schemas";
 
@@ -11,9 +12,9 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || "",
 });
 
-export async function POST(req: Request) {
+export const POST = withErrors(async (req: Request) => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
+  if (!session?.user?.id) return unauthorized();
 
   // The code limit, roughly 5,000 tokens, keeps a pasted file from
   // becoming a large bill (see docs/adr/0011). The language comes from a
@@ -49,4 +50,4 @@ ${code}`,
   const description =
     message.content[0].type === "text" ? message.content[0].text.trim() : "";
   return NextResponse.json({ description });
-}
+});

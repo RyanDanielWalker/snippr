@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { IncrementUsage } from "@/lib/rate-limit";
 
@@ -22,10 +21,3 @@ export const incrementAiUsage: IncrementUsage = async ({ userId, bucket, windowS
   `;
   return rows[0].count;
 };
-
-export function tooManyRequests(retryAfterSeconds: number) {
-  return NextResponse.json(
-    { error: "That's a lot of AI for one hour. Try again in a bit." },
-    { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
-  );
-}

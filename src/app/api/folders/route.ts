@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { folderCap, folderCapMessage } from "@/lib/folder-cap";
 import { parseBody } from "@/lib/request-body";
+import { apiError, unauthorized, withErrors } from "@/lib/api-errors";
 import {
   createFolderSchema,
   deleteByIdSchema,
@@ -10,9 +11,15 @@ import {
 } from "@/lib/schemas";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+// Missing and someone else's get the same response, so it can't be used to
+// probe which folder ids exist.
+function folderNotFound() {
+  return apiError(403, "Folder not found.");
+}
+
+export const GET = withErrors(async () => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json([], { status: 401 });
+  if (!session?.user?.id) return unauthorized();
 
   const folders = await prisma.folder.findMany({
     where: { userId: session.user.id },
@@ -25,11 +32,11 @@ export async function GET() {
   });
 
   return NextResponse.json(folders);
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withErrors(async (req: Request) => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
+  if (!session?.user?.id) return unauthorized();
 
   const body = await parseBody(req, createFolderSchema);
   if (!body.ok) return body.response;
@@ -41,10 +48,7 @@ export async function POST(req: Request) {
   // 409 like the snippet cap: the request is fine, the account is full.
   const cap = folderCap(session.user.isGuest);
   if (folderCount >= cap) {
-    return NextResponse.json(
-      { error: folderCapMessage(cap, session.user.isGuest) },
-      { status: 409 },
-    );
+    return apiError(409, folderCapMessage(cap, session.user.isGuest));
   }
 
   const folder = await prisma.folder.create({
@@ -55,11 +59,11 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json(folder);
-}
+});
 
-export async function PATCH(req: Request) {
+export const PATCH = withErrors(async (req: Request) => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
+  if (!session?.user?.id) return unauthorized();
 
   const body = await parseBody(req, renameFolderSchema);
   if (!body.ok) return body.response;
@@ -67,7 +71,7 @@ export async function PATCH(req: Request) {
 
   const folder = await prisma.folder.findUnique({ where: { id } });
   if (!folder || folder.userId !== session.user.id) {
-    return NextResponse.json({}, { status: 403 });
+    return folderNotFound();
   }
 
   const updated = await prisma.folder.update({
@@ -76,11 +80,11 @@ export async function PATCH(req: Request) {
   });
 
   return NextResponse.json(updated);
-}
+});
 
-export async function DELETE(req: Request) {
+export const DELETE = withErrors(async (req: Request) => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({}, { status: 401 });
+  if (!session?.user?.id) return unauthorized();
 
   const body = await parseBody(req, deleteByIdSchema);
   if (!body.ok) return body.response;
@@ -88,9 +92,9 @@ export async function DELETE(req: Request) {
 
   const folder = await prisma.folder.findUnique({ where: { id } });
   if (!folder || folder.userId !== session.user.id) {
-    return NextResponse.json({}, { status: 403 });
+    return folderNotFound();
   }
 
   await prisma.folder.delete({ where: { id } });
   return NextResponse.json({ success: true });
-}
+});
