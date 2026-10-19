@@ -1,0 +1,95 @@
+# Every push and pull request: lint, typecheck, and unit tests, then the
+# tests that need Postgres. See docs/adr/0020.
+#
+# Vercel deploys on its own. Its Deployment Checks hold a production deploy
+# until both jobs here pass.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A newer push to the same branch makes an older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Not pinned anywhere else yet; see "Pick a Node version on purpose" in
+  # docs/ROADMAP.md.
+  NODE_VERSION: 22
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # The Prisma client's types, which typecheck needs. Doesn't connect.
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  database:
+    name: Migrations, store tests, end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      # The same image and credentials as docker-compose.yml, so the URLs
+      # the test scripts default to work here unchanged.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: snippr
+          POSTGRES_PASSWORD: snippr
+          POSTGRES_DB: snippr
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U snippr -d snippr"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://snippr:snippr@localhost:5432/snippr
+      # Signs the demo's session cookie. Any value works for a throwaway run.
+      NEXTAUTH_SECRET: ci-only-not-a-secret
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+
+      # What production's build runs (docs/adr/0016), on an empty database:
+      # proves the migrations apply in order from nothing.
+      - name: Apply migrations from scratch
+        run: npx prisma migrate deploy
+
+      - name: Store tests against Postgres
+        run: npm run test:db
+
+      - run: npx playwright install --with-deps chromium
+      - name: End-to-end test
+        run: npm run test:e2e
+
+      - name: Keep the trace of a failed end-to-end run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace
+          path: test-results/
+          retention-days: 7
