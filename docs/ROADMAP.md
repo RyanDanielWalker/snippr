@@ -4,11 +4,62 @@
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
-Phases are ordered by impact. Items inside a phase can ship in any order. Each item lands as its own small set of commits.
+## 1.0
 
-## Phase 0: Foundation and security
+Snippr is a portfolio piece, and a portfolio piece needs a finish line. 1.0 is that line. It's done when:
 
-Quick, high-value fixes and the groundwork everything else builds on.
+- A visitor can try the whole product in one click, on a laptop or a phone, and it looks like someone made choices
+- Errors show up in the interface instead of in `alert()` or not at all
+- Claude, Cursor, or any MCP client can search and save to your snippet library
+- Every push runs lint, typecheck, and tests, and schema changes can't deploy out of order
+- Local development no longer touches the production database
+- The README and a case study explain what was built and why
+
+Everything else is in [Parked](#parked), with the reason it waits. New ideas go there too unless 1.0 can't ship without them.
+
+Phases run in order. Items inside a phase can ship in any order. Each item lands as its own small set of commits.
+
+### Phase 2: Make it reviewable
+
+What an engineer looks for when they open the repo, plus the two fixes that keep production safe.
+
+- [x] Runtime validation (zod) on every Route Handler, with length limits on snippet fields and a cap on folders ([0014](./adr/0014-validate-request-bodies-with-zod.md)). The UI shares the limits and the language list, not the schemas
+- [x] Test runner (Vitest) with `npm test`
+- [ ] Separate databases for production and everything else. Local `.env` points at production today, so one wrong command changes real data. The end-to-end tests below need this first
+- [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md)). Apply migrations as part of the deploy, so schema and code can't go out in the wrong order. Twice now (the `AiUsage` table and demo mode's columns) the code went live before `db push`, and production errored until it ran
+- [ ] Consistent API errors: one error shape, correct status codes, no `alert()`. Creating a snippet already shows errors inline; editing, deleting, and describing still use `alert()` or fail silently. So do folder create and rename, which now have a length limit and a `409` cap that nobody sees ([0014](./adr/0014-validate-request-bodies-with-zod.md))
+- [ ] Unit and integration tests for API logic (ownership, validation, cap)
+- [ ] One end-to-end test of the main flow through demo mode: start a demo, create a snippet, search, move it to a folder
+- [ ] GitHub Actions CI: lint, typecheck, test on every push
+- [ ] Check production for rows the new limits reject: a language outside the list, a title over 200 characters, more than 50 folders. Editing such a snippet fails until the field changes ([0014](./adr/0014-validate-request-bodies-with-zod.md))
+
+### Phase 3: Make it look designed
+
+Today it reads as default Tailwind dark mode. It should look like someone made choices.
+
+- [ ] Visual identity: type, color, logo, a point of view. Redo the Open Graph image to match; today it borrows the landing page's gray and blue and only has Geist Regular, so the wordmark can't be bold
+- [ ] Fix the font: `globals.css` forces Arial and overrides the Geist font being loaded
+- [ ] Toasts, real loading states, and empty states
+- [ ] Syntax highlighting on the cards, not only in the preview
+- [ ] Remove the dashboard's blank first render with a stable `DndContext` id ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
+- [ ] Mobile pass
+
+### Phase 4: The differentiator
+
+The part that makes Snippr more than a CRUD app.
+
+- [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). The MCP server's search tool will call it too
+- [ ] **MCP server:** expose search, get, and save as tools so Claude, Cursor, or any MCP client can use your snippet library directly
+
+### Phase 5: Tell the story
+
+- [ ] README rebuilt around screenshots, a short demo GIF, and the architecture
+- [ ] A case study: what was built, what broke, what was decided, and why
+- [ ] Tag `v1.0`, then rewrite this roadmap around whatever comes next, if anything does
+
+## Done
+
+### Phase 0: Foundation and security
 
 - [x] Engineering docs: architecture overview, decision records, development guide
 - [x] Disable the Supabase Data API, or enable RLS on every table ([0003](./adr/0003-supabase-postgres-with-prisma-5.md)). Done by turning the Data API off in the Supabase dashboard; RLS is still off, so turning the API back on reopens the gap
@@ -23,60 +74,13 @@ Quick, high-value fixes and the groundwork everything else builds on.
 - [x] Remove unused dependencies: `@prisma/adapter-pg`, `pg`, `@types/pg`, `@dnd-kit/sortable`
 - [x] Remove the unused Next.js starter files from `public/`
 
-## Phase 1: Make it visitable
-
-Right now a visitor sees two OAuth buttons and nothing else. Nobody evaluating the project should have to hand over a GitHub login to see it.
+### Phase 1: Make it visitable
 
 - [x] Landing page at `/` that shows the product
 - [x] Demo mode: try Snippr in one click, without signing in ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
 - [x] Run `npx prisma db push` against production **before** pushing the demo mode commits. It adds `User.guestExpiresAt` and the `DemoStart` table; until they exist, every signed-in page and API call fails ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
 - [x] Revisit the 10-snippet cap and its UX alongside demo mode ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)). Now 50 for members, 10 for guests, `409` when full
 - [x] Open Graph image and metadata so shared links look intentional. The image is generated from code at build time (`src/app/opengraph-image.tsx`)
-
-## Phase 2: Make it reviewable
-
-What an engineer looks for when they open the repo.
-
-- [x] Runtime validation (zod) on every Route Handler, with length limits on snippet fields and a cap on folders ([0014](./adr/0014-validate-request-bodies-with-zod.md)). The UI shares the limits and the language list, not the schemas
-- [ ] Consistent API errors: one error shape, correct status codes, no `alert()`. Creating a snippet already shows errors inline; editing, deleting, and describing still use `alert()` or fail silently. So do folder create and rename, which now have a length limit and a `409` cap that nobody sees ([0014](./adr/0014-validate-request-bodies-with-zod.md))
-- [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
-- [ ] Structured output for AI search instead of parsing free text ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
-- [x] Test runner (Vitest) with `npm test`
-- [ ] Unit and integration tests for API logic (ownership, validation, cap)
-- [ ] End-to-end tests for the critical flows (sign in, create, search, move to folder)
-- [ ] GitHub Actions CI: lint, typecheck, test on every push
-- [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md)). Apply migrations as part of the deploy, so schema and code can't go out in the wrong order. Twice now (the `AiUsage` table and demo mode's columns) the code went live before `db push`, and production errored until it ran
-- [ ] Unique index on `lower(email)` so the database refuses case-only duplicate users, once migrations exist ([0010](./adr/0010-store-emails-lowercased.md))
-- [ ] Separate databases for production and everything else
-- [ ] Check production for rows the new limits reject: a language outside the list, a title over 200 characters, more than 50 folders. Editing such a snippet fails until the field changes ([0014](./adr/0014-validate-request-bodies-with-zod.md))
-- [ ] A daily ceiling on AI calls across all demo guests. Today the limit is per guest, so total guest spend grows with the number of guests ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
-- [ ] Delete old `AiUsage` rows on a schedule. Each active user adds up to two rows an hour, which is nothing today ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
-- [ ] Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
-
-## Phase 3: Make it look designed
-
-Today it reads as default Tailwind dark mode. It should look like someone made choices.
-
-- [ ] Visual identity: type, color, logo, a point of view. Redo the Open Graph image to match; today it borrows the landing page's gray and blue and only has Geist Regular, so the wordmark can't be bold
-- [ ] Fix the font: `globals.css` forces Arial and overrides the Geist font being loaded
-- [ ] Toasts, real loading states, and empty states
-- [ ] Command palette (⌘K) and keyboard shortcuts
-- [ ] Syntax highlighting on the cards, not only in the preview
-- [ ] Remove the dashboard's blank first render with a stable `DndContext` id ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
-- [ ] Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
-- [ ] Mobile pass
-
-## Phase 4: The differentiators
-
-The parts that make Snippr more than a CRUD app.
-
-- [ ] **MCP server:** expose search, get, and save as tools so Claude, Cursor, or any MCP client can use your snippet library directly
-- [ ] **Embedding-based semantic search** with pgvector, replacing whole-library prompts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). Removes the cost reason for the snippet cap, so revisit [0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md) then
-
-## Phase 5: Tell the story
-
-- [ ] README rebuilt around screenshots, a short demo GIF, and the architecture
-- [ ] A case study: what was built, what broke, what was decided, and why
 
 ## Open decisions
 
@@ -85,12 +89,29 @@ These need a call before the related work starts. Each one becomes an ADR.
 | Decision | Options | Needed for |
 | --- | --- | --- |
 | MCP transport | Local (stdio, runs on your machine); remote (HTTP, anyone can connect with a token) | Phase 4 |
-| Embedding provider | Voyage AI (Anthropic's recommended partner); OpenAI; open model | Phase 4 |
 | Design direction | To be explored with mockups | Phase 3 |
 
 ## Parked
 
-Good ideas that don't serve the current goal. Not deleted, just not now.
+Not deleted, just not part of 1.0.
+
+### Worth doing after 1.0
+
+Real improvements that a visitor won't notice and that aren't urgent at today's traffic.
+
+- Embedding-based semantic search with pgvector, replacing whole-library prompts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). Was Phase 4. The MCP server works with today's search, and the 50-snippet cap keeps prompts small. Pulls in the embedding provider decision (Voyage AI, OpenAI, or an open model), and removes the cost reason for the cap, so revisit [0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md) then
+- Structured output for AI search instead of parsing free text ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). Today's parsing works; embeddings would replace it anyway
+- Unique index on `lower(email)` so the database refuses case-only duplicate users ([0010](./adr/0010-store-emails-lowercased.md)). The app already lowercases emails; this is the backstop. Small once migrations exist
+- A daily ceiling on AI calls across all demo guests ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)). The per-guest and per-IP limits bound it for now. Check Anthropic spend after sharing the link widely, and pull this forward if it moves
+- Delete old `AiUsage` rows on a schedule. Each active user adds up to two rows an hour, which is nothing today ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
+- Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
+- Command palette (⌘K) and keyboard shortcuts
+- Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
+- End-to-end tests beyond the main flow, including real OAuth sign-in
+
+### Not planned
+
+Good ideas that don't serve a portfolio piece.
 
 - Social feed: follows, stars, comments
 - Public snippet sharing (revisit after MCP, since it changes the security model)
