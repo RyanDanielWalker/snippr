@@ -54,7 +54,7 @@ flowchart LR
 3. It loads the user's snippets and folders (with snippet counts) in parallel with `Promise.all`.
 4. It passes that data as props to `DashboardClient`, a **Client Component** that runs in the browser and owns all the interactive state: search text, AI mode, selected folder, sidebar collapse, the new-snippet modal, and drag state. Each `SnippetCard` owns its own preview and edit modals.
 
-Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded. Only AI search makes a network call.
+Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded. Only AI search makes a network call. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
 
 ### Changing data (write path)
 
@@ -270,6 +270,7 @@ src/
 │   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
+│   ├── ai-results.ts           AI search results as ids, looked up in the current snippets (tested)
 │   ├── ai-usage.ts             Atomic AI usage counter (SQL)
 │   ├── api-client.ts           callApi: how components call the API and read its errors (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)

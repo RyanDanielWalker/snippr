@@ -20,6 +20,7 @@ import { snippetCap, snippetCapMessage, snippetCapStatus } from "@/lib/snippet-c
 import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
 import { emptyState } from "@/lib/empty-state";
+import { pickByIds } from "@/lib/ai-results";
 
 type Snippet = {
   id: string;
@@ -52,7 +53,8 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
   const [aiMode, setAiMode] = useState(false);
-  const [aiResults, setAiResults] = useState<Snippet[] | null>(null);
+  // Ids, not snippets, so the results follow edits, moves, and deletes.
+  const [aiResultIds, setAiResultIds] = useState<string[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
@@ -108,7 +110,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   async function handleAiSearch() {
     if (!search.trim()) return;
     setAiLoading(true);
-    setAiResults(null);
+    setAiResultIds(null);
     setAiError(null);
 
     const result = await callApi<Snippet[]>("/api/snippets/search", "POST", {
@@ -117,10 +119,10 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     setAiLoading(false);
     if (!result.ok) {
       setAiError(result.error);
-      setAiResults([]);
+      setAiResultIds([]);
       return;
     }
-    setAiResults(result.data);
+    setAiResultIds(result.data.map((s) => s.id));
   }
 
   function handleSearchKeyDown(e: React.KeyboardEvent) {
@@ -129,7 +131,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
 
   function handleModeToggle() {
     setAiMode((v) => !v);
-    setAiResults(null);
+    setAiResultIds(null);
     setAiError(null);
     setSearch("");
   }
@@ -187,7 +189,8 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     });
   }
 
-  const displaySnippets = aiMode && aiResults !== null ? aiResults : filtered;
+  const displaySnippets =
+    aiMode && aiResultIds !== null ? pickByIds(aiResultIds, snippets) : filtered;
 
   const folderName =
     selectedFolderId === null
@@ -208,7 +211,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 : "folder",
           search,
           aiMode,
-          aiSearched: aiResults !== null,
+          aiSearched: aiResultIds !== null,
           aiError,
           canCreate: capStatus !== "full",
         })
@@ -332,7 +335,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
-                      if (!aiMode) setAiResults(null);
+                      if (!aiMode) setAiResultIds(null);
                     }}
                     onKeyDown={handleSearchKeyDown}
                     className="w-full bg-gray-900 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 border border-gray-800"
