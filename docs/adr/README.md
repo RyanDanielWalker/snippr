@@ -50,5 +50,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0016](./0016-apply-migrations-in-the-production-build.md) | Track schema changes with `prisma migrate`, applied during the production build | Accepted |
 | [0017](./0017-one-error-shape-shown-inline.md) | Send every API error as `{ error }` and show it where it happened | Accepted |
 | [0018](./0018-route-handler-logic-in-lib-with-a-store.md) | Keep Route Handler logic in `src/lib`, with the database passed in as a store | Accepted |
+| [0019](./0019-end-to-end-tests-with-playwright-on-their-own-database.md) | Run end-to-end tests with Playwright, on a production build and their own database | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
