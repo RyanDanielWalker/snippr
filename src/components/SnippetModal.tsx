@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { codeToHtml } from "shiki";
+import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { SHIKI_THEME, shikiLanguage } from "@/lib/highlight";
 
 type Snippet = {
@@ -25,6 +26,7 @@ export default function SnippetModal({
 }) {
   const [html, setHtml] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const del = useDeleteSnippet(snippet.id, onClose);
 
   useEffect(() => {
     codeToHtml(snippet.code, {
@@ -53,6 +55,9 @@ export default function SnippetModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={snippet.title}
         className="bg-gray-900 rounded-xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-gray-800"
         onClick={(e) => e.stopPropagation()}
       >
@@ -68,6 +73,18 @@ export default function SnippetModal({
             </div>
             {snippet.description && (
               <p className="text-gray-400 text-sm">{snippet.description}</p>
+            )}
+            {snippet.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {snippet.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded-md"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
           <button
@@ -85,18 +102,26 @@ export default function SnippetModal({
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-t border-gray-800">
-          <div className="flex flex-wrap gap-2">
-            {snippet.tags.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded-md"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-          <div className="flex items-center gap-3 ml-auto">
+        {del.error && (
+          <p role="alert" className="px-4 pt-4 text-sm text-red-400">
+            {del.error}
+          </p>
+        )}
+        {/* Delete on the opposite side from Edit and Copy, so a near miss
+            doesn't land on it. */}
+        <div className="flex items-center justify-between gap-4 p-4 border-t border-gray-800">
+          <button
+            onClick={del.press}
+            disabled={del.deleting}
+            className={`px-2 py-2 text-sm transition shrink-0 ${
+              del.armed
+                ? "text-red-400 hover:text-red-300"
+                : "text-gray-500 hover:text-red-400"
+            }`}
+          >
+            {del.label}
+          </button>
+          <div className="flex items-center gap-3">
             <button
               onClick={onEdit}
               className="px-4 py-2 text-sm text-gray-300 hover:text-white transition shrink-0"

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LANGUAGES, SNIPPET_LIMITS } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
+import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 
 type Snippet = {
   id: string;
@@ -34,6 +35,7 @@ export default function EditSnippetModal({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [describeError, setDescribeError] = useState<string | null>(null);
+  const del = useDeleteSnippet(snippet.id, onClose);
   const [form, setForm] = useState({
     title: snippet.title,
     code: snippet.code,
@@ -109,6 +111,9 @@ export default function EditSnippetModal({
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit snippet"
         className="m-auto bg-gray-900 rounded-xl w-full max-w-3xl p-4 sm:p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
@@ -226,16 +231,28 @@ export default function EditSnippetModal({
           className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
         />
 
-        {error && (
+        {(error ?? del.error) && (
           <p
             role="alert"
             className="text-sm text-red-300 bg-red-950/60 border border-red-900 rounded-lg px-4 py-3"
           >
-            {error}
+            {error ?? del.error}
           </p>
         )}
 
-        <div className="flex justify-end gap-3 pt-2">
+        {/* Deleting throws away unsaved edits too, which is what you'd want. */}
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            onClick={del.press}
+            disabled={del.deleting || saving}
+            className={`mr-auto px-2 py-2 text-sm transition ${
+              del.armed
+                ? "text-red-400 hover:text-red-300"
+                : "text-gray-500 hover:text-red-400"
+            }`}
+          >
+            {del.label}
+          </button>
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-400 hover:text-white transition"
@@ -244,7 +261,9 @@ export default function EditSnippetModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={saving || !form.title || !form.code || !hasChanges}
+            disabled={
+              saving || del.deleting || !form.title || !form.code || !hasChanges
+            }
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? "Saving..." : "Save changes"}

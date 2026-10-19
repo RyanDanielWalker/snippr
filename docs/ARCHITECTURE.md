@@ -266,10 +266,11 @@ src/
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser
+│   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard only
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── NewSnippetModal.tsx     Create form
-│   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard
+│   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard, delete
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
 │   ├── ai-results.ts           AI search results as ids, looked up in the current snippets (tested)

@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import EditSnippetModal from "@/components/EditSnippetModal";
 import SnippetModal from "@/components/SnippetModal";
 import SnippetCardView from "@/components/SnippetCardView";
-import { useToast } from "@/components/Toaster";
-import { callApi } from "@/lib/api-client";
+import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 
 type Snippet = {
   id: string;
@@ -37,12 +35,8 @@ export default function SnippetCard({
   /** A drag to a folder is on its way; see DashboardClient. */
   moving?: boolean;
 }) {
-  const router = useRouter();
-  const toast = useToast();
   const [copied, setCopied] = useState(false);
-  const [deleting, startDeleting] = useTransition();
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const del = useDeleteSnippet(snippet.id);
   const [showEdit, setShowEdit] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -68,27 +62,7 @@ export default function SnippetCard({
 
   function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      setTimeout(() => setConfirmDelete(false), 3000);
-      return;
-    }
-    setDeleteError(null);
-    startDeleting(async () => {
-      const result = await callApi("/api/snippets", "DELETE", {
-        id: snippet.id,
-      });
-      if (!result.ok) {
-        setConfirmDelete(false);
-        setDeleteError(result.error);
-        return;
-      }
-      // The toast and the card's removal land in the same render.
-      startDeleting(() => {
-        toast("Snippet deleted.");
-        router.refresh();
-      });
-    });
+    del.press();
   }
 
   function handleEdit(e: React.MouseEvent) {
@@ -123,47 +97,44 @@ export default function SnippetCard({
         onClick={() => !isDragging && setShowPreview(true)}
         snippet={snippet}
         folderName={folderName}
-        aria-busy={moving || deleting}
+        aria-busy={moving || del.deleting}
         className="hover:border-gray-700 transition cursor-grab active:cursor-grabbing"
         footer={
           <div className="pt-1 mt-auto space-y-2">
-            {deleteError && (
+            {del.error && (
               <p role="alert" className="text-xs text-red-400">
-                {deleteError}
+                {del.error}
               </p>
             )}
+            {/* Delete sits alone on the far side, away from Edit and Copy. */}
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={handleDelete}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  disabled={deleting}
-                  className={`text-xs transition ${
-                    confirmDelete
-                      ? "text-red-400 hover:text-red-300"
-                      : "text-gray-600 hover:text-red-400"
-                  }`}
-                >
-                  {deleting
-                    ? "Deleting..."
-                    : confirmDelete
-                      ? "Click again to confirm"
-                      : "Delete"}
-                </button>
-                <button
                   onClick={handleEdit}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="text-xs text-gray-600 hover:text-white transition"
+                  className="text-xs text-gray-500 hover:text-white transition"
                 >
                   Edit
                 </button>
+                <button
+                  onClick={copy}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="text-xs text-gray-500 hover:text-white transition"
+                >
+                  {copied ? "✓ Copied" : "Copy"}
+                </button>
               </div>
               <button
-                onClick={copy}
+                onClick={handleDelete}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="text-xs text-gray-500 hover:text-white transition"
+                disabled={del.deleting}
+                className={`text-xs transition ${
+                  del.armed
+                    ? "text-red-400 hover:text-red-300"
+                    : "text-gray-600 hover:text-red-400"
+                }`}
               >
-                {copied ? "✓ Copied" : "Copy"}
+                {del.label}
               </button>
             </div>
           </div>
