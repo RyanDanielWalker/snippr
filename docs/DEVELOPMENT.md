@@ -93,6 +93,6 @@ A change is ready to push when:
 
 - [ ] It works locally, and risky changes have been checked with a production build.
 - [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass.
-- [ ] New API input is validated and every record lookup checks ownership.
+- [ ] New API input goes through a schema in `src/lib/schemas.ts` (via `parseBody`), and every record lookup checks ownership.
 - [ ] Docs are updated if behavior, setup, or architecture changed.
 - [ ] Significant decisions have an ADR.

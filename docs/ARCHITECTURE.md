@@ -43,6 +43,7 @@ flowchart LR
 | dnd-kit | Drag snippets onto folders | [0007](./adr/0007-dnd-kit-for-drag-and-drop.md) |
 | Demo mode | Expiring guest users, no sign-in needed | [0012](./adr/0012-demo-mode-as-expiring-guest-users.md) |
 | Shiki | Syntax highlighting in the preview modal | n/a |
+| zod | Checks every API request body | [0014](./adr/0014-validate-request-bodies-with-zod.md) |
 
 ## How a request flows
 
@@ -75,7 +76,7 @@ sequenceDiagram
     UI->>UI: router.refresh()
 ```
 
-PATCH is a partial update: fields the request leaves out stay as they are, and `folderId: null` is how you move a snippet to Unorganized (`src/lib/snippet-update.ts`).
+PATCH is a partial update: fields the request leaves out stay as they are, and `folderId: null` is how you move a snippet to Unorganized. The request schema handles both (`src/lib/schemas.ts`).
 
 `router.refresh()` asks Next.js to re-run the Server Components for the current page and send down fresh data, without a full page reload and without losing client state like the open sidebar. That's how the dashboard picks up changes: the client never edits its own copy of the list.
 
@@ -84,12 +85,13 @@ PATCH is a partial update: fields the request leaves out stay as they are, and `
 Every Route Handler follows the same pattern:
 
 1. **Who are you?** Resolve the session. No user id means `401`.
-2. **Is it yours?** For any record addressed by id, load it and compare its `userId` to the session's. Mismatch or missing means `403`.
-3. **Do the work,** scoped by `userId`.
+2. **Is it the right shape?** Check the body against its zod schema (`src/lib/schemas.ts`). Wrong types, missing fields, oversized fields, or malformed JSON mean `400` with an `error` message. Fields the schema doesn't list are dropped, so a body can't set `userId` ([0014](./adr/0014-validate-request-bodies-with-zod.md)).
+3. **Is it yours?** For any record addressed by id, load it and compare its `userId` to the session's. Mismatch or missing means `403`.
+4. **Do the work,** scoped by `userId`.
 
 Lists are always filtered with `where: { userId }`, so one user can never see another's data. Foreign keys in a request body get the same rule: when a snippet is created or updated, its `folderId` must be null or a folder you own, or the request gets a `403` (`src/lib/folder-ownership.ts`; history in [0006](./adr/0006-folders-as-optional-one-to-many.md)).
 
-Creating a snippet when the library is full returns `409`: 50 snippets for members, 10 for demo guests ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)).
+Creating a snippet when the library is full returns `409`: 50 snippets for members, 10 for demo guests ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)). Folders work the same way, with the same numbers ([0014](./adr/0014-validate-request-bodies-with-zod.md)). Field limits (200-character titles, 20,000 characters of code, and so on) are listed in 0014 and kept in `src/lib/field-limits.ts`, which the UI imports too.
 
 ## Data model
 
@@ -202,7 +204,7 @@ Both features call Claude synchronously from a Route Handler. The API key never 
 - **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets.
 - **AI descriptions** (`POST /api/snippets/describe`): sends the code and language and asks for one sentence under 15 words.
 
-Each user gets 30 calls an hour per feature, or 10 for demo guests. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. Oversized input gets a `413` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
+Each user gets 30 calls an hour per feature, or 10 for demo guests. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. Oversized input gets a `400` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md), [0014](./adr/0014-validate-request-bodies-with-zod.md)). Describe also only accepts a language from the dropdown's list, since it goes into the prompt.
 
 Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md).
 
@@ -222,7 +224,7 @@ src/
 │   ├── globals.css             Tailwind v4 entry + global styles
 │   └── api/
 │       ├── auth/[...nextauth]/ NextAuth handler
-│       ├── folders/            Folder CRUD
+│       ├── folders/            Folder CRUD + folder cap
 │       └── snippets/
 │           ├── route.ts        Snippet CRUD + snippet cap
 │           ├── search/         AI search, rate-limited
@@ -244,14 +246,17 @@ src/
 │   ├── demo-store.ts           Database side of starting a demo
 │   ├── email-case.ts           Lowercases emails in the NextAuth adapter (tested)
 │   ├── email-verification.ts   Provider email verification (tested)
+│   ├── field-limits.ts         Field limits and the language list, shared with the UI
+│   ├── folder-cap.ts           Folder cap: 50 per member, 10 per guest (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
+│   ├── request-body.ts         Reads a JSON body and checks it against a schema, or returns a 400 (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   ├── site.ts                 Site URL, name, and description for metadata (tested)
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
-│   ├── snippet-update.ts       Partial-update fields for snippet PATCH (tested)
+│   ├── schemas.ts              zod schemas for every request body (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type
 ```
@@ -269,4 +274,4 @@ Secrets live in Vercel environment variables, marked Sensitive, and in a local `
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: thin test coverage and no CI, no input validation at the API boundary, and one database shared by every environment. Demo guests also write anonymously to that database, bounded by the per-IP limit and the snippet cap.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: thin test coverage and no CI, and one database shared by every environment. Demo guests also write anonymously to that database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.

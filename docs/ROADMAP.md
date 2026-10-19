@@ -37,8 +37,8 @@ Right now a visitor sees two OAuth buttons and nothing else. Nobody evaluating t
 
 What an engineer looks for when they open the repo.
 
-- [ ] Runtime validation (zod) on every Route Handler, schemas shared with the client ([0002](./adr/0002-nextjs-full-stack-on-vercel.md)). Include length limits on snippet fields and a cap on folders: demo guests can be created without an account, so oversized writes are cheap to make ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
-- [ ] Consistent API errors: one error shape, correct status codes, no `alert()`. Creating a snippet already shows errors inline; editing, deleting, and describing still use `alert()` or fail silently
+- [x] Runtime validation (zod) on every Route Handler, with length limits on snippet fields and a cap on folders ([0014](./adr/0014-validate-request-bodies-with-zod.md)). The UI shares the limits and the language list, not the schemas
+- [ ] Consistent API errors: one error shape, correct status codes, no `alert()`. Creating a snippet already shows errors inline; editing, deleting, and describing still use `alert()` or fail silently. So do folder create and rename, which now have a length limit and a `409` cap that nobody sees ([0014](./adr/0014-validate-request-bodies-with-zod.md))
 - [ ] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
 - [ ] Structured output for AI search instead of parsing free text ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md))
 - [x] Test runner (Vitest) with `npm test`
@@ -48,6 +48,7 @@ What an engineer looks for when they open the repo.
 - [ ] Adopt `prisma migrate` with a baseline migration ([0003](./adr/0003-supabase-postgres-with-prisma-5.md)). Apply migrations as part of the deploy, so schema and code can't go out in the wrong order. Twice now (the `AiUsage` table and demo mode's columns) the code went live before `db push`, and production errored until it ran
 - [ ] Unique index on `lower(email)` so the database refuses case-only duplicate users, once migrations exist ([0010](./adr/0010-store-emails-lowercased.md))
 - [ ] Separate databases for production and everything else
+- [ ] Check production for rows the new limits reject: a language outside the list, a title over 200 characters, more than 50 folders. Editing such a snippet fails until the field changes ([0014](./adr/0014-validate-request-bodies-with-zod.md))
 - [ ] A daily ceiling on AI calls across all demo guests. Today the limit is per guest, so total guest spend grows with the number of guests ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
 - [ ] Delete old `AiUsage` rows on a schedule. Each active user adds up to two rows an hour, which is nothing today ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md))
 - [ ] Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5

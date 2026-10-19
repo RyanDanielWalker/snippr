@@ -13,7 +13,7 @@ A personal code snippet manager with AI search and AI-written descriptions. Live
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind v4, Prisma 5 on Supabase Postgres, NextAuth v4 (GitHub and Google, database sessions), Anthropic SDK, Shiki, dnd-kit. Deployed on Vercel from `main`.
+Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind v4, Prisma 5 on Supabase Postgres, NextAuth v4 (GitHub and Google, database sessions), Anthropic SDK, zod, Shiki, dnd-kit. Deployed on Vercel from `main`.
 
 ## Commands
 

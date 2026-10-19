@@ -38,6 +38,7 @@ Built as a portfolio project to demonstrate full-stack development with modern t
 - **AI:** Anthropic Claude API (Claude Sonnet)
 - **Syntax highlighting:** Shiki
 - **Drag-and-drop:** dnd-kit
+- **Validation:** zod
 - **Deployment:** Vercel
 
 ## AI Features
