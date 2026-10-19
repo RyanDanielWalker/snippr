@@ -26,7 +26,6 @@ Built as a portfolio project to demonstrate full-stack development with modern t
 - **Copy to clipboard**: one click to copy any snippet
 - **Demo mode**: try it without signing in; the demo deletes itself after 24 hours
 - **Snippet limit**: 50 per account (10 in the demo), with a warning as you get close
-- **Fully responsive**: works on mobile and desktop
 
 ## Tech Stack
 
@@ -63,7 +62,7 @@ Snippr uses the Anthropic Claude API for two core features:
 
 1. Clone the repo
 ```bash
-   git clone https://github.com/YOUR_USERNAME/snippr.git
+   git clone https://github.com/RyanDanielWalker/snippr.git
    cd snippr
 ```
 
@@ -102,27 +101,9 @@ ANTHROPIC_API_KEY=
 ```
 
 ## Project Structure
-```
-src/
-├── app/
-│   ├── api/
-│   │   ├── auth/        # NextAuth route handler
-│   │   ├── folders/     # Folder CRUD
-│   │   └── snippets/    # Snippet CRUD, AI search, AI describe
-│   ├── dashboard/       # Main app page
-│   └── login/           # Login page
-├── components/
-│   ├── DashboardClient    # Client-side dashboard with DnD context
-│   ├── FolderSidebar      # Collapsible sidebar with drop targets
-│   ├── SnippetCard        # Draggable snippet display
-│   ├── SnippetModal       # Syntax-highlighted preview
-│   ├── NewSnippetModal    # Create snippet form
-│   ├── EditSnippetModal   # Edit snippet form
-│   └── LoginButton        # OAuth trigger buttons
-└── lib/
-├── auth.ts          # NextAuth config
-└── prisma.ts        # Prisma client singleton
-```
+
+The [code map in ARCHITECTURE.md](docs/ARCHITECTURE.md#code-map) walks through the files and what each one is for.
+
 ## Roadmap
 
 See [docs/ROADMAP.md](docs/ROADMAP.md).
