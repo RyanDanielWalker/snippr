@@ -1,8 +1,11 @@
+import type { Metadata } from "next"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import DashboardClient from "@/components/DashboardClient"
+
+export const metadata: Metadata = { title: "Your snippets" }
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)

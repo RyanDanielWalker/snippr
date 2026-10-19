@@ -1,8 +1,11 @@
+import type { Metadata } from "next"
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 import { signInErrorMessage } from "@/lib/sign-in-errors"
 import LoginButton from "@/components/LoginButton"
+
+export const metadata: Metadata = { title: "Sign in" }
 
 export default async function LoginPage({
   searchParams,
