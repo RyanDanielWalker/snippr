@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-10-18*
+*Last updated: 2026-10-19*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -31,7 +31,7 @@ Right now a visitor sees two OAuth buttons and nothing else. Nobody evaluating t
 - [x] Demo mode: try Snippr in one click, without signing in ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
 - [x] Run `npx prisma db push` against production **before** pushing the demo mode commits. It adds `User.guestExpiresAt` and the `DemoStart` table; until they exist, every signed-in page and API call fails ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
 - [x] Revisit the 10-snippet cap and its UX alongside demo mode ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)). Now 50 for members, 10 for guests, `409` when full
-- [ ] Open Graph image and metadata so shared links look intentional
+- [x] Open Graph image and metadata so shared links look intentional. The image is generated from code at build time (`src/app/opengraph-image.tsx`)
 
 ## Phase 2: Make it reviewable
 
@@ -56,7 +56,7 @@ What an engineer looks for when they open the repo.
 
 Today it reads as default Tailwind dark mode. It should look like someone made choices.
 
-- [ ] Visual identity: type, color, logo, a point of view
+- [ ] Visual identity: type, color, logo, a point of view. Redo the Open Graph image to match; today it borrows the landing page's gray and blue and only has Geist Regular, so the wordmark can't be bold
 - [ ] Fix the font: `globals.css` forces Arial and overrides the Geist font being loaded
 - [ ] Toasts, real loading states, and empty states
 - [ ] Command palette (⌘K) and keyboard shortcuts

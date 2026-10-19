@@ -217,7 +217,8 @@ src/
 │   ├── login/page.tsx          Sign-in page
 │   ├── actions/start-demo.ts   Server Action: create a guest and sign in as it
 │   ├── dashboard/page.tsx      Server Component: auth check + data load
-│   ├── layout.tsx              Root layout, fonts, metadata
+│   ├── layout.tsx              Root layout, fonts, metadata and link previews
+│   ├── opengraph-image.tsx     Link preview image, rendered at build time
 │   ├── globals.css             Tailwind v4 entry + global styles
 │   └── api/
 │       ├── auth/[...nextauth]/ NextAuth handler
@@ -248,6 +249,7 @@ src/
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
+│   ├── site.ts                 Site URL, name, and description for metadata (tested)
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippet-update.ts       Partial-update fields for snippet PATCH (tested)
 │   └── prisma.ts               Prisma client singleton
