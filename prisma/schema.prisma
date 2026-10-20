@@ -32,6 +32,7 @@ model Folder {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   snippets  Snippet[]
   createdAt DateTime  @default(now())
+  @@index([userId])
 }
 
 model Snippet {
@@ -47,6 +48,8 @@ model Snippet {
   folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  @@index([userId])
+  @@index([folderId])
 }
 
 // One row per user, AI endpoint, and rate-limit window. See docs/adr/0011.
@@ -83,6 +86,7 @@ model Account {
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -91,6 +95,7 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model VerificationToken {
