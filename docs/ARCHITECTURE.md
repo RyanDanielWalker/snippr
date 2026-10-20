@@ -2,7 +2,7 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-18 (after ADR 0013)*
+*Last reviewed: 2026-10-20 (after ADR 0022)*
 
 ## The short version
 
@@ -229,6 +229,7 @@ Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-feat
 
 ```
 .github/workflows/ci.yml        CI: formatting, lint, types, unit tests, migrations, store tests, e2e
+.git-blame-ignore-revs          Formatting-only commits for git blame to skip
 .prettierignore                 What Prettier leaves alone: Markdown, the lockfile
 docker-compose.yml              Local Postgres for development and tests
 e2e/
@@ -236,10 +237,13 @@ e2e/
 └── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer
 playwright.config.ts            Runs it against a production build on port 3100
 prisma/
+├── migrations/                 SQL migrations, starting from the 0_init baseline
 └── schema.prisma               Data model (source of truth)
 scripts/
 ├── check-db.mjs                Stops database scripts aimed at a remote database
 ├── db-guard.mjs                The rules it follows (tested)
+├── deploy-migrations.mjs       Applies pending migrations during production builds
+├── migrate-gate.mjs            Which builds migrate: only Vercel production (tested)
 ├── e2e-db.mjs                  Wipes and migrates the end-to-end database
 ├── e2e-guard.mjs               Keeps that to a local database named *_e2e (tested)
 ├── test-db-guard.mjs           The rule for any database a test run wipes (tested)
@@ -262,7 +266,7 @@ src/
 │           ├── search/         AI search, rate-limited
 │           └── describe/       AI descriptions, rate-limited
 ├── components/
-│   ├── DashboardClient.tsx     Interactive dashboard, DnD context
+│   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders match)
 │   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
@@ -306,6 +310,7 @@ src/
 │   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type
+vitest.config.mts               npm test: the *.test.ts files next to the code
 vitest.db.config.mts            npm run test:db: *.db.test.ts against a local snippr_test
 ```
 
