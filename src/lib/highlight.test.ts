@@ -5,6 +5,7 @@ import {
   CARD_PREVIEW_LINES,
   SHIKI_THEME,
   cardPreviewCode,
+  highlightCode,
   shikiLanguage,
   withCardHtml,
   type CodeToHtml,
@@ -33,6 +34,29 @@ describe("shikiLanguage", () => {
   it("maps other to plain text and leaves the rest", () => {
     expect(shikiLanguage("other")).toBe("text");
     expect(shikiLanguage("python")).toBe("python");
+  });
+});
+
+describe("highlightCode", () => {
+  it("passes the whole code, Shiki's language name, and the theme", async () => {
+    const calls: Parameters<CodeToHtml>[] = [];
+    const fake: CodeToHtml = async (code, options) => {
+      calls.push([code, options]);
+      return "<pre>ok</pre>";
+    };
+    const long = Array.from({ length: 100 }, () => "x").join("\n");
+
+    expect(await highlightCode(long, "other", fake)).toBe("<pre>ok</pre>");
+    expect(calls).toEqual([[long, { lang: "text", theme: SHIKI_THEME }]]);
+  });
+
+  // In the browser this is Shiki failing to load its language or theme.
+  it("gives null instead of throwing when Shiki fails", async () => {
+    const fake: CodeToHtml = async () => {
+      throw new Error("Failed to fetch dynamically imported module");
+    };
+
+    await expect(highlightCode("a", "typescript", fake)).resolves.toBeNull();
   });
 });
 

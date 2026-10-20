@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { codeToHtml } from "shiki";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
-import { SHIKI_THEME, shikiLanguage } from "@/lib/highlight";
+import { highlightCode } from "@/lib/highlight";
 import type { Snippet } from "@/lib/library-types";
 
 export default function SnippetModal({
@@ -15,16 +15,25 @@ export default function SnippetModal({
   onClose: () => void;
   onEdit: () => void;
 }) {
-  const [html, setHtml] = useState<string>("");
+  // Each result remembers which code it's for, so after an edit the old one
+  // doesn't show. html is undefined while Shiki loads and null if it couldn't;
+  // both show the plain code.
+  const key = `${snippet.language}\n${snippet.code}`;
+  const [result, setResult] = useState<{ key: string; html: string | null }>();
+  const html = result?.key === key ? result.html : undefined;
   const [copied, setCopied] = useState(false);
   const del = useDeleteSnippet(snippet.id, onClose);
 
   useEffect(() => {
-    codeToHtml(snippet.code, {
-      lang: shikiLanguage(snippet.language),
-      theme: SHIKI_THEME,
-    }).then(setHtml);
-  }, [snippet.code, snippet.language]);
+    // An edit can change the code before the last result arrives; drop that one.
+    let current = true;
+    highlightCode(snippet.code, snippet.language, codeToHtml).then((html) => {
+      if (current) setResult({ key, html });
+    });
+    return () => {
+      current = false;
+    };
+  }, [key, snippet.code, snippet.language]);
 
   useEffect(() => {
     function handleEsc(e: KeyboardEvent) {
@@ -87,10 +96,22 @@ export default function SnippetModal({
         </div>
 
         <div className="flex-1 overflow-auto p-4 sm:p-6">
-          <div
-            className="shiki-wrapper rounded-lg overflow-hidden text-sm"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
+          {html ? (
+            // Shiki escapes the code, so this is its markup and nothing else.
+            <div
+              className="shiki-wrapper rounded-lg overflow-hidden text-sm"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          ) : (
+            <pre className="bg-gray-950 rounded-lg p-4 text-sm text-gray-300 font-mono overflow-x-auto">
+              <code>{snippet.code}</code>
+            </pre>
+          )}
+          {html === null && (
+            <p className="mt-2 text-xs text-gray-500">
+              Highlighting didn&apos;t load, so this is the plain code.
+            </p>
+          )}
         </div>
 
         {del.error && (
