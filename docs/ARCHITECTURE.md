@@ -108,6 +108,8 @@ Every error is `{ error: string }` with a status code: the status is for program
 | `500` | Something broke on our side |
 | `502` | Claude didn't answer |
 
+Pages follow the same idea. A page or Server Action that throws shows `src/app/error.tsx`: Snippr's words, a **Try again** that re-fetches the page from the server, a link home, and the error's `digest`. In production Next hides a server error's message from the browser and sends that hash instead; it matches the error's line in Vercel's logs. The page never shows the message, since a client-side error's message can hold anything. The root layout sits above `error.tsx`, so an error there falls through to Next's built-in `global-error`; the layout only loads fonts and metadata, so that's an accepted gap.
+
 In the browser, components call the API through `callApi` (`src/lib/api-client.ts`), which returns the data or a message to show. Errors you can fix show next to whatever was being done. Things that happen out of sight, like a drag to a folder or a finished delete, show a toast instead ([0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)).
 
 ## Data model
@@ -259,6 +261,7 @@ src/
 │   ├── actions/start-demo.ts   Server Action: create a guest and sign in as it
 │   ├── dashboard/page.tsx      Server Component: auth check + data load
 │   ├── layout.tsx              Root layout, fonts, metadata and link previews
+│   ├── error.tsx               What a page that throws shows: retry, a way home, a log reference (tested)
 │   ├── opengraph-image.tsx     Link preview image, rendered at build time
 │   ├── globals.css             Tailwind v4 entry + global styles
 │   └── api/
