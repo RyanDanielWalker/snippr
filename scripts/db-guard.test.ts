@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { findRemoteUrls, overrideMessage, refusalMessage } from "./db-guard.mjs";
+import {
+  findRemoteUrls,
+  overrideMessage,
+  refusalMessage,
+} from "./db-guard.mjs";
 
 const SUPABASE =
   "postgresql://postgres.abcdefgh:s3cret%40pw@aws-0-us-east-1.pooler.supabase.com:5432/postgres";
@@ -27,12 +31,18 @@ describe("findRemoteUrls", () => {
   });
 
   it("treats hosts it doesn't recognize as remote", () => {
-    expect(findRemoteUrls([at("postgresql://u:p@db.example.com/x")])).toHaveLength(1);
-    expect(findRemoteUrls([at("postgresql://u:p@localhost.example.com/x")])).toHaveLength(1);
+    expect(
+      findRemoteUrls([at("postgresql://u:p@db.example.com/x")]),
+    ).toHaveLength(1);
+    expect(
+      findRemoteUrls([at("postgresql://u:p@localhost.example.com/x")]),
+    ).toHaveLength(1);
   });
 
   it("refuses a URL it can't read instead of guessing", () => {
-    expect(findRemoteUrls([at("not a url")])).toEqual([{ source: ".env", host: null }]);
+    expect(findRemoteUrls([at("not a url")])).toEqual([
+      { source: ".env", host: null },
+    ]);
     expect(findRemoteUrls([at("postgresql:///snippr?host=/tmp")])).toEqual([
       { source: ".env", host: null },
     ]);
@@ -66,14 +76,20 @@ describe("refusalMessage", () => {
   });
 
   it("explains an unreadable URL without echoing it", () => {
-    const unreadable = refusalMessage([{ source: ".env", host: null }], "db:push");
+    const unreadable = refusalMessage(
+      [{ source: ".env", host: null }],
+      "db:push",
+    );
     expect(unreadable).toContain("isn't a URL this check can read");
   });
 });
 
 describe("overrideMessage", () => {
   it("names each host once", () => {
-    const remote = findRemoteUrls([at(SUPABASE, ".env"), at(SUPABASE, "the environment")]);
+    const remote = findRemoteUrls([
+      at(SUPABASE, ".env"),
+      at(SUPABASE, "the environment"),
+    ]);
     expect(overrideMessage(remote)).toBe(
       "ALLOW_REMOTE_DB is set. Using aws-0-us-east-1.pooler.supabase.com.",
     );

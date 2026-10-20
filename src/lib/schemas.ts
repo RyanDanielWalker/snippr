@@ -83,9 +83,7 @@ export const createSnippetSchema = body({
 });
 
 /** Partial update: a field the request leaves out stays as it is. */
-export const updateSnippetSchema = createSnippetSchema
-  .partial()
-  .extend({ id });
+export const updateSnippetSchema = createSnippetSchema.partial().extend({ id });
 
 /** Any DELETE: the body is just the record's id. */
 export const deleteByIdSchema = body({ id });
@@ -102,18 +100,14 @@ export const renameFolderSchema = body({ id, name: folderName });
 // Empty code and empty queries are allowed through; the handlers answer
 // them without calling Claude.
 export const describeSchema = body({
-  code: z
-    .string({ error: "Code has to be text." })
-    .max(SNIPPET_LIMITS.code, {
-      error: `That snippet is too long to describe. The limit is ${n(SNIPPET_LIMITS.code)} characters.`,
-    }),
+  code: z.string({ error: "Code has to be text." }).max(SNIPPET_LIMITS.code, {
+    error: `That snippet is too long to describe. The limit is ${n(SNIPPET_LIMITS.code)} characters.`,
+  }),
   language,
 });
 
 export const searchSchema = body({
-  query: z
-    .string({ error: "A search has to be text." })
-    .max(SEARCH_QUERY_MAX, {
-      error: `That search is too long. The limit is ${n(SEARCH_QUERY_MAX)} characters.`,
-    }),
+  query: z.string({ error: "A search has to be text." }).max(SEARCH_QUERY_MAX, {
+    error: `That search is too long. The limit is ${n(SEARCH_QUERY_MAX)} characters.`,
+  }),
 });

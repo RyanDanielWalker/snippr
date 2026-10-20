@@ -30,95 +30,93 @@ export default function Image() {
   if (!result) throw new Error("searchExample.resultId has no matching sample");
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: 72,
-          background: colors.page,
-          color: colors.body,
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <div style={{ fontSize: 32, color: colors.heading }}>{siteName}</div>
-          <div
-            style={{
-              fontSize: 64,
-              lineHeight: 1.1,
-              color: colors.heading,
-              maxWidth: 900,
-            }}
-          >
-            {siteHeadline}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              padding: "16px 20px",
-              background: colors.card,
-              border: `1px solid ${colors.border}`,
-              borderRadius: 12,
-              fontSize: 26,
-              color: "#e5e7eb", // gray-200
-            }}
-          >
-            <span
-              style={{
-                fontSize: 20,
-                color: colors.accent,
-                background: colors.accentBg,
-                padding: "4px 10px",
-                borderRadius: 6,
-              }}
-            >
-              AI
-            </span>
-            {searchExample.query}
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "20px 24px",
-              background: colors.card,
-              border: "2px solid rgba(59, 130, 246, 0.6)", // ring-blue-500/60
-              borderRadius: 12,
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <div style={{ fontSize: 28, color: colors.heading }}>
-                {result.title}
-              </div>
-              <div style={{ fontSize: 22, color: colors.muted }}>
-                {result.description}
-              </div>
-            </div>
-            <span
-              style={{
-                fontSize: 20,
-                color: colors.accent,
-                background: colors.accentBg,
-                padding: "4px 10px",
-                borderRadius: 6,
-              }}
-            >
-              {result.language}
-            </span>
-          </div>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: 72,
+        background: colors.page,
+        color: colors.body,
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ fontSize: 32, color: colors.heading }}>{siteName}</div>
+        <div
+          style={{
+            fontSize: 64,
+            lineHeight: 1.1,
+            color: colors.heading,
+            maxWidth: 900,
+          }}
+        >
+          {siteHeadline}
         </div>
       </div>
-    ),
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            padding: "16px 20px",
+            background: colors.card,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 12,
+            fontSize: 26,
+            color: "#e5e7eb", // gray-200
+          }}
+        >
+          <span
+            style={{
+              fontSize: 20,
+              color: colors.accent,
+              background: colors.accentBg,
+              padding: "4px 10px",
+              borderRadius: 6,
+            }}
+          >
+            AI
+          </span>
+          {searchExample.query}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "20px 24px",
+            background: colors.card,
+            border: "2px solid rgba(59, 130, 246, 0.6)", // ring-blue-500/60
+            borderRadius: 12,
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ fontSize: 28, color: colors.heading }}>
+              {result.title}
+            </div>
+            <div style={{ fontSize: 22, color: colors.muted }}>
+              {result.description}
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: 20,
+              color: colors.accent,
+              background: colors.accentBg,
+              padding: "4px 10px",
+              borderRadius: 6,
+            }}
+          >
+            {result.language}
+          </span>
+        </div>
+      </div>
+    </div>,
     size,
   );
 }

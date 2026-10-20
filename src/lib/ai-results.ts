@@ -8,7 +8,10 @@
  */
 
 /** The snippets with these ids, in Claude's order. Deleted ones drop out. */
-export function pickByIds<T extends { id: string }>(ids: readonly string[], snippets: readonly T[]): T[] {
+export function pickByIds<T extends { id: string }>(
+  ids: readonly string[],
+  snippets: readonly T[],
+): T[] {
   const byId = new Map(snippets.map((s) => [s.id, s]));
   return ids.flatMap((id) => byId.get(id) ?? []);
 }

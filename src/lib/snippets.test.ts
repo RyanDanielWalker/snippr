@@ -12,7 +12,11 @@ import { SNIPPET_CAPS } from "./snippet-cap";
 const me = { id: "user-me", isGuest: false };
 const guest = { id: "user-me", isGuest: true };
 
-function snippet(id: string, userId: string, folderId: string | null = null): Snippet {
+function snippet(
+  id: string,
+  userId: string,
+  folderId: string | null = null,
+): Snippet {
   const at = new Date("2026-10-19T12:00:00.000Z");
   return {
     id,
@@ -45,9 +49,12 @@ function fakeStore(extraSnippets: Snippet[] = []) {
   let nextId = 1;
 
   const store = {
-    list: vi.fn(async (userId: string) => [...snippets.values()].filter((s) => s.userId === userId)),
+    list: vi.fn(async (userId: string) =>
+      [...snippets.values()].filter((s) => s.userId === userId),
+    ),
     count: vi.fn(
-      async (userId: string) => [...snippets.values()].filter((s) => s.userId === userId).length,
+      async (userId: string) =>
+        [...snippets.values()].filter((s) => s.userId === userId).length,
     ),
     findOwner: vi.fn(async (id: string) => {
       const found = snippets.get(id);
@@ -55,7 +62,10 @@ function fakeStore(extraSnippets: Snippet[] = []) {
     }),
     findFolderOwner: vi.fn(async (id: string) => folders.get(id) ?? null),
     create: vi.fn(async (data) => {
-      const created = { ...snippet(`snippet-new-${nextId++}`, data.userId), ...data };
+      const created = {
+        ...snippet(`snippet-new-${nextId++}`, data.userId),
+        ...data,
+      };
       snippets.set(created.id, created);
       return created;
     }),
@@ -79,7 +89,11 @@ function request(body: unknown) {
   });
 }
 
-const newSnippet = { title: "Debounce", code: "const x = 1", language: "javascript" };
+const newSnippet = {
+  title: "Debounce",
+  code: "const x = 1",
+  language: "javascript",
+};
 
 async function expectError(res: Response, status: number, error?: string) {
   expect(res.status).toBe(status);
@@ -95,9 +109,18 @@ describe("without a session", () => {
   it("every method is a 401 that never reaches the database", async () => {
     const { store } = fakeStore();
     await expectError(await listSnippets(store, null), 401);
-    await expectError(await createSnippet(store, null, request(newSnippet)), 401);
-    await expectError(await updateSnippet(store, null, request({ id: "snippet-mine" })), 401);
-    await expectError(await deleteSnippet(store, null, request({ id: "snippet-mine" })), 401);
+    await expectError(
+      await createSnippet(store, null, request(newSnippet)),
+      401,
+    );
+    await expectError(
+      await updateSnippet(store, null, request({ id: "snippet-mine" })),
+      401,
+    );
+    await expectError(
+      await deleteSnippet(store, null, request({ id: "snippet-mine" })),
+      401,
+    );
     untouched(store);
   });
 });
@@ -105,10 +128,27 @@ describe("without a session", () => {
 describe("invalid bodies", () => {
   it("are a 400 that never reaches the database", async () => {
     const { store } = fakeStore();
-    await expectError(await createSnippet(store, me, request("{not json")), 400, "Expected a JSON body.");
-    await expectError(await createSnippet(store, me, request({ ...newSnippet, title: "" })), 400);
-    await expectError(await createSnippet(store, me, request({ ...newSnippet, language: "cobol" })), 400);
-    await expectError(await updateSnippet(store, me, request({ title: "No id" })), 400);
+    await expectError(
+      await createSnippet(store, me, request("{not json")),
+      400,
+      "Expected a JSON body.",
+    );
+    await expectError(
+      await createSnippet(store, me, request({ ...newSnippet, title: "" })),
+      400,
+    );
+    await expectError(
+      await createSnippet(
+        store,
+        me,
+        request({ ...newSnippet, language: "cobol" }),
+      ),
+      400,
+    );
+    await expectError(
+      await updateSnippet(store, me, request({ title: "No id" })),
+      400,
+    );
     await expectError(await deleteSnippet(store, me, request({})), 400);
     untouched(store);
   });
@@ -119,7 +159,9 @@ describe("listSnippets", () => {
     const { store } = fakeStore();
     const res = await listSnippets(store, me);
     expect(res.status).toBe(200);
-    expect((await res.json()).map((s: Snippet) => s.id)).toEqual(["snippet-mine"]);
+    expect((await res.json()).map((s: Snippet) => s.id)).toEqual([
+      "snippet-mine",
+    ]);
     expect(store.list).toHaveBeenCalledWith("user-me");
   });
 });
@@ -140,21 +182,37 @@ describe("createSnippet", () => {
 
   it("ignores a userId in the body", async () => {
     const { store } = fakeStore();
-    await createSnippet(store, me, request({ ...newSnippet, userId: "user-other" }));
-    expect(store.create).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-me" }));
+    await createSnippet(
+      store,
+      me,
+      request({ ...newSnippet, userId: "user-other" }),
+    );
+    expect(store.create).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user-me" }),
+    );
   });
 
   it("puts it in a folder the user owns", async () => {
     const { store } = fakeStore();
-    const res = await createSnippet(store, me, request({ ...newSnippet, folderId: "folder-mine" }));
+    const res = await createSnippet(
+      store,
+      me,
+      request({ ...newSnippet, folderId: "folder-mine" }),
+    );
     expect(res.status).toBe(200);
-    expect(store.create).toHaveBeenCalledWith(expect.objectContaining({ folderId: "folder-mine" }));
+    expect(store.create).toHaveBeenCalledWith(
+      expect.objectContaining({ folderId: "folder-mine" }),
+    );
   });
 
   it("refuses someone else's folder and a missing one with the same 403", async () => {
     const { store } = fakeStore();
     for (const folderId of ["folder-theirs", "folder-missing"]) {
-      const res = await createSnippet(store, me, request({ ...newSnippet, folderId }));
+      const res = await createSnippet(
+        store,
+        me,
+        request({ ...newSnippet, folderId }),
+      );
       await expectError(res, 403, "Folder not found.");
     }
     expect(store.create).not.toHaveBeenCalled();
@@ -178,8 +236,13 @@ describe("createSnippet", () => {
       snippet(`extra-${i}`, "user-me"),
     );
     const { store } = fakeStore(almost);
-    expect((await createSnippet(store, guest, request(newSnippet))).status).toBe(200);
-    await expectError(await createSnippet(store, guest, request(newSnippet)), 409);
+    expect(
+      (await createSnippet(store, guest, request(newSnippet))).status,
+    ).toBe(200);
+    await expectError(
+      await createSnippet(store, guest, request(newSnippet)),
+      409,
+    );
     expect(store.create).toHaveBeenCalledTimes(1);
   });
 
@@ -188,45 +251,71 @@ describe("createSnippet", () => {
       snippet(`theirs-${i}`, "user-other"),
     );
     const { store } = fakeStore(theirs);
-    expect((await createSnippet(store, me, request(newSnippet))).status).toBe(200);
+    expect((await createSnippet(store, me, request(newSnippet))).status).toBe(
+      200,
+    );
   });
 });
 
 describe("updateSnippet", () => {
   it("changes only the fields the request sent", async () => {
     const { store, snippets } = fakeStore();
-    const res = await updateSnippet(store, me, request({ id: "snippet-mine", title: "Renamed" }));
+    const res = await updateSnippet(
+      store,
+      me,
+      request({ id: "snippet-mine", title: "Renamed" }),
+    );
     expect(res.status).toBe(200);
-    expect(store.update).toHaveBeenCalledWith("snippet-mine", { title: "Renamed" });
+    expect(store.update).toHaveBeenCalledWith("snippet-mine", {
+      title: "Renamed",
+    });
     expect(snippets.get("snippet-mine")?.folderId).toBe("folder-mine");
   });
 
   it("moves it to Unorganized with folderId: null", async () => {
     const { store, snippets } = fakeStore();
-    await updateSnippet(store, me, request({ id: "snippet-mine", folderId: null }));
+    await updateSnippet(
+      store,
+      me,
+      request({ id: "snippet-mine", folderId: null }),
+    );
     expect(snippets.get("snippet-mine")?.folderId).toBeNull();
   });
 
   it("refuses someone else's snippet and a missing one with the same 403", async () => {
     const { store, snippets } = fakeStore();
     for (const id of ["snippet-theirs", "snippet-missing"]) {
-      const res = await updateSnippet(store, me, request({ id, title: "Mine now" }));
+      const res = await updateSnippet(
+        store,
+        me,
+        request({ id, title: "Mine now" }),
+      );
       await expectError(res, 403, "Snippet not found.");
     }
     expect(store.update).not.toHaveBeenCalled();
-    expect(snippets.get("snippet-theirs")?.title).toBe("Snippet snippet-theirs");
+    expect(snippets.get("snippet-theirs")?.title).toBe(
+      "Snippet snippet-theirs",
+    );
   });
 
   it("refuses to move a snippet into someone else's folder", async () => {
     const { store } = fakeStore();
-    const res = await updateSnippet(store, me, request({ id: "snippet-mine", folderId: "folder-theirs" }));
+    const res = await updateSnippet(
+      store,
+      me,
+      request({ id: "snippet-mine", folderId: "folder-theirs" }),
+    );
     await expectError(res, 403, "Folder not found.");
     expect(store.update).not.toHaveBeenCalled();
   });
 
   it("can't hand a snippet to another user", async () => {
     const { store } = fakeStore();
-    await updateSnippet(store, me, request({ id: "snippet-mine", userId: "user-other" }));
+    await updateSnippet(
+      store,
+      me,
+      request({ id: "snippet-mine", userId: "user-other" }),
+    );
     expect(store.update).toHaveBeenCalledWith("snippet-mine", {});
   });
 });
@@ -242,7 +331,11 @@ describe("deleteSnippet", () => {
   it("refuses someone else's snippet and a missing one with the same 403", async () => {
     const { store, snippets } = fakeStore();
     for (const id of ["snippet-theirs", "snippet-missing"]) {
-      await expectError(await deleteSnippet(store, me, request({ id })), 403, "Snippet not found.");
+      await expectError(
+        await deleteSnippet(store, me, request({ id })),
+        403,
+        "Snippet not found.",
+      );
     }
     expect(store.delete).not.toHaveBeenCalled();
     expect(snippets.has("snippet-theirs")).toBe(true);

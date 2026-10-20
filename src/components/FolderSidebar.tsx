@@ -113,7 +113,10 @@ export default function FolderSidebar({
     done: () => void,
     currentName?: string,
   ) {
-    const action = folderNameAction({ name, saving, failedName, currentName }, trigger);
+    const action = folderNameAction(
+      { name, saving, failedName, currentName },
+      trigger,
+    );
     if (action === "ignore") return;
     if (action === "cancel") {
       done();

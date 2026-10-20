@@ -4,11 +4,15 @@ import { normalizeEmail, withLowercaseEmails } from "./email-case";
 function fakeAdapter() {
   return {
     getUserByEmail: vi.fn(async (email: string) => ({ id: "u1", email })),
-    createUser: vi.fn(async (user: { email?: string | null; name?: string }) => ({
-      id: "u1",
-      ...user,
-    })),
-    updateUser: vi.fn(async (user: { id: string; email?: string | null }) => user),
+    createUser: vi.fn(
+      async (user: { email?: string | null; name?: string }) => ({
+        id: "u1",
+        ...user,
+      }),
+    ),
+    updateUser: vi.fn(
+      async (user: { id: string; email?: string | null }) => user,
+    ),
     getUser: vi.fn(async (id: string) => ({ id, email: "Kept@As.Is" })),
   };
 }
@@ -28,8 +32,14 @@ describe("withLowercaseEmails", () => {
 
   it("creates users with a lowercased email and keeps the other fields", async () => {
     const inner = fakeAdapter();
-    await withLowercaseEmails(inner).createUser({ email: "Me@X.com", name: "Me" });
-    expect(inner.createUser).toHaveBeenCalledWith({ email: "me@x.com", name: "Me" });
+    await withLowercaseEmails(inner).createUser({
+      email: "Me@X.com",
+      name: "Me",
+    });
+    expect(inner.createUser).toHaveBeenCalledWith({
+      email: "me@x.com",
+      name: "Me",
+    });
   });
 
   it("creates users with no email as they are", async () => {
@@ -43,7 +53,10 @@ describe("withLowercaseEmails", () => {
     const adapter = withLowercaseEmails(inner);
     await adapter.updateUser({ id: "u1", email: "New@X.com" });
     await adapter.updateUser({ id: "u1" });
-    expect(inner.updateUser).toHaveBeenNthCalledWith(1, { id: "u1", email: "new@x.com" });
+    expect(inner.updateUser).toHaveBeenNthCalledWith(1, {
+      id: "u1",
+      email: "new@x.com",
+    });
     expect(inner.updateUser).toHaveBeenNthCalledWith(2, { id: "u1" });
   });
 

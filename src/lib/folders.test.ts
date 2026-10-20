@@ -13,28 +13,41 @@ const me = { id: "user-me", isGuest: false };
 const guest = { id: "user-me", isGuest: true };
 
 function folder(id: string, userId: string): Folder {
-  return { id, name: `Folder ${id}`, userId, createdAt: new Date("2026-10-19T12:00:00.000Z") };
+  return {
+    id,
+    name: `Folder ${id}`,
+    userId,
+    createdAt: new Date("2026-10-19T12:00:00.000Z"),
+  };
 }
 
 // An in-memory stand-in for the database: two users with a folder each.
 function fakeStore(extraFolders: Folder[] = []) {
   const folders = new Map<string, Folder>(
-    [folder("folder-mine", "user-me"), folder("folder-theirs", "user-other"), ...extraFolders].map(
-      (f) => [f.id, f],
-    ),
+    [
+      folder("folder-mine", "user-me"),
+      folder("folder-theirs", "user-other"),
+      ...extraFolders,
+    ].map((f) => [f.id, f]),
   );
   let nextId = 1;
-  const own = (userId: string) => [...folders.values()].filter((f) => f.userId === userId);
+  const own = (userId: string) =>
+    [...folders.values()].filter((f) => f.userId === userId);
 
   const store = {
-    list: vi.fn(async (userId: string) => own(userId).map((f) => ({ ...f, _count: { snippets: 0 } }))),
+    list: vi.fn(async (userId: string) =>
+      own(userId).map((f) => ({ ...f, _count: { snippets: 0 } })),
+    ),
     count: vi.fn(async (userId: string) => own(userId).length),
     findOwner: vi.fn(async (id: string) => {
       const found = folders.get(id);
       return found ? { userId: found.userId } : null;
     }),
     create: vi.fn(async (data: { name: string; userId: string }) => {
-      const created = { ...folder(`folder-new-${nextId++}`, data.userId), name: data.name };
+      const created = {
+        ...folder(`folder-new-${nextId++}`, data.userId),
+        name: data.name,
+      };
       folders.set(created.id, created);
       return created;
     }),
@@ -71,9 +84,22 @@ describe("without a session", () => {
   it("every method is a 401 that never reaches the database", async () => {
     const { store } = fakeStore();
     await expectError(await listFolders(store, null), 401);
-    await expectError(await createFolder(store, null, request({ name: "Work" })), 401);
-    await expectError(await renameFolder(store, null, request({ id: "folder-mine", name: "x" })), 401);
-    await expectError(await deleteFolder(store, null, request({ id: "folder-mine" })), 401);
+    await expectError(
+      await createFolder(store, null, request({ name: "Work" })),
+      401,
+    );
+    await expectError(
+      await renameFolder(
+        store,
+        null,
+        request({ id: "folder-mine", name: "x" }),
+      ),
+      401,
+    );
+    await expectError(
+      await deleteFolder(store, null, request({ id: "folder-mine" })),
+      401,
+    );
     untouched(store);
   });
 });
@@ -81,9 +107,19 @@ describe("without a session", () => {
 describe("invalid bodies", () => {
   it("are a 400 that never reaches the database", async () => {
     const { store } = fakeStore();
-    await expectError(await createFolder(store, me, request("{not json")), 400, "Expected a JSON body.");
-    await expectError(await createFolder(store, me, request({ name: "   " })), 400);
-    await expectError(await renameFolder(store, me, request({ name: "No id" })), 400);
+    await expectError(
+      await createFolder(store, me, request("{not json")),
+      400,
+      "Expected a JSON body.",
+    );
+    await expectError(
+      await createFolder(store, me, request({ name: "   " })),
+      400,
+    );
+    await expectError(
+      await renameFolder(store, me, request({ name: "No id" })),
+      400,
+    );
     await expectError(await deleteFolder(store, me, request({ id: "" })), 400);
     untouched(store);
   });
@@ -94,7 +130,9 @@ describe("listFolders", () => {
     const { store } = fakeStore();
     const res = await listFolders(store, me);
     expect(res.status).toBe(200);
-    expect((await res.json()).map((f: Folder) => f.id)).toEqual(["folder-mine"]);
+    expect((await res.json()).map((f: Folder) => f.id)).toEqual([
+      "folder-mine",
+    ]);
     expect(store.list).toHaveBeenCalledWith("user-me");
   });
 });
@@ -102,13 +140,22 @@ describe("listFolders", () => {
 describe("createFolder", () => {
   it("creates it for the signed-in user, ignoring a userId in the body", async () => {
     const { store } = fakeStore();
-    const res = await createFolder(store, me, request({ name: "  Work ", userId: "user-other" }));
+    const res = await createFolder(
+      store,
+      me,
+      request({ name: "  Work ", userId: "user-other" }),
+    );
     expect(res.status).toBe(200);
-    expect(store.create).toHaveBeenCalledWith({ name: "Work", userId: "user-me" });
+    expect(store.create).toHaveBeenCalledWith({
+      name: "Work",
+      userId: "user-me",
+    });
   });
 
   it("refuses with a 409 once a member has 50", async () => {
-    const full = Array.from({ length: FOLDER_CAPS.member - 1 }, (_, i) => folder(`extra-${i}`, "user-me"));
+    const full = Array.from({ length: FOLDER_CAPS.member - 1 }, (_, i) =>
+      folder(`extra-${i}`, "user-me"),
+    );
     const { store } = fakeStore(full);
     await expectError(
       await createFolder(store, me, request({ name: "One more" })),
@@ -119,24 +166,39 @@ describe("createFolder", () => {
   });
 
   it("uses the guest cap for guests, and allows the last one", async () => {
-    const almost = Array.from({ length: FOLDER_CAPS.guest - 2 }, (_, i) => folder(`extra-${i}`, "user-me"));
+    const almost = Array.from({ length: FOLDER_CAPS.guest - 2 }, (_, i) =>
+      folder(`extra-${i}`, "user-me"),
+    );
     const { store } = fakeStore(almost);
-    expect((await createFolder(store, guest, request({ name: "Last" }))).status).toBe(200);
-    await expectError(await createFolder(store, guest, request({ name: "Too many" })), 409);
+    expect(
+      (await createFolder(store, guest, request({ name: "Last" }))).status,
+    ).toBe(200);
+    await expectError(
+      await createFolder(store, guest, request({ name: "Too many" })),
+      409,
+    );
     expect(store.create).toHaveBeenCalledTimes(1);
   });
 
   it("counts only the user's own folders toward the cap", async () => {
-    const theirs = Array.from({ length: FOLDER_CAPS.member }, (_, i) => folder(`theirs-${i}`, "user-other"));
+    const theirs = Array.from({ length: FOLDER_CAPS.member }, (_, i) =>
+      folder(`theirs-${i}`, "user-other"),
+    );
     const { store } = fakeStore(theirs);
-    expect((await createFolder(store, me, request({ name: "Mine" }))).status).toBe(200);
+    expect(
+      (await createFolder(store, me, request({ name: "Mine" }))).status,
+    ).toBe(200);
   });
 });
 
 describe("renameFolder", () => {
   it("renames the user's own folder", async () => {
     const { store, folders } = fakeStore();
-    const res = await renameFolder(store, me, request({ id: "folder-mine", name: "Renamed" }));
+    const res = await renameFolder(
+      store,
+      me,
+      request({ id: "folder-mine", name: "Renamed" }),
+    );
     expect(res.status).toBe(200);
     expect(folders.get("folder-mine")?.name).toBe("Renamed");
   });
@@ -144,7 +206,11 @@ describe("renameFolder", () => {
   it("refuses someone else's folder and a missing one with the same 403", async () => {
     const { store, folders } = fakeStore();
     for (const id of ["folder-theirs", "folder-missing"]) {
-      const res = await renameFolder(store, me, request({ id, name: "Mine now" }));
+      const res = await renameFolder(
+        store,
+        me,
+        request({ id, name: "Mine now" }),
+      );
       await expectError(res, 403, "Folder not found.");
     }
     expect(store.rename).not.toHaveBeenCalled();
@@ -163,7 +229,11 @@ describe("deleteFolder", () => {
   it("refuses someone else's folder and a missing one with the same 403", async () => {
     const { store, folders } = fakeStore();
     for (const id of ["folder-theirs", "folder-missing"]) {
-      await expectError(await deleteFolder(store, me, request({ id })), 403, "Folder not found.");
+      await expectError(
+        await deleteFolder(store, me, request({ id })),
+        403,
+        "Folder not found.",
+      );
     }
     expect(store.delete).not.toHaveBeenCalled();
     expect(folders.has("folder-theirs")).toBe(true);

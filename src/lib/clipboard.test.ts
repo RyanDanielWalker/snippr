@@ -4,7 +4,9 @@ import { copyText, type Clipboard } from "./clipboard";
 describe("copyText", () => {
   it("writes the text and says it worked", async () => {
     const written: string[] = [];
-    const clipboard: Clipboard = { writeText: async (text) => void written.push(text) };
+    const clipboard: Clipboard = {
+      writeText: async (text) => void written.push(text),
+    };
 
     expect(await copyText("const a = 1;", clipboard)).toBe(true);
     expect(written).toEqual(["const a = 1;"]);

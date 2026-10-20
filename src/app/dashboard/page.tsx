@@ -1,18 +1,18 @@
-import type { Metadata } from "next"
-import { getServerSession } from "next-auth"
-import { redirect } from "next/navigation"
-import { codeToHtml } from "shiki"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { withCardHtml } from "@/lib/highlight"
-import DashboardClient from "@/components/DashboardClient"
-import { ToastProvider } from "@/components/Toaster"
+import type { Metadata } from "next";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { codeToHtml } from "shiki";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { withCardHtml } from "@/lib/highlight";
+import DashboardClient from "@/components/DashboardClient";
+import { ToastProvider } from "@/components/Toaster";
 
-export const metadata: Metadata = { title: "Your snippets" }
+export const metadata: Metadata = { title: "Your snippets" };
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) redirect("/login")
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) redirect("/login");
 
   const [snippets, folders] = await Promise.all([
     prisma.snippet.findMany({
@@ -26,10 +26,10 @@ export default async function DashboardPage() {
         _count: { select: { snippets: true } },
       },
     }),
-  ])
+  ]);
   // Highlighted here so the cards arrive in color and the browser never
   // loads Shiki for them (docs/adr/0022).
-  const cards = await withCardHtml(snippets, codeToHtml)
+  const cards = await withCardHtml(snippets, codeToHtml);
 
   return (
     <ToastProvider>
@@ -43,5 +43,5 @@ export default async function DashboardPage() {
         }}
       />
     </ToastProvider>
-  )
+  );
 }

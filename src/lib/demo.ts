@@ -1,7 +1,11 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { landingSamples } from "@/lib/landing-samples";
 import { GUEST_LIFETIME_MS } from "@/lib/guest";
-import { checkFixedWindow, windowStart, type RateLimitRule } from "@/lib/rate-limit";
+import {
+  checkFixedWindow,
+  windowStart,
+  type RateLimitRule,
+} from "@/lib/rate-limit";
 import type { SnippetCardData } from "@/components/SnippetCardView";
 
 /**
@@ -26,14 +30,16 @@ export type DemoSeed = { folders: string[]; snippets: DemoSnippet[] };
  */
 export function demoSeed(): DemoSeed {
   const snippets: DemoSnippet[] = [
-    ...landingSamples.map(({ title, language, folderName, description, tags, code }) => ({
-      title,
-      language,
-      folderName,
-      description,
-      tags,
-      code,
-    })),
+    ...landingSamples.map(
+      ({ title, language, folderName, description, tags, code }) => ({
+        title,
+        language,
+        folderName,
+        description,
+        tags,
+        code,
+      }),
+    ),
     {
       title: "Retry with backoff",
       language: "python",
@@ -64,7 +70,11 @@ export type DemoStore = {
   /** Deletes guests expired by `now`, and start counts from windows before `keepFrom`. */
   deleteExpired: (now: Date, keepFrom: Date) => Promise<void>;
   /** Creates the guest, its seeded library, and its session, all or nothing. */
-  createGuest: (guest: { expiresAt: Date; sessionToken: string; seed: DemoSeed }) => Promise<void>;
+  createGuest: (guest: {
+    expiresAt: Date;
+    sessionToken: string;
+    seed: DemoSeed;
+  }) => Promise<void>;
 };
 
 export type StartDemoResult =
@@ -87,7 +97,8 @@ export async function startDemo({
     DEMO_START_LIMIT,
     now,
   );
-  if (!limit.allowed) return { ok: false, retryAfterSeconds: limit.retryAfterSeconds };
+  if (!limit.allowed)
+    return { ok: false, retryAfterSeconds: limit.retryAfterSeconds };
 
   // Cleanup rides along with new demos instead of needing a scheduled job.
   // If nobody starts a demo, expired guests sit there, but they're already
@@ -96,7 +107,11 @@ export async function startDemo({
 
   const expires = new Date(now.getTime() + GUEST_LIFETIME_MS);
   const sessionToken = newSessionToken();
-  await store.createGuest({ expiresAt: expires, sessionToken, seed: demoSeed() });
+  await store.createGuest({
+    expiresAt: expires,
+    sessionToken,
+    seed: demoSeed(),
+  });
   return { ok: true, sessionToken, expires };
 }
 

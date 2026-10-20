@@ -40,7 +40,10 @@ export async function highlightCode(
   codeToHtml: CodeToHtml,
 ): Promise<string | null> {
   try {
-    return await codeToHtml(code, { lang: shikiLanguage(language), theme: SHIKI_THEME });
+    return await codeToHtml(code, {
+      lang: shikiLanguage(language),
+      theme: SHIKI_THEME,
+    });
   } catch {
     return null;
   }
@@ -50,14 +53,20 @@ export async function highlightCode(
  * Adds `codeHtml` to each snippet: the highlighted start of its code, or null
  * if Shiki couldn't do it. A card with null shows the plain code.
  */
-export async function withCardHtml<T extends { code: string; language: string }>(
+export async function withCardHtml<
+  T extends { code: string; language: string },
+>(
   snippets: T[],
   codeToHtml: CodeToHtml,
 ): Promise<(T & { codeHtml: string | null })[]> {
   return Promise.all(
     snippets.map(async (snippet) => ({
       ...snippet,
-      codeHtml: await highlightCode(cardPreviewCode(snippet.code), snippet.language, codeToHtml),
+      codeHtml: await highlightCode(
+        cardPreviewCode(snippet.code),
+        snippet.language,
+        codeToHtml,
+      ),
     })),
   );
 }

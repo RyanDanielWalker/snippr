@@ -1,21 +1,21 @@
-import type { Metadata } from "next"
-import { getServerSession } from "next-auth"
-import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { signInErrorMessage } from "@/lib/sign-in-errors"
-import LoginButton from "@/components/LoginButton"
+import type { Metadata } from "next";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import { signInErrorMessage } from "@/lib/sign-in-errors";
+import LoginButton from "@/components/LoginButton";
 
-export const metadata: Metadata = { title: "Sign in" }
+export const metadata: Metadata = { title: "Sign in" };
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string | string[] }>
+  searchParams: Promise<{ error?: string | string[] }>;
 }) {
-  const session = await getServerSession(authOptions)
-  if (session) redirect("/dashboard")
+  const session = await getServerSession(authOptions);
+  if (session) redirect("/dashboard");
 
-  const errorMessage = signInErrorMessage((await searchParams).error)
+  const errorMessage = signInErrorMessage((await searchParams).error);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-950">
@@ -33,5 +33,5 @@ export default async function LoginPage({
         <LoginButton />
       </div>
     </main>
-  )
+  );
 }

@@ -26,7 +26,10 @@ export const GUEST_AI_RATE_LIMITS: Record<RateLimitBucket, RateLimitRule> = {
   search: { limit: 10, windowMs: HOUR },
 };
 
-export function aiRateLimitRule(bucket: RateLimitBucket, isGuest: boolean): RateLimitRule {
+export function aiRateLimitRule(
+  bucket: RateLimitBucket,
+  isGuest: boolean,
+): RateLimitRule {
   return (isGuest ? GUEST_AI_RATE_LIMITS : AI_RATE_LIMITS)[bucket];
 }
 
@@ -42,8 +45,7 @@ export type IncrementUsage = (key: {
 }) => Promise<number>;
 
 export type RateLimitResult =
-  | { allowed: true }
-  | { allowed: false; retryAfterSeconds: number };
+  { allowed: true } | { allowed: false; retryAfterSeconds: number };
 
 /** Start of the fixed window that `now` falls in. */
 export function windowStart(now: Date, windowMs: number): Date {
@@ -85,6 +87,9 @@ export async function checkFixedWindow(
   if (count <= rule.limit) return { allowed: true };
 
   const resetsAt = start.getTime() + rule.windowMs;
-  const retryAfterSeconds = Math.max(1, Math.ceil((resetsAt - now.getTime()) / 1000));
+  const retryAfterSeconds = Math.max(
+    1,
+    Math.ceil((resetsAt - now.getTime()) / 1000),
+  );
   return { allowed: false, retryAfterSeconds };
 }

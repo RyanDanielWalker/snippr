@@ -14,30 +14,48 @@ describe("canUseFolder", () => {
   it("allows no folder (Unorganized) without a lookup", async () => {
     const findFolder = fakeFindFolder();
     await expect(canUseFolder(null, "user-me", findFolder)).resolves.toBe(true);
-    await expect(canUseFolder(undefined, "user-me", findFolder)).resolves.toBe(true);
+    await expect(canUseFolder(undefined, "user-me", findFolder)).resolves.toBe(
+      true,
+    );
     expect(findFolder).not.toHaveBeenCalled();
   });
 
   it("allows a folder the user owns", async () => {
-    await expect(canUseFolder("folder-mine", "user-me", fakeFindFolder())).resolves.toBe(true);
+    await expect(
+      canUseFolder("folder-mine", "user-me", fakeFindFolder()),
+    ).resolves.toBe(true);
   });
 
   it("rejects someone else's folder", async () => {
-    await expect(canUseFolder("folder-theirs", "user-me", fakeFindFolder())).resolves.toBe(false);
+    await expect(
+      canUseFolder("folder-theirs", "user-me", fakeFindFolder()),
+    ).resolves.toBe(false);
   });
 
   it("rejects a folder that doesn't exist", async () => {
-    await expect(canUseFolder("folder-missing", "user-me", fakeFindFolder())).resolves.toBe(false);
+    await expect(
+      canUseFolder("folder-missing", "user-me", fakeFindFolder()),
+    ).resolves.toBe(false);
   });
 
   it("rejects an empty string", async () => {
-    await expect(canUseFolder("", "user-me", fakeFindFolder())).resolves.toBe(false);
+    await expect(canUseFolder("", "user-me", fakeFindFolder())).resolves.toBe(
+      false,
+    );
   });
 
   it("rejects values that aren't strings without a lookup", async () => {
     const findFolder = fakeFindFolder();
-    for (const value of [42, true, {}, ["folder-mine"], { id: "folder-mine" }]) {
-      await expect(canUseFolder(value, "user-me", findFolder)).resolves.toBe(false);
+    for (const value of [
+      42,
+      true,
+      {},
+      ["folder-mine"],
+      { id: "folder-mine" },
+    ]) {
+      await expect(canUseFolder(value, "user-me", findFolder)).resolves.toBe(
+        false,
+      );
     }
     expect(findFolder).not.toHaveBeenCalled();
   });

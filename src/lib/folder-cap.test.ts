@@ -11,7 +11,11 @@ describe("folderCap", () => {
 
 describe("folderCapMessage", () => {
   it("says the number and what to do about it", () => {
-    expect(folderCapMessage(10, true)).toBe("The demo holds 10 folders. Delete one to make room.");
-    expect(folderCapMessage(50, false)).toBe("You've hit the 50 folder limit. Delete one to make room.");
+    expect(folderCapMessage(10, true)).toBe(
+      "The demo holds 10 folders. Delete one to make room.",
+    );
+    expect(folderCapMessage(50, false)).toBe(
+      "You've hit the 50 folder limit. Delete one to make room.",
+    );
   });
 });

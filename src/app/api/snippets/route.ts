@@ -10,7 +10,9 @@ import {
 
 // The rules live in src/lib/snippets.ts, where they're tested (docs/adr/0018).
 
-export const GET = withErrors(async () => listSnippets(snippetStore, await currentUser()));
+export const GET = withErrors(async () =>
+  listSnippets(snippetStore, await currentUser()),
+);
 
 export const POST = withErrors(async (req: Request) =>
   createSnippet(snippetStore, await currentUser(), req),

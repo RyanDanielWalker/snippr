@@ -27,6 +27,8 @@ describe("parseBody", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.response.status).toBe(400);
-    expect(await result.response.json()).toEqual({ error: "Expected a JSON body." });
+    expect(await result.response.json()).toEqual({
+      error: "Expected a JSON body.",
+    });
   });
 });

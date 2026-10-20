@@ -41,7 +41,9 @@ describe("checkRateLimit", () => {
   it("allows requests up to the limit", async () => {
     const increment = fakeIncrement();
     for (let i = 0; i < rule.limit; i++) {
-      await expect(checkRateLimit("user-me", "search", increment, now, rule)).resolves.toEqual({
+      await expect(
+        checkRateLimit("user-me", "search", increment, now, rule),
+      ).resolves.toEqual({
         allowed: true,
       });
     }
@@ -49,9 +51,12 @@ describe("checkRateLimit", () => {
 
   it("rejects the request after the limit, with time left in the window", async () => {
     const increment = fakeIncrement();
-    for (let i = 0; i < rule.limit; i++) await checkRateLimit("user-me", "search", increment, now, rule);
+    for (let i = 0; i < rule.limit; i++)
+      await checkRateLimit("user-me", "search", increment, now, rule);
     // 14:45 in an hourly window: 15 minutes until it resets.
-    await expect(checkRateLimit("user-me", "search", increment, now, rule)).resolves.toEqual({
+    await expect(
+      checkRateLimit("user-me", "search", increment, now, rule),
+    ).resolves.toEqual({
       allowed: false,
       retryAfterSeconds: 15 * 60,
     });
@@ -59,25 +64,34 @@ describe("checkRateLimit", () => {
 
   it("allows requests again once the next window starts", async () => {
     const increment = fakeIncrement();
-    for (let i = 0; i <= rule.limit; i++) await checkRateLimit("user-me", "search", increment, now, rule);
+    for (let i = 0; i <= rule.limit; i++)
+      await checkRateLimit("user-me", "search", increment, now, rule);
     const nextHour = new Date("2026-10-18T15:00:00.000Z");
-    await expect(checkRateLimit("user-me", "search", increment, nextHour, rule)).resolves.toEqual({
+    await expect(
+      checkRateLimit("user-me", "search", increment, nextHour, rule),
+    ).resolves.toEqual({
       allowed: true,
     });
   });
 
   it("counts each user separately", async () => {
     const increment = fakeIncrement();
-    for (let i = 0; i <= rule.limit; i++) await checkRateLimit("user-me", "search", increment, now, rule);
-    await expect(checkRateLimit("user-other", "search", increment, now, rule)).resolves.toEqual({
+    for (let i = 0; i <= rule.limit; i++)
+      await checkRateLimit("user-me", "search", increment, now, rule);
+    await expect(
+      checkRateLimit("user-other", "search", increment, now, rule),
+    ).resolves.toEqual({
       allowed: true,
     });
   });
 
   it("counts each endpoint separately", async () => {
     const increment = fakeIncrement();
-    for (let i = 0; i <= rule.limit; i++) await checkRateLimit("user-me", "search", increment, now, rule);
-    await expect(checkRateLimit("user-me", "describe", increment, now, rule)).resolves.toEqual({
+    for (let i = 0; i <= rule.limit; i++)
+      await checkRateLimit("user-me", "search", increment, now, rule);
+    await expect(
+      checkRateLimit("user-me", "describe", increment, now, rule),
+    ).resolves.toEqual({
       allowed: true,
     });
   });
@@ -85,7 +99,9 @@ describe("checkRateLimit", () => {
   it("asks for a retry of at least one second at the very end of a window", async () => {
     const increment = vi.fn<IncrementUsage>(async () => rule.limit + 1);
     const almostDone = new Date("2026-10-18T14:59:59.900Z");
-    await expect(checkRateLimit("user-me", "search", increment, almostDone, rule)).resolves.toEqual({
+    await expect(
+      checkRateLimit("user-me", "search", increment, almostDone, rule),
+    ).resolves.toEqual({
       allowed: false,
       retryAfterSeconds: 1,
     });
@@ -102,10 +118,16 @@ describe("checkRateLimit", () => {
   });
 
   it("uses the endpoint's default rule when none is given", async () => {
-    const increment = vi.fn<IncrementUsage>(async () => AI_RATE_LIMITS.search.limit);
-    await expect(checkRateLimit("user-me", "search", increment, now)).resolves.toEqual({ allowed: true });
+    const increment = vi.fn<IncrementUsage>(
+      async () => AI_RATE_LIMITS.search.limit,
+    );
+    await expect(
+      checkRateLimit("user-me", "search", increment, now),
+    ).resolves.toEqual({ allowed: true });
     increment.mockResolvedValue(AI_RATE_LIMITS.search.limit + 1);
-    await expect(checkRateLimit("user-me", "search", increment, now)).resolves.toMatchObject({
+    await expect(
+      checkRateLimit("user-me", "search", increment, now),
+    ).resolves.toMatchObject({
       allowed: false,
     });
   });
@@ -115,7 +137,9 @@ describe("aiRateLimitRule", () => {
   it("gives guests a lower limit than members for each endpoint", () => {
     for (const bucket of ["describe", "search"] as const) {
       expect(aiRateLimitRule(bucket, false)).toBe(AI_RATE_LIMITS[bucket]);
-      expect(aiRateLimitRule(bucket, true).limit).toBeLessThan(AI_RATE_LIMITS[bucket].limit);
+      expect(aiRateLimitRule(bucket, true).limit).toBeLessThan(
+        AI_RATE_LIMITS[bucket].limit,
+      );
     }
   });
 });
@@ -126,14 +150,20 @@ describe("checkFixedWindow", () => {
   it("passes the window start to the counter", async () => {
     const increment = vi.fn(async () => 1);
     await checkFixedWindow(increment, rule, now);
-    expect(increment).toHaveBeenCalledWith(new Date("2026-10-18T14:00:00.000Z"));
+    expect(increment).toHaveBeenCalledWith(
+      new Date("2026-10-18T14:00:00.000Z"),
+    );
   });
 
   it("allows a count at the limit and rejects one past it", async () => {
-    await expect(checkFixedWindow(async () => rule.limit, rule, now)).resolves.toEqual({
+    await expect(
+      checkFixedWindow(async () => rule.limit, rule, now),
+    ).resolves.toEqual({
       allowed: true,
     });
-    await expect(checkFixedWindow(async () => rule.limit + 1, rule, now)).resolves.toEqual({
+    await expect(
+      checkFixedWindow(async () => rule.limit + 1, rule, now),
+    ).resolves.toEqual({
       allowed: false,
       retryAfterSeconds: 15 * 60,
     });

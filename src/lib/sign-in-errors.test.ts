@@ -18,6 +18,8 @@ describe("signInErrorMessage", () => {
   });
 
   it("uses the first value when the code appears more than once", () => {
-    expect(signInErrorMessage(["AccessDenied", "OAuthCallback"])).toMatch(/verified/);
+    expect(signInErrorMessage(["AccessDenied", "OAuthCallback"])).toMatch(
+      /verified/,
+    );
   });
 });

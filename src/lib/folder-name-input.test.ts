@@ -25,19 +25,32 @@ describe("folderNameAction", () => {
   });
 
   it("cancels a rename that keeps the same name", () => {
-    expect(folderNameAction(state({ currentName: "Utils" }), "enter")).toBe("cancel");
-    expect(folderNameAction(state({ name: " Utils ", currentName: "Utils" }), "blur")).toBe("cancel");
+    expect(folderNameAction(state({ currentName: "Utils" }), "enter")).toBe(
+      "cancel",
+    );
+    expect(
+      folderNameAction(
+        state({ name: " Utils ", currentName: "Utils" }),
+        "blur",
+      ),
+    ).toBe("cancel");
   });
 
   it("doesn't resend a name that just failed when you click away", () => {
-    expect(folderNameAction(state({ failedName: "Utils" }), "blur")).toBe("ignore");
+    expect(folderNameAction(state({ failedName: "Utils" }), "blur")).toBe(
+      "ignore",
+    );
   });
 
   it("retries a failed name on Enter, since that's asked for", () => {
-    expect(folderNameAction(state({ failedName: "Utils" }), "enter")).toBe("save");
+    expect(folderNameAction(state({ failedName: "Utils" }), "enter")).toBe(
+      "save",
+    );
   });
 
   it("saves on blur once the failed name has been changed", () => {
-    expect(folderNameAction(state({ name: "Utils 2", failedName: "Utils" }), "blur")).toBe("save");
+    expect(
+      folderNameAction(state({ name: "Utils 2", failedName: "Utils" }), "blur"),
+    ).toBe("save");
   });
 });

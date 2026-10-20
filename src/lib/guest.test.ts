@@ -8,7 +8,9 @@ const earlier = new Date("2026-10-17T12:00:00.000Z");
 function fakeAdapter(users: Record<string, { guestExpiresAt: Date | null }>) {
   return {
     getSessionAndUser: vi.fn(async (token: string) =>
-      users[token] ? { session: { sessionToken: token }, user: users[token] } : null,
+      users[token]
+        ? { session: { sessionToken: token }, user: users[token] }
+        : null,
     ),
     getUser: vi.fn(async (id: string) => users[id] ?? null),
     linkAccount: vi.fn(async (account: { userId: string }) => account),
@@ -40,8 +42,12 @@ describe("isGuest and isExpiredGuest", () => {
 describe("withGuestRules", () => {
   it("returns sessions for members and guests that haven't expired", async () => {
     const adapter = withGuestRules(fakeAdapter(users), () => now);
-    await expect(adapter.getSessionAndUser("member")).resolves.toMatchObject({ user: users.member });
-    await expect(adapter.getSessionAndUser("guest")).resolves.toMatchObject({ user: users.guest });
+    await expect(adapter.getSessionAndUser("member")).resolves.toMatchObject({
+      user: users.member,
+    });
+    await expect(adapter.getSessionAndUser("guest")).resolves.toMatchObject({
+      user: users.guest,
+    });
   });
 
   it("treats an expired guest's session as no session", async () => {

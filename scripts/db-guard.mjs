@@ -77,6 +77,8 @@ export function refusalMessage(remote, script) {
  * @returns {string}
  */
 export function overrideMessage(remote) {
-  const hosts = [...new Set(remote.map(({ host }) => host ?? "an unreadable URL"))];
+  const hosts = [
+    ...new Set(remote.map(({ host }) => host ?? "an unreadable URL")),
+  ];
   return `ALLOW_REMOTE_DB is set. Using ${hosts.join(", ")}.`;
 }

@@ -2,21 +2,31 @@ import { expect, test } from "@playwright/test";
 
 // The dashboard on a phone: nothing scrolls sideways, and the folders open in
 // a drawer instead of sitting beside the cards.
-test.use({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true });
+test.use({
+  viewport: { width: 375, height: 667 },
+  isMobile: true,
+  hasTouch: true,
+});
 
-test("the dashboard fits a phone, with its folders in a drawer", async ({ page }) => {
+test("the dashboard fits a phone, with its folders in a drawer", async ({
+  page,
+}) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try the demo" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
   const cards = page.locator('[aria-roledescription="draggable"]');
   const card = (title: string) =>
-    cards.filter({ has: page.getByRole("heading", { name: title, exact: true }) });
+    cards.filter({
+      has: page.getByRole("heading", { name: title, exact: true }),
+    });
   await expect(card("Debounce")).toBeVisible();
 
   // Wider than the screen is what the old fixed sidebar did.
   const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    () =>
+      document.documentElement.scrollWidth -
+      document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
 
@@ -27,7 +37,9 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({ page }
   await expect(sidebar).toBeVisible();
   await sidebar.getByRole("button", { name: /^Frontend/ }).click();
   await expect(sidebar).toBeHidden();
-  await expect(page.getByRole("heading", { name: "Frontend", level: 2 })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Frontend", level: 2 }),
+  ).toBeVisible();
   await expect(card("Debounce")).toBeVisible();
 
   // Escape closes it too.
@@ -38,14 +50,18 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({ page }
 });
 
 // Delete is in the preview and the edit form too, not only on the card.
-test("a snippet can be deleted from its preview or its edit form", async ({ page }) => {
+test("a snippet can be deleted from its preview or its edit form", async ({
+  page,
+}) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try the demo" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
   const cards = page.locator('[aria-roledescription="draggable"]');
   const card = (title: string) =>
-    cards.filter({ has: page.getByRole("heading", { name: title, exact: true }) });
+    cards.filter({
+      has: page.getByRole("heading", { name: title, exact: true }),
+    });
 
   // From the preview: the first tap only arms it.
   await card("Debounce").getByRole("heading").click();

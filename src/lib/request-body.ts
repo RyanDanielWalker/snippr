@@ -11,8 +11,7 @@
 import type { z } from "zod";
 
 export type ParsedBody<T> =
-  | { ok: true; data: T }
-  | { ok: false; response: Response };
+  { ok: true; data: T } | { ok: false; response: Response };
 
 export async function parseBody<Schema extends z.ZodType>(
   req: Request,

@@ -10,7 +10,8 @@
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-export const GENERIC_ERROR = "Couldn't reach Snippr. Check your connection and try again.";
+export const GENERIC_ERROR =
+  "Couldn't reach Snippr. Check your connection and try again.";
 
 export async function callApi<T = unknown>(
   url: string,

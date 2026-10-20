@@ -32,7 +32,9 @@ export default function SnippetCardView({
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="text-white font-medium break-words">{snippet.title}</h3>
+          <h3 className="text-white font-medium break-words">
+            {snippet.title}
+          </h3>
           {snippet.description && (
             <p className="text-gray-500 text-sm mt-0.5">
               {snippet.description}

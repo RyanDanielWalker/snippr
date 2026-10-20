@@ -1,32 +1,32 @@
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
-import { aiRateLimitRule, checkRateLimit } from "@/lib/rate-limit"
-import { incrementAiUsage } from "@/lib/ai-usage"
-import { tooManyRequests, unauthorized, withErrors } from "@/lib/api-errors"
-import { parseBody } from "@/lib/request-body"
-import { searchSchema } from "@/lib/schemas"
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { aiRateLimitRule, checkRateLimit } from "@/lib/rate-limit";
+import { incrementAiUsage } from "@/lib/ai-usage";
+import { tooManyRequests, unauthorized, withErrors } from "@/lib/api-errors";
+import { parseBody } from "@/lib/request-body";
+import { searchSchema } from "@/lib/schemas";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || "",
-})
+});
 
 export const POST = withErrors(async (req: Request) => {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return unauthorized()
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return unauthorized();
 
-  const body = await parseBody(req, searchSchema)
-  if (!body.ok) return body.response
-  const { query } = body.data
-  if (!query) return NextResponse.json([])
+  const body = await parseBody(req, searchSchema);
+  if (!body.ok) return body.response;
+  const { query } = body.data;
+  if (!query) return NextResponse.json([]);
 
   const snippets = await prisma.snippet.findMany({
     where: { userId: session.user.id },
-  })
+  });
 
-  if (snippets.length === 0) return NextResponse.json([])
+  if (snippets.length === 0) return NextResponse.json([]);
 
   const limit = await checkRateLimit(
     session.user.id,
@@ -34,12 +34,15 @@ export const POST = withErrors(async (req: Request) => {
     incrementAiUsage,
     new Date(),
     aiRateLimitRule("search", session.user.isGuest),
-  )
-  if (!limit.allowed) return tooManyRequests(limit.retryAfterSeconds)
+  );
+  if (!limit.allowed) return tooManyRequests(limit.retryAfterSeconds);
 
-  const snippetList = snippets.map((s, i) => (
-    `[${i}] title: "${s.title}" | language: ${s.language} | tags: ${s.tags.join(", ")} | description: "${s.description ?? ""}"`
-  )).join("\n")
+  const snippetList = snippets
+    .map(
+      (s, i) =>
+        `[${i}] title: "${s.title}" | language: ${s.language} | tags: ${s.tags.join(", ")} | description: "${s.description ?? ""}"`,
+    )
+    .join("\n");
 
   const message = await client.messages.create({
     model: "claude-sonnet-4-6",
@@ -54,18 +57,19 @@ User query: "${query}"
 Snippets:
 ${snippetList}
 
-Return ONLY a JSON array of indices (e.g. [0, 2, 5]) of the most relevant snippets, ordered by relevance. Return an empty array if nothing matches. No explanation, just the JSON array.`
-      }
-    ]
-  })
+Return ONLY a JSON array of indices (e.g. [0, 2, 5]) of the most relevant snippets, ordered by relevance. Return an empty array if nothing matches. No explanation, just the JSON array.`,
+      },
+    ],
+  });
 
-  const text = message.content[0].type === "text" ? message.content[0].text : "[]"
-  
+  const text =
+    message.content[0].type === "text" ? message.content[0].text : "[]";
+
   try {
-    const indices: number[] = JSON.parse(text)
-    const results = indices.map(i => snippets[i]).filter(Boolean)
-    return NextResponse.json(results)
+    const indices: number[] = JSON.parse(text);
+    const results = indices.map((i) => snippets[i]).filter(Boolean);
+    return NextResponse.json(results);
   } catch {
-    return NextResponse.json([])
+    return NextResponse.json([]);
   }
-})
+});

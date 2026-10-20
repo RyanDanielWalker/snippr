@@ -35,7 +35,10 @@ export async function startDemoAction() {
 
   // The same cookie NextAuth would set after an OAuth sign-in, so every
   // getServerSession call finds the guest's session from here on.
-  const secure = usesSecureCookies(process.env, requestHeaders.get("x-forwarded-proto"));
+  const secure = usesSecureCookies(
+    process.env,
+    requestHeaders.get("x-forwarded-proto"),
+  );
   const cookieStore = await cookies();
   cookieStore.set(sessionCookieName(secure), result.sessionToken, {
     httpOnly: true,

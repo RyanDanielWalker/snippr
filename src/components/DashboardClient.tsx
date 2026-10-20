@@ -16,7 +16,11 @@ import SnippetCard from "@/components/SnippetCard";
 import SnippetFormModal from "@/components/SnippetFormModal";
 import FolderSidebar from "@/components/FolderSidebar";
 import { useToast } from "@/components/Toaster";
-import { snippetCap, snippetCapMessage, snippetCapStatus } from "@/lib/snippet-cap";
+import {
+  snippetCap,
+  snippetCapMessage,
+  snippetCapStatus,
+} from "@/lib/snippet-cap";
 import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
 import { emptyState } from "@/lib/empty-state";
@@ -195,7 +199,9 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   }
 
   const displaySnippets =
-    aiMode && aiResultIds !== null ? pickByIds(aiResultIds, snippets) : filtered;
+    aiMode && aiResultIds !== null
+      ? pickByIds(aiResultIds, snippets)
+      : filtered;
 
   const folderName =
     selectedFolderId === null
@@ -271,8 +277,8 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
         {user.isGuest && (
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm bg-blue-950/50 border border-blue-900 text-blue-200 rounded-lg px-4 py-3 mb-8">
             <span>
-              This is a demo. It and everything in it is deleted 24 hours
-              after you started.
+              This is a demo. It and everything in it is deleted 24 hours after
+              you started.
             </span>
             {/* Signs out first: signing in on top of a guest session would
                 try to attach your account to the guest (docs/adr/0012). */}

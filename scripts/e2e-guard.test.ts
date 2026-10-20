@@ -3,7 +3,10 @@ import { DEFAULT_E2E_DATABASE_URL, e2eDatabase } from "./e2e-guard.mjs";
 
 describe("e2eDatabase", () => {
   it("uses the local e2e database by default", () => {
-    expect(e2eDatabase({})).toEqual({ ok: true, url: DEFAULT_E2E_DATABASE_URL });
+    expect(e2eDatabase({})).toEqual({
+      ok: true,
+      url: DEFAULT_E2E_DATABASE_URL,
+    });
   });
 
   it("takes E2E_DATABASE_URL when it's local and named for tests", () => {
@@ -13,7 +16,9 @@ describe("e2eDatabase", () => {
 
   it("ignores DATABASE_URL, so the dev database is never the target", () => {
     expect(
-      e2eDatabase({ DATABASE_URL: "postgresql://snippr:snippr@localhost:5432/snippr" }),
+      e2eDatabase({
+        DATABASE_URL: "postgresql://snippr:snippr@localhost:5432/snippr",
+      }),
     ).toEqual({ ok: true, url: DEFAULT_E2E_DATABASE_URL });
   });
 

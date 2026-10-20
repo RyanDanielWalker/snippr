@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { landingSamples, searchExample } from "./landing-samples";
 
-const words = (text: string) =>
-  text.toLowerCase().match(/[a-z]{4,}/g) ?? [];
+const words = (text: string) => text.toLowerCase().match(/[a-z]{4,}/g) ?? [];
 
 describe("landing page samples", () => {
   it("gives every sample a unique id", () => {
@@ -20,7 +19,12 @@ describe("landing page samples", () => {
     const result = landingSamples.find((s) => s.id === searchExample.resultId)!;
     const resultWords = new Set(
       words(
-        [result.title, result.language, result.description, ...result.tags].join(" "),
+        [
+          result.title,
+          result.language,
+          result.description,
+          ...result.tags,
+        ].join(" "),
       ),
     );
     const shared = words(searchExample.query).filter((w) => resultWords.has(w));

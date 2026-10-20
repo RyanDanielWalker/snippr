@@ -1,11 +1,11 @@
-import { getServerSession, NextAuthOptions } from "next-auth"
-import GithubProvider from "next-auth/providers/github"
-import GoogleProvider from "next-auth/providers/google"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/prisma"
-import { isProviderEmailVerified } from "@/lib/email-verification"
-import { withLowercaseEmails } from "@/lib/email-case"
-import { isGuest, withGuestRules } from "@/lib/guest"
+import { getServerSession, NextAuthOptions } from "next-auth";
+import GithubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";
+import { isProviderEmailVerified } from "@/lib/email-verification";
+import { withLowercaseEmails } from "@/lib/email-case";
+import { isGuest, withGuestRules } from "@/lib/guest";
 
 export const authOptions: NextAuthOptions = {
   // Emails are stored and matched in lowercase so the same address from two
@@ -35,7 +35,7 @@ export const authOptions: NextAuthOptions = {
     // Any error refuses the sign-in. Letting it throw would make NextAuth put
     // the raw error message (which can include database details) in the URL.
     async signIn({ user, account, profile }) {
-      if (!account) return false
+      if (!account) return false;
 
       try {
         const alreadyAttached = await prisma.account.findUnique({
@@ -46,25 +46,25 @@ export const authOptions: NextAuthOptions = {
             },
           },
           select: { id: true },
-        })
-        if (alreadyAttached) return true
+        });
+        if (alreadyAttached) return true;
 
         return await isProviderEmailVerified({
           provider: account.provider,
           email: user.email,
           profile,
           accessToken: account.access_token,
-        })
+        });
       } catch {
-        return false
+        return false;
       }
     },
     session({ session, user }) {
       if (session.user) {
-        session.user.id = user.id
-        session.user.isGuest = isGuest(user)
+        session.user.id = user.id;
+        session.user.isGuest = isGuest(user);
       }
-      return session
+      return session;
     },
   },
   pages: {
@@ -73,16 +73,16 @@ export const authOptions: NextAuthOptions = {
     // page turns into a readable message (src/lib/sign-in-errors.ts).
     error: "/login",
   },
-}
+};
 /** The signed-in user, or null when there's no session. */
-export type ApiUser = { id: string; isGuest: boolean } | null
+export type ApiUser = { id: string; isGuest: boolean } | null;
 
 /**
  * The signed-in user for a Route Handler, as the plain value the logic in
  * src/lib/snippets.ts and src/lib/folders.ts takes (docs/adr/0018).
  */
 export async function currentUser(): Promise<ApiUser> {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return null
-  return { id: session.user.id, isGuest: session.user.isGuest }
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return null;
+  return { id: session.user.id, isGuest: session.user.isGuest };
 }

@@ -16,7 +16,9 @@ const MESSAGES: Record<string, string> = {
 const FALLBACK = "Sign-in didn't go through. Give it another shot.";
 
 /** Returns a message for a NextAuth error code, or null if there's no error. */
-export function signInErrorMessage(code: string | string[] | undefined): string | null {
+export function signInErrorMessage(
+  code: string | string[] | undefined,
+): string | null {
   const value = Array.isArray(code) ? code[0] : code;
   if (!value) return null;
   return MESSAGES[value] ?? FALLBACK;

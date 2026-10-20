@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TEST_DATABASE_URL, testDatabase, wipeableDatabase } from "./test-db-guard.mjs";
+import {
+  DEFAULT_TEST_DATABASE_URL,
+  testDatabase,
+  wipeableDatabase,
+} from "./test-db-guard.mjs";
 
 const rule = { variable: "SOME_URL", suffix: "_test" };
 
@@ -22,25 +26,36 @@ describe("wipeableDatabase", () => {
 
   it("refuses a local database without the suffix", () => {
     for (const name of ["snippr", "snippr_test_backup", "snippr_e2e", ""]) {
-      const result = wipeableDatabase(`postgresql://snippr:snippr@localhost:5432/${name}`, rule);
+      const result = wipeableDatabase(
+        `postgresql://snippr:snippr@localhost:5432/${name}`,
+        rule,
+      );
       expect(result.ok, name).toBe(false);
     }
   });
 
   it("names the variable when the URL can't be read", () => {
     const result = wipeableDatabase("not a url", rule);
-    expect(result).toEqual({ ok: false, message: "SOME_URL isn't a URL this check can read." });
+    expect(result).toEqual({
+      ok: false,
+      message: "SOME_URL isn't a URL this check can read.",
+    });
   });
 });
 
 describe("testDatabase", () => {
   it("uses the local test database by default", () => {
-    expect(testDatabase({})).toEqual({ ok: true, url: DEFAULT_TEST_DATABASE_URL });
+    expect(testDatabase({})).toEqual({
+      ok: true,
+      url: DEFAULT_TEST_DATABASE_URL,
+    });
   });
 
   it("ignores DATABASE_URL, so the dev database is never the target", () => {
     expect(
-      testDatabase({ DATABASE_URL: "postgresql://snippr:snippr@localhost:5432/snippr" }),
+      testDatabase({
+        DATABASE_URL: "postgresql://snippr:snippr@localhost:5432/snippr",
+      }),
     ).toEqual({ ok: true, url: DEFAULT_TEST_DATABASE_URL });
   });
 

@@ -11,7 +11,11 @@ import type { IncrementUsage } from "@/lib/rate-limit";
  * exactly the race this needs to avoid, so this uses raw SQL. The tagged
  * template sends every value as a parameter, never as SQL text.
  */
-export const incrementAiUsage: IncrementUsage = async ({ userId, bucket, windowStart }) => {
+export const incrementAiUsage: IncrementUsage = async ({
+  userId,
+  bucket,
+  windowStart,
+}) => {
   const rows = await prisma.$queryRaw<{ count: number }[]>`
     INSERT INTO "AiUsage" ("userId", "bucket", "windowStart", "count")
     VALUES (${userId}, ${bucket}, ${windowStart}, 1)

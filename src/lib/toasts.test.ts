@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { INFO_TOAST_MS, MAX_TOASTS, addToast, dismissToast, toastDuration, type Toast } from "./toasts";
+import {
+  INFO_TOAST_MS,
+  MAX_TOASTS,
+  addToast,
+  dismissToast,
+  toastDuration,
+  type Toast,
+} from "./toasts";
 
-const info = (id: number, message = `toast ${id}`): Toast => ({ id, message, tone: "info" });
+const info = (id: number, message = `toast ${id}`): Toast => ({
+  id,
+  message,
+  tone: "info",
+});
 
 describe("addToast", () => {
   it("adds the newest at the end", () => {
@@ -10,13 +21,17 @@ describe("addToast", () => {
 
   it("drops the oldest past the limit", () => {
     let toasts: Toast[] = [];
-    for (let id = 1; id <= MAX_TOASTS + 2; id++) toasts = addToast(toasts, info(id));
+    for (let id = 1; id <= MAX_TOASTS + 2; id++)
+      toasts = addToast(toasts, info(id));
     expect(toasts).toHaveLength(MAX_TOASTS);
     expect(toasts.map((t) => t.id)).toEqual([3, 4, 5]);
   });
 
   it("replaces a toast with the same message instead of stacking it", () => {
-    const toasts = addToast([info(1, "Folder full."), info(2)], info(3, "Folder full."));
+    const toasts = addToast(
+      [info(1, "Folder full."), info(2)],
+      info(3, "Folder full."),
+    );
     expect(toasts.map((t) => t.id)).toEqual([2, 3]);
   });
 

@@ -90,9 +90,7 @@ export default async function Home({
               <span className="text-xs text-blue-400 bg-blue-950 px-2 py-1 rounded-md shrink-0">
                 ✦ AI
               </span>
-              <span className="text-gray-200">
-                {searchExample.query}
-              </span>
+              <span className="text-gray-200">{searchExample.query}</span>
             </div>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               {samples.map(({ id, folderName, ...snippet }) => (

@@ -18,6 +18,10 @@ export default function setup() {
     ["migrate", "reset", "--force", "--skip-seed", "--skip-generate"],
     { stdio: "inherit", env: { ...process.env, DATABASE_URL: target.url } },
   );
-  if (result.error) throw new Error(`Couldn't run prisma migrate reset: ${result.error.message}`);
-  if (result.status !== 0) throw new Error("prisma migrate reset failed. See the output above.");
+  if (result.error)
+    throw new Error(
+      `Couldn't run prisma migrate reset: ${result.error.message}`,
+    );
+  if (result.status !== 0)
+    throw new Error("prisma migrate reset failed. See the output above.");
 }

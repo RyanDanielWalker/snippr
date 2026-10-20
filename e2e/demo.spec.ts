@@ -14,7 +14,9 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   // Cards are dnd-kit draggables, which is the most specific thing about them.
   const cards = page.locator('[aria-roledescription="draggable"]');
   const card = (title: string) =>
-    cards.filter({ has: page.getByRole("heading", { name: title, exact: true }) });
+    cards.filter({
+      has: page.getByRole("heading", { name: title, exact: true }),
+    });
 
   // The seeded library.
   await expect(card("Debounce")).toBeVisible();
@@ -45,22 +47,32 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
 
   // Move: drag the card onto a folder. dnd-kit starts a drag only after the
   // pointer travels 8px, so the mouse moves in steps instead of jumping.
-  const frontend = page.locator("aside").getByRole("button", { name: /^Frontend/ });
+  const frontend = page
+    .locator("aside")
+    .getByRole("button", { name: /^Frontend/ });
   await card("Slugify").getByRole("heading").hover();
   await page.mouse.down();
   const target = await frontend.boundingBox();
   if (!target) throw new Error("The Frontend folder isn't on screen");
-  await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, {
-    steps: 20,
-  });
+  await page.mouse.move(
+    target.x + target.width / 2,
+    target.y + target.height / 2,
+    {
+      steps: 20,
+    },
+  );
   await page.mouse.up();
 
   // A toast says so, the card now carries the folder's name, and the folder
   // lists it.
   await expect(page.getByText("Moved to Frontend.")).toBeVisible();
-  await expect(card("Slugify").getByText("Frontend", { exact: true })).toBeVisible();
+  await expect(
+    card("Slugify").getByText("Frontend", { exact: true }),
+  ).toBeVisible();
   await frontend.click();
-  await expect(page.getByRole("heading", { name: "Frontend", level: 2 })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Frontend", level: 2 }),
+  ).toBeVisible();
   await expect(card("Slugify")).toBeVisible();
   await expect(card("Debounce")).toBeVisible();
   await expect(cards).toHaveCount(2);

@@ -39,7 +39,10 @@ async function ownsFolder(store: FolderStore, id: string, userId: string) {
   return folder?.userId === userId;
 }
 
-export async function listFolders(store: FolderStore, user: ApiUser): Promise<Response> {
+export async function listFolders(
+  store: FolderStore,
+  user: ApiUser,
+): Promise<Response> {
   if (!user) return unauthorized();
   return Response.json(await store.list(user.id));
 }
@@ -60,7 +63,9 @@ export async function createFolder(
     return apiError(409, folderCapMessage(cap, user.isGuest));
   }
 
-  return Response.json(await store.create({ name: body.data.name, userId: user.id }));
+  return Response.json(
+    await store.create({ name: body.data.name, userId: user.id }),
+  );
 }
 
 export async function renameFolder(
@@ -89,7 +94,8 @@ export async function deleteFolder(
   const body = await parseBody(req, deleteByIdSchema);
   if (!body.ok) return body.response;
 
-  if (!(await ownsFolder(store, body.data.id, user.id))) return folderNotFound();
+  if (!(await ownsFolder(store, body.data.id, user.id)))
+    return folderNotFound();
 
   await store.delete(body.data.id);
   return Response.json({ success: true });

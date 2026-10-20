@@ -23,7 +23,10 @@ export function isGuest(user: MaybeGuest): boolean {
 }
 
 export function isExpiredGuest(user: MaybeGuest, now: Date): boolean {
-  return user.guestExpiresAt != null && user.guestExpiresAt.getTime() <= now.getTime();
+  return (
+    user.guestExpiresAt != null &&
+    user.guestExpiresAt.getTime() <= now.getTime()
+  );
 }
 
 /** The adapter methods the guest rules change. */
@@ -55,7 +58,8 @@ export function withGuestRules<A extends object>(
         linkAccount: async (account: { userId: string }) => {
           const user = await getUser(account.userId);
           // NextAuth turns this into /login?error=Callback, without the message.
-          if (user && isGuest(user)) throw new Error("Guests can't link a sign-in account");
+          if (user && isGuest(user))
+            throw new Error("Guests can't link a sign-in account");
           return linkAccount(account);
         },
       }),

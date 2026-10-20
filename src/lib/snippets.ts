@@ -20,7 +20,10 @@ import {
  * the order of checks) are tested against an in-memory store.
  */
 
-type NewSnippet = Omit<z.output<typeof createSnippetSchema>, "description" | "tags" | "folderId"> & {
+type NewSnippet = Omit<
+  z.output<typeof createSnippetSchema>,
+  "description" | "tags" | "folderId"
+> & {
   description: string;
   tags: string[];
   folderId: string | null;
@@ -56,7 +59,10 @@ async function ownsSnippet(store: SnippetStore, id: string, userId: string) {
   return snippet?.userId === userId;
 }
 
-export async function listSnippets(store: SnippetStore, user: ApiUser): Promise<Response> {
+export async function listSnippets(
+  store: SnippetStore,
+  user: ApiUser,
+): Promise<Response> {
   if (!user) return unauthorized();
   return Response.json(await store.list(user.id));
 }
@@ -124,7 +130,8 @@ export async function deleteSnippet(
   const body = await parseBody(req, deleteByIdSchema);
   if (!body.ok) return body.response;
 
-  if (!(await ownsSnippet(store, body.data.id, user.id))) return snippetNotFound();
+  if (!(await ownsSnippet(store, body.data.id, user.id)))
+    return snippetNotFound();
 
   await store.delete(body.data.id);
   return Response.json({ success: true });

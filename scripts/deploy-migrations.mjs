@@ -15,9 +15,13 @@ console.log(decision.reason);
 if (decision.migrate) {
   // npm puts node_modules/.bin on PATH for scripts, so this is the pinned
   // Prisma 5, not whatever npx would fetch.
-  const result = spawnSync("prisma", ["migrate", "deploy"], { stdio: "inherit" });
+  const result = spawnSync("prisma", ["migrate", "deploy"], {
+    stdio: "inherit",
+  });
   if (result.error) {
-    console.error(`Couldn't run prisma migrate deploy: ${result.error.message}`);
+    console.error(
+      `Couldn't run prisma migrate deploy: ${result.error.message}`,
+    );
     process.exit(1);
   }
   process.exit(result.status ?? 1);

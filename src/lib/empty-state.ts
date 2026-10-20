@@ -37,17 +37,26 @@ export function emptyState({
   aiError,
   canCreate,
 }: EmptyStateInput): EmptyState {
-  const empty = (title: string, hint?: string, offerNewSnippet = false): EmptyState => ({
+  const empty = (
+    title: string,
+    hint?: string,
+    offerNewSnippet = false,
+  ): EmptyState => ({
     title,
     hint,
     tone: "empty",
     offerNewSnippet,
   });
 
-  if (aiMode && aiError) return { title: aiError, tone: "error", offerNewSnippet: false };
+  if (aiMode && aiError)
+    return { title: aiError, tone: "error", offerNewSnippet: false };
 
   if (librarySize === 0) {
-    return empty("Your library is empty.", "Start with the code you keep rewriting.", canCreate);
+    return empty(
+      "Your library is empty.",
+      "Start with the code you keep rewriting.",
+      canCreate,
+    );
   }
 
   if (aiMode && aiSearched) {
@@ -66,11 +75,16 @@ export function emptyState({
     return empty("No snippets match your search.", hint);
   }
 
-  if (view === "unorganized") return empty("Nothing unorganized.", "Every snippet has a folder.");
+  if (view === "unorganized")
+    return empty("Nothing unorganized.", "Every snippet has a folder.");
 
   if (view === "folder") {
     return canCreate
-      ? empty("This folder is empty.", "Drag a snippet here, or make one while the folder is open.", true)
+      ? empty(
+          "This folder is empty.",
+          "Drag a snippet here, or make one while the folder is open.",
+          true,
+        )
       : empty("This folder is empty.", "Drag a snippet here.");
   }
 

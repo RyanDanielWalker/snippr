@@ -13,7 +13,8 @@ export const landingSamples: LandingSample[] = [
     title: "Debounce",
     language: "typescript",
     folderName: "Frontend",
-    description: "Runs a function only after calls have paused for a given delay.",
+    description:
+      "Runs a function only after calls have paused for a given delay.",
     tags: ["timing", "utils"],
     code: `export function debounce<T extends unknown[]>(
   fn: (...args: T) => void,
@@ -31,7 +32,8 @@ export const landingSamples: LandingSample[] = [
     title: "Find duplicate rows",
     language: "sql",
     folderName: "Database",
-    description: "Lists values that appear more than once in a column, with counts.",
+    description:
+      "Lists values that appear more than once in a column, with counts.",
     tags: ["postgres", "cleanup"],
     code: `SELECT email, COUNT(*) AS copies
 FROM users

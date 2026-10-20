@@ -21,7 +21,10 @@ export function useCopy(text: string) {
 
   async function copy() {
     if (!(await copyText(text, navigator.clipboard))) {
-      toast("Couldn't copy that. Your browser said no, so select the code and copy it by hand.", "error");
+      toast(
+        "Couldn't copy that. Your browser said no, so select the code and copy it by hand.",
+        "error",
+      );
       return;
     }
     clearTimeout(resetTimer.current);

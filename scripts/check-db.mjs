@@ -6,7 +6,11 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
-import { findRemoteUrls, overrideMessage, refusalMessage } from "./db-guard.mjs";
+import {
+  findRemoteUrls,
+  overrideMessage,
+  refusalMessage,
+} from "./db-guard.mjs";
 
 const ENV_FILES = [
   ".env",
@@ -35,7 +39,9 @@ if (remote.length > 0) {
   if (process.env.ALLOW_REMOTE_DB === "1") {
     console.warn(overrideMessage(remote));
   } else {
-    console.error(refusalMessage(remote, process.env.npm_lifecycle_event ?? "<script>"));
+    console.error(
+      refusalMessage(remote, process.env.npm_lifecycle_event ?? "<script>"),
+    );
     process.exit(1);
   }
 }

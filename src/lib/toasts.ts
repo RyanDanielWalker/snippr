@@ -21,8 +21,14 @@ export const INFO_TOAST_MS = 4000;
  * Adds a toast at the end. The same message showing already is taken out
  * first, so dragging into a full folder five times shows one toast, not five.
  */
-export function addToast(toasts: Toast[], toast: Toast, max = MAX_TOASTS): Toast[] {
-  const others = toasts.filter((t) => !(t.message === toast.message && t.tone === toast.tone));
+export function addToast(
+  toasts: Toast[],
+  toast: Toast,
+  max = MAX_TOASTS,
+): Toast[] {
+  const others = toasts.filter(
+    (t) => !(t.message === toast.message && t.tone === toast.tone),
+  );
   return [...others, toast].slice(-max);
 }
 

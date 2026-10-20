@@ -37,7 +37,10 @@ describe("unexpectedError", () => {
   const silent = () => {};
 
   it("answers a failed Claude call with a 502", async () => {
-    const res = unexpectedError(new APIConnectionError({ message: "down" }), silent);
+    const res = unexpectedError(
+      new APIConnectionError({ message: "down" }),
+      silent,
+    );
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({
       error: "Claude didn't answer. Try again in a minute.",
@@ -69,7 +72,9 @@ describe("withErrors", () => {
   });
 
   it("passes the handler's arguments through", async () => {
-    const handler = withErrors(async (req: Request) => Response.json({ url: req.url }));
+    const handler = withErrors(async (req: Request) =>
+      Response.json({ url: req.url }),
+    );
     const res = await handler(new Request("http://localhost/api/x"));
     expect(await res.json()).toEqual({ url: "http://localhost/api/x" });
   });

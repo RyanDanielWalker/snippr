@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SNIPPET_CAPS, snippetCap, snippetCapMessage, snippetCapStatus } from "./snippet-cap";
+import {
+  SNIPPET_CAPS,
+  snippetCap,
+  snippetCapMessage,
+  snippetCapStatus,
+} from "./snippet-cap";
 
 describe("snippetCap", () => {
   it("gives members more room than guests", () => {
@@ -34,6 +39,8 @@ describe("snippetCapMessage", () => {
     expect(snippetCapMessage(50, false)).toBe(
       "You've hit the 50 snippet limit. Delete one to make room.",
     );
-    expect(snippetCapMessage(10, true)).toBe("The demo holds 10 snippets. Delete one to make room.");
+    expect(snippetCapMessage(10, true)).toBe(
+      "The demo holds 10 snippets. Delete one to make room.",
+    );
   });
 });

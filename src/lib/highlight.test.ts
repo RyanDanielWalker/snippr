@@ -11,11 +11,17 @@ import {
   type CodeToHtml,
 } from "./highlight";
 
-const snippet = (code: string, language = "typescript") => ({ id: "a", code, language });
+const snippet = (code: string, language = "typescript") => ({
+  id: "a",
+  code,
+  language,
+});
 
 describe("cardPreviewCode", () => {
   it("leaves short code alone", () => {
-    expect(cardPreviewCode("const a = 1;\nconst b = 2;")).toBe("const a = 1;\nconst b = 2;");
+    expect(cardPreviewCode("const a = 1;\nconst b = 2;")).toBe(
+      "const a = 1;\nconst b = 2;",
+    );
   });
 
   it("keeps only the lines a card has room for", () => {
@@ -26,7 +32,9 @@ describe("cardPreviewCode", () => {
   });
 
   it("cuts one very long line too", () => {
-    expect(cardPreviewCode("x".repeat(20_000))).toHaveLength(CARD_PREVIEW_CHARS);
+    expect(cardPreviewCode("x".repeat(20_000))).toHaveLength(
+      CARD_PREVIEW_CHARS,
+    );
   });
 });
 
@@ -71,8 +79,13 @@ describe("withCardHtml", () => {
 
     const [result] = await withCardHtml([snippet(long, "other")], fake);
 
-    expect(calls).toEqual([[cardPreviewCode(long), { lang: "text", theme: SHIKI_THEME }]]);
-    expect(result).toEqual({ ...snippet(long, "other"), codeHtml: `<pre>${cardPreviewCode(long).length}</pre>` });
+    expect(calls).toEqual([
+      [cardPreviewCode(long), { lang: "text", theme: SHIKI_THEME }],
+    ]);
+    expect(result).toEqual({
+      ...snippet(long, "other"),
+      codeHtml: `<pre>${cardPreviewCode(long).length}</pre>`,
+    });
   });
 
   it("gives null to a snippet Shiki fails on and still highlights the others", async () => {
@@ -81,14 +94,20 @@ describe("withCardHtml", () => {
       return "<pre>ok</pre>";
     };
 
-    const results = await withCardHtml([snippet("a", "cobol"), snippet("b")], fake);
+    const results = await withCardHtml(
+      [snippet("a", "cobol"), snippet("b")],
+      fake,
+    );
 
     expect(results.map((r) => r.codeHtml)).toEqual([null, "<pre>ok</pre>"]);
   });
 
   // The cards put this HTML on the page as is, so the escaping has to be Shiki's.
   it("escapes the code with the real Shiki", async () => {
-    const [result] = await withCardHtml([snippet("<script>alert(1)</script>", "html")], codeToHtml);
+    const [result] = await withCardHtml(
+      [snippet("<script>alert(1)</script>", "html")],
+      codeToHtml,
+    );
 
     expect(result.codeHtml).toContain("<pre");
     expect(result.codeHtml).not.toContain("<script>");

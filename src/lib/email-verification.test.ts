@@ -29,7 +29,9 @@ describe("isGitHubEmailVerified", () => {
   });
 
   it("rejects an email that isn't on the GitHub account at all", () => {
-    expect(isGitHubEmailVerified("someone-else@example.com", emails)).toBe(false);
+    expect(isGitHubEmailVerified("someone-else@example.com", emails)).toBe(
+      false,
+    );
   });
 
   it("matches regardless of letter case", () => {
@@ -88,7 +90,9 @@ describe("fetchGitHubEmails", () => {
   });
 
   it("returns an empty list when GitHub responds with an error", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ message: "Bad credentials" }, 401));
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ message: "Bad credentials" }, 401));
     await expect(fetchGitHubEmails("t", fetchImpl)).resolves.toEqual([]);
   });
 
@@ -98,7 +102,9 @@ describe("fetchGitHubEmails", () => {
   });
 
   it("returns an empty list when the response isn't a list", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ unexpected: true }));
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ unexpected: true }));
     await expect(fetchGitHubEmails("t", fetchImpl)).resolves.toEqual([]);
   });
 });
@@ -137,7 +143,10 @@ describe("isProviderEmailVerified", () => {
   it("rejects GitHub without an access token, without calling GitHub", async () => {
     const fetchImpl = vi.fn();
     await expect(
-      isProviderEmailVerified({ provider: "github", email: "me@example.com" }, fetchImpl),
+      isProviderEmailVerified(
+        { provider: "github", email: "me@example.com" },
+        fetchImpl,
+      ),
     ).resolves.toBe(false);
     expect(fetchImpl).not.toHaveBeenCalled();
   });

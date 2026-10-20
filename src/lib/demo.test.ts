@@ -17,7 +17,9 @@ import { createFolderSchema, createSnippetSchema } from "./schemas";
 const now = new Date("2026-10-18T14:45:00.000Z");
 
 // An in-memory stand-in for the database side.
-function fakeStore(): DemoStore & { [K in keyof DemoStore]: ReturnType<typeof vi.fn> } {
+function fakeStore(): DemoStore & {
+  [K in keyof DemoStore]: ReturnType<typeof vi.fn>;
+} {
   const counts = new Map<string, number>();
   return {
     countStart: vi.fn(async (ipHash: string, start: Date) => {
@@ -34,7 +36,12 @@ function fakeStore(): DemoStore & { [K in keyof DemoStore]: ReturnType<typeof vi
 describe("startDemo", () => {
   it("creates a guest with a seeded library and a session that ends in 24 hours", async () => {
     const store = fakeStore();
-    const result = await startDemo({ ipHash: "ip-a", store, now, newSessionToken: () => "tok" });
+    const result = await startDemo({
+      ipHash: "ip-a",
+      store,
+      now,
+      newSessionToken: () => "tok",
+    });
 
     const expires = new Date(now.getTime() + GUEST_LIFETIME_MS);
     expect(result).toEqual({ ok: true, sessionToken: "tok", expires });
@@ -48,13 +55,18 @@ describe("startDemo", () => {
   it("cleans up expired guests and old start counts on the way", async () => {
     const store = fakeStore();
     await startDemo({ ipHash: "ip-a", store, now });
-    expect(store.deleteExpired).toHaveBeenCalledWith(now, new Date("2026-10-18T14:00:00.000Z"));
+    expect(store.deleteExpired).toHaveBeenCalledWith(
+      now,
+      new Date("2026-10-18T14:00:00.000Z"),
+    );
   });
 
   it("refuses past the hourly limit for one IP, without creating anything", async () => {
     const store = fakeStore();
     for (let i = 0; i < DEMO_START_LIMIT.limit; i++) {
-      await expect(startDemo({ ipHash: "ip-a", store, now })).resolves.toMatchObject({ ok: true });
+      await expect(
+        startDemo({ ipHash: "ip-a", store, now }),
+      ).resolves.toMatchObject({ ok: true });
     }
     store.createGuest.mockClear();
     store.deleteExpired.mockClear();
@@ -69,8 +81,11 @@ describe("startDemo", () => {
 
   it("counts each IP separately", async () => {
     const store = fakeStore();
-    for (let i = 0; i < DEMO_START_LIMIT.limit; i++) await startDemo({ ipHash: "ip-a", store, now });
-    await expect(startDemo({ ipHash: "ip-b", store, now })).resolves.toMatchObject({ ok: true });
+    for (let i = 0; i < DEMO_START_LIMIT.limit; i++)
+      await startDemo({ ipHash: "ip-a", store, now });
+    await expect(
+      startDemo({ ipHash: "ip-b", store, now }),
+    ).resolves.toMatchObject({ ok: true });
   });
 
   it("makes a different session token each time by default", async () => {
@@ -108,7 +123,15 @@ describe("demoSeed", () => {
   // the guest then can't edit (see docs/adr/0014).
   it("only seeds what the API would accept", () => {
     for (const { title, code, language, description, tags } of seed.snippets) {
-      expect(createSnippetSchema.safeParse({ title, code, language, description, tags }).error).toBeUndefined();
+      expect(
+        createSnippetSchema.safeParse({
+          title,
+          code,
+          language,
+          description,
+          tags,
+        }).error,
+      ).toBeUndefined();
     }
     for (const name of seed.folders) {
       expect(createFolderSchema.safeParse({ name }).error).toBeUndefined();
@@ -124,7 +147,9 @@ describe("clientIp", () => {
   });
 
   it("falls back to x-real-ip, then to a shared bucket", () => {
-    expect(clientIp(new Headers({ "x-real-ip": "203.0.113.8" }))).toBe("203.0.113.8");
+    expect(clientIp(new Headers({ "x-real-ip": "203.0.113.8" }))).toBe(
+      "203.0.113.8",
+    );
     expect(clientIp(new Headers())).toBe("unknown");
     expect(clientIp(new Headers({ "x-forwarded-for": " " }))).toBe("unknown");
   });
@@ -150,8 +175,12 @@ describe("usesSecureCookies and sessionCookieName", () => {
   });
 
   it("follows NEXTAUTH_URL elsewhere", () => {
-    expect(usesSecureCookies({ NEXTAUTH_URL: "https://snippr.dev" }, "http")).toBe(true);
-    expect(usesSecureCookies({ NEXTAUTH_URL: "http://localhost:3000" }, "https")).toBe(false);
+    expect(
+      usesSecureCookies({ NEXTAUTH_URL: "https://snippr.dev" }, "http"),
+    ).toBe(true);
+    expect(
+      usesSecureCookies({ NEXTAUTH_URL: "http://localhost:3000" }, "https"),
+    ).toBe(false);
     expect(usesSecureCookies({}, null)).toBe(false);
   });
 

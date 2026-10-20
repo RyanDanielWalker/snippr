@@ -13,9 +13,20 @@ async function makeUser(name: string) {
   return prisma.user.create({ data: { name, email: `${name}@example.com` } });
 }
 
-async function makeSnippet(userId: string, title: string, extra: { createdAt?: Date; folderId?: string } = {}) {
+async function makeSnippet(
+  userId: string,
+  title: string,
+  extra: { createdAt?: Date; folderId?: string } = {},
+) {
   return prisma.snippet.create({
-    data: { userId, title, code: "x", language: "typescript", tags: [], ...extra },
+    data: {
+      userId,
+      title,
+      code: "x",
+      language: "typescript",
+      tags: [],
+      ...extra,
+    },
   });
 }
 
@@ -55,20 +66,30 @@ describe("snippetStore", () => {
   it("finds a snippet's owner, or null when there's no such snippet", async () => {
     const snippet = await makeSnippet(ben.id, "Ben's");
 
-    expect(await snippetStore.findOwner(snippet.id)).toEqual({ userId: ben.id });
+    expect(await snippetStore.findOwner(snippet.id)).toEqual({
+      userId: ben.id,
+    });
     expect(await snippetStore.findOwner("no-such-id")).toBeNull();
   });
 
   it("finds a folder's owner, or null when there's no such folder", async () => {
-    const folder = await prisma.folder.create({ data: { userId: ben.id, name: "Ben's" } });
+    const folder = await prisma.folder.create({
+      data: { userId: ben.id, name: "Ben's" },
+    });
 
-    expect(await snippetStore.findFolderOwner(folder.id)).toEqual({ userId: ben.id });
+    expect(await snippetStore.findFolderOwner(folder.id)).toEqual({
+      userId: ben.id,
+    });
     expect(await snippetStore.findFolderOwner("no-such-id")).toBeNull();
   });
 
   it("leaves out what an update doesn't mention", async () => {
-    const folder = await prisma.folder.create({ data: { userId: ana.id, name: "Utils" } });
-    const snippet = await makeSnippet(ana.id, "Before", { folderId: folder.id });
+    const folder = await prisma.folder.create({
+      data: { userId: ana.id, name: "Utils" },
+    });
+    const snippet = await makeSnippet(ana.id, "Before", {
+      folderId: folder.id,
+    });
 
     const updated = await snippetStore.update(snippet.id, { title: "After" });
 
@@ -79,12 +100,21 @@ describe("snippetStore", () => {
 
 describe("folderStore", () => {
   it("lists only the user's folders, oldest first, with their snippet counts", async () => {
-    const newer = await prisma.folder.create({ data: { userId: ana.id, name: "Newer", createdAt: day(2) } });
-    await prisma.folder.create({ data: { userId: ana.id, name: "Older", createdAt: day(1) } });
-    await prisma.folder.create({ data: { userId: ben.id, name: "Ben's", createdAt: day(3) } });
+    const newer = await prisma.folder.create({
+      data: { userId: ana.id, name: "Newer", createdAt: day(2) },
+    });
+    await prisma.folder.create({
+      data: { userId: ana.id, name: "Older", createdAt: day(1) },
+    });
+    await prisma.folder.create({
+      data: { userId: ben.id, name: "Ben's", createdAt: day(3) },
+    });
     await makeSnippet(ana.id, "Filed", { folderId: newer.id });
 
-    const folders = (await folderStore.list(ana.id)).map((f) => [f.name, f._count.snippets]);
+    const folders = (await folderStore.list(ana.id)).map((f) => [
+      f.name,
+      f._count.snippets,
+    ]);
     expect(folders).toEqual([
       ["Older", 0],
       ["Newer", 1],
@@ -100,11 +130,15 @@ describe("folderStore", () => {
 
   it("moves a deleted folder's snippets to Unorganized instead of deleting them", async () => {
     const folder = await folderStore.create({ userId: ana.id, name: "Doomed" });
-    const snippet = await makeSnippet(ana.id, "Survivor", { folderId: folder.id });
+    const snippet = await makeSnippet(ana.id, "Survivor", {
+      folderId: folder.id,
+    });
 
     await folderStore.delete(folder.id);
 
-    const after = await prisma.snippet.findUnique({ where: { id: snippet.id } });
+    const after = await prisma.snippet.findUnique({
+      where: { id: snippet.id },
+    });
     expect(after?.folderId).toBeNull();
   });
 });

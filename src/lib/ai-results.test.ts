@@ -15,7 +15,9 @@ describe("pickByIds", () => {
   });
 
   it("drops a snippet that was deleted after the search", () => {
-    expect(pickByIds(["a", "gone"], [snippet("a")]).map((s) => s.id)).toEqual(["a"]);
+    expect(pickByIds(["a", "gone"], [snippet("a")]).map((s) => s.id)).toEqual([
+      "a",
+    ]);
   });
 
   it("returns nothing for no results", () => {

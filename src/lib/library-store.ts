@@ -14,11 +14,15 @@ function findFolderOwner(id: string) {
 
 export const snippetStore: SnippetStore = {
   list: (userId) =>
-    prisma.snippet.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
+    prisma.snippet.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    }),
 
   count: (userId) => prisma.snippet.count({ where: { userId } }),
 
-  findOwner: (id) => prisma.snippet.findUnique({ where: { id }, select: { userId: true } }),
+  findOwner: (id) =>
+    prisma.snippet.findUnique({ where: { id }, select: { userId: true } }),
 
   findFolderOwner,
 
