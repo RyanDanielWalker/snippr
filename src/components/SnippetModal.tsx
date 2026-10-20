@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { codeToHtml } from "shiki";
+import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { highlightCode } from "@/lib/highlight";
 import type { Snippet } from "@/lib/library-types";
@@ -21,7 +22,7 @@ export default function SnippetModal({
   const key = `${snippet.language}\n${snippet.code}`;
   const [result, setResult] = useState<{ key: string; html: string | null }>();
   const html = result?.key === key ? result.html : undefined;
-  const [copied, setCopied] = useState(false);
+  const { copy, copied } = useCopy(snippet.code);
   const del = useDeleteSnippet(snippet.id, onClose);
 
   useEffect(() => {
@@ -42,12 +43,6 @@ export default function SnippetModal({
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
-
-  function copy() {
-    navigator.clipboard.writeText(snippet.code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
 
   return (
     <div

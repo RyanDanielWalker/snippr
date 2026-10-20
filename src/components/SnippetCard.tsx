@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import SnippetFormModal from "@/components/SnippetFormModal";
 import SnippetModal from "@/components/SnippetModal";
 import SnippetCardView from "@/components/SnippetCardView";
+import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import type { Snippet, Folder } from "@/lib/library-types";
 
@@ -19,7 +20,7 @@ export default function SnippetCard({
   /** A drag to a folder is on its way; see DashboardClient. */
   moving?: boolean;
 }) {
-  const [copied, setCopied] = useState(false);
+  const { copy, copied } = useCopy(snippet.code);
   const del = useDeleteSnippet(snippet.id);
   const [showEdit, setShowEdit] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -37,11 +38,9 @@ export default function SnippetCard({
 
   const folderName = folders.find((f) => f.id === snippet.folderId)?.name;
 
-  function copy(e: React.MouseEvent) {
+  function handleCopy(e: React.MouseEvent) {
     e.stopPropagation();
-    navigator.clipboard.writeText(snippet.code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    copy();
   }
 
   function handleDelete(e: React.MouseEvent) {
@@ -101,7 +100,7 @@ export default function SnippetCard({
                   Edit
                 </button>
                 <button
-                  onClick={copy}
+                  onClick={handleCopy}
                   onPointerDown={(e) => e.stopPropagation()}
                   className="text-xs text-gray-500 hover:text-white transition"
                 >
