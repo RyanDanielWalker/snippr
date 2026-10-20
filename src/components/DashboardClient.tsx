@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
@@ -25,6 +25,7 @@ import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
 import { emptyState } from "@/lib/empty-state";
 import { pickByIds } from "@/lib/ai-results";
+import { latestOnly } from "@/lib/latest-only";
 import type { Snippet, Folder } from "@/lib/library-types";
 
 type Props = {
@@ -45,6 +46,9 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   const [aiResultIds, setAiResultIds] = useState<string[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  // Each AI search costs a call against the hourly limit, and a slow reply
+  // mustn't overwrite a newer one, so only the latest search's reply counts.
+  const aiSearches = useRef(latestOnly());
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   // Below md the sidebar is a drawer instead (see the wrapper around it).
@@ -117,7 +121,8 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   );
 
   async function handleAiSearch() {
-    if (!search.trim()) return;
+    if (aiLoading || !search.trim()) return;
+    const isLatest = aiSearches.current.start();
     setAiLoading(true);
     setAiResultIds(null);
     setAiError(null);
@@ -125,6 +130,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
     const result = await callApi<Snippet[]>("/api/snippets/search", "POST", {
       query: search,
     });
+    if (!isLatest()) return;
     setAiLoading(false);
     if (!result.ok) {
       setAiError(result.error);
@@ -139,6 +145,8 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   }
 
   function handleModeToggle() {
+    aiSearches.current.cancel();
+    setAiLoading(false);
     setAiMode((v) => !v);
     setAiResultIds(null);
     setAiError(null);
