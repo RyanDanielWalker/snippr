@@ -55,7 +55,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run typecheck` | TypeScript type check, no output files |
 | `npm test` | Run the test suite once (Vitest) |
 | `npm run test:watch` | Re-run tests as files change |
-| `npm run test:db` | The store and AI usage counter tests, against a real Postgres. Resets the `snippr_test` database first |
+| `npm run test:db` | The store, AI usage counter, and foreign key index tests, against a real Postgres. Resets the `snippr_test` database first |
 | `npm run test:e2e` | The end-to-end test in a real browser. Resets the e2e database, builds, and serves on port 3100 first, so it takes a minute or two |
 | `npm run e2e:db` | Wipe the e2e database and apply every migration. `test:e2e` runs it for you |
 
@@ -75,7 +75,7 @@ On a failure, `npx playwright show-trace test-results/<test>/trace.zip` replays 
 
 ## Store tests
 
-`npm test` never touches a database. The Prisma stores in `src/lib/library-store.ts` get their own tests, in `*.db.test.ts` files, that run against Postgres, because a fake store can't tell when a real query forgets its `userId` ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). The AI rate limit's SQL counter (`src/lib/ai-usage.ts`) is tested there too.
+`npm test` never touches a database. The Prisma stores in `src/lib/library-store.ts` get their own tests, in `*.db.test.ts` files, that run against Postgres, because a fake store can't tell when a real query forgets its `userId` ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). The AI rate limit's SQL counter (`src/lib/ai-usage.ts`) is tested there too, and so is the migrated schema itself: every foreign key needs an index (`src/lib/foreign-key-indexes.db.test.ts`), so a new relation in `schema.prisma` needs an `@@index` on its column.
 
 ```bash
 npm run db:up
@@ -153,7 +153,7 @@ If a change involves a decision that's hard to reverse, not obvious from the cod
 A change is ready to push when:
 
 - [ ] It works locally, and risky changes have been checked with a production build.
-- [ ] `npm run format:check`, `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`, and changes to a store or `ai-usage.ts` pass `npm run test:db`. CI runs all of them after the push either way.
+- [ ] `npm run format:check`, `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`, and changes to a store, `ai-usage.ts`, or `schema.prisma` pass `npm run test:db`. CI runs all of them after the push either way.
 - [ ] New API input goes through a schema in `src/lib/schemas.ts` (via `parseBody`), and every record lookup checks ownership.
 - [ ] New Route Handler logic lives in `src/lib` with the database passed in as a store, and has tests for its `401`, `400`, and ownership cases ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)).
 - [ ] New Route Handlers are wrapped in `withErrors`, send errors as `{ error }` through `src/lib/api-errors.ts`, and the interface calls them with `callApi` and shows the message: inline if the user can fix it, a toast if it happened out of sight ([0017](./adr/0017-one-error-shape-shown-inline.md), [0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)).
