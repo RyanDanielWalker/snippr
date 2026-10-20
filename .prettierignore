@@ -1,0 +1,8 @@
+# Prettier already skips what .gitignore lists (node_modules, .next,
+# the generated Prisma client, test output).
+
+# Prose is written by hand, and accepted ADRs are append-only, so a
+# formatter mustn't rewrite them.
+*.md
+
+package-lock.json

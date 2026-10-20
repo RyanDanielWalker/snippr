@@ -48,6 +48,8 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run db:migrate` | Apply migrations to the local database. After editing `prisma/schema.prisma`, also writes the new migration |
 | `npm run db:studio` | Browse the database in a local web UI |
 | `npm run lint` | ESLint |
+| `npm run format` | Format the code with Prettier. Markdown is left alone |
+| `npm run format:check` | Fail if any file isn't formatted. CI runs it |
 | `npm run typecheck` | TypeScript type check, no output files |
 | `npm test` | Run the test suite once (Vitest) |
 | `npm run test:watch` | Re-run tests as files change |
@@ -82,7 +84,7 @@ It wipes and migrates `snippr_test`, a third database in the same Docker Postgre
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push. One job runs lint, typecheck, and `npm test`. The other starts Postgres, applies the migrations to an empty database with `prisma migrate deploy`, then runs `test:db` and `test:e2e`. If the end-to-end test fails, the run's **Artifacts** section has a `playwright-trace` to download and open with `npx playwright show-trace`.
+`.github/workflows/ci.yml` runs on every push. One job checks formatting, then runs lint, typecheck, and `npm test`. The other starts Postgres, applies the migrations to an empty database with `prisma migrate deploy`, then runs `test:db` and `test:e2e`. If the end-to-end test fails, the run's **Artifacts** section has a `playwright-trace` to download and open with `npx playwright show-trace`.
 
 Vercel's Deployment Checks hold a production deploy until both jobs pass, so a red run means the previous version stays live. Fix it and push again, or, if it's urgent and the failure is the test's fault, promote the build by hand in Vercel.
 
@@ -149,7 +151,7 @@ If a change involves a decision that's hard to reverse, not obvious from the cod
 A change is ready to push when:
 
 - [ ] It works locally, and risky changes have been checked with a production build.
-- [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`, and changes to a store pass `npm run test:db`. CI runs all of them after the push either way.
+- [ ] `npm run format:check`, `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`, and changes to a store pass `npm run test:db`. CI runs all of them after the push either way.
 - [ ] New API input goes through a schema in `src/lib/schemas.ts` (via `parseBody`), and every record lookup checks ownership.
 - [ ] New Route Handler logic lives in `src/lib` with the database passed in as a store, and has tests for its `401`, `400`, and ownership cases ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)).
 - [ ] New Route Handlers are wrapped in `withErrors`, send errors as `{ error }` through `src/lib/api-errors.ts`, and the interface calls them with `callApi` and shows the message: inline if the user can fix it, a toast if it happened out of sight ([0017](./adr/0017-one-error-shape-shown-inline.md), [0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)).

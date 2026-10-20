@@ -38,6 +38,7 @@ jobs:
       - run: npm ci
       # The Prisma client's types, which typecheck needs. Doesn't connect.
       - run: npx prisma generate
+      - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
