@@ -7,23 +7,7 @@ import EditSnippetModal from "@/components/EditSnippetModal";
 import SnippetModal from "@/components/SnippetModal";
 import SnippetCardView from "@/components/SnippetCardView";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
-
-type Snippet = {
-  id: string;
-  title: string;
-  code: string;
-  language: string;
-  description?: string | null;
-  tags: string[];
-  folderId?: string | null;
-  createdAt: string;
-  codeHtml?: string | null;
-};
-
-type Folder = {
-  id: string;
-  name: string;
-};
+import type { Snippet, Folder } from "@/lib/library-types";
 
 export default function SnippetCard({
   snippet,

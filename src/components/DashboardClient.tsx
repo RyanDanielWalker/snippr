@@ -21,24 +21,7 @@ import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
 import { emptyState } from "@/lib/empty-state";
 import { pickByIds } from "@/lib/ai-results";
-
-type Snippet = {
-  id: string;
-  title: string;
-  code: string;
-  language: string;
-  description?: string | null;
-  tags: string[];
-  folderId?: string | null;
-  createdAt: string;
-  codeHtml?: string | null;
-};
-
-type Folder = {
-  id: string;
-  name: string;
-  _count: { snippets: number };
-};
+import type { Snippet, Folder } from "@/lib/library-types";
 
 type Props = {
   snippets: Snippet[];

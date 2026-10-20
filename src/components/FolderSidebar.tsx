@@ -7,12 +7,7 @@ import { FOLDER_NAME_MAX } from "@/lib/field-limits";
 import { callApi, type ApiResult } from "@/lib/api-client";
 import { folderNameAction } from "@/lib/folder-name-input";
 import { useToast } from "@/components/Toaster";
-
-type Folder = {
-  id: string;
-  name: string;
-  _count: { snippets: number };
-};
+import type { Folder } from "@/lib/library-types";
 
 function DroppableFolder({
   id,

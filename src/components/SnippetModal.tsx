@@ -4,16 +4,7 @@ import { useEffect, useState } from "react";
 import { codeToHtml } from "shiki";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { SHIKI_THEME, shikiLanguage } from "@/lib/highlight";
-
-type Snippet = {
-  id: string;
-  title: string;
-  code: string;
-  language: string;
-  description?: string | null;
-  tags: string[];
-  createdAt: string;
-};
+import type { Snippet } from "@/lib/library-types";
 
 export default function SnippetModal({
   snippet,
