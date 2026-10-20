@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import EditSnippetModal from "@/components/EditSnippetModal";
+import SnippetFormModal from "@/components/SnippetFormModal";
 import SnippetModal from "@/components/SnippetModal";
 import SnippetCardView from "@/components/SnippetCardView";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
@@ -57,7 +57,7 @@ export default function SnippetCard({
   return (
     <>
       {showEdit && (
-        <EditSnippetModal
+        <SnippetFormModal
           snippet={snippet}
           folders={folders}
           onClose={() => setShowEdit(false)}

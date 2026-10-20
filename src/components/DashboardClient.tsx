@@ -13,7 +13,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import SnippetCard from "@/components/SnippetCard";
-import NewSnippetModal from "@/components/NewSnippetModal";
+import SnippetFormModal from "@/components/SnippetFormModal";
 import FolderSidebar from "@/components/FolderSidebar";
 import { useToast } from "@/components/Toaster";
 import { snippetCap, snippetCapMessage, snippetCapStatus } from "@/lib/snippet-cap";
@@ -225,7 +225,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       {showModal && (
-        <NewSnippetModal
+        <SnippetFormModal
           folders={folders}
           defaultFolderId={
             selectedFolderId && selectedFolderId !== "unorganized"

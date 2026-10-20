@@ -12,8 +12,12 @@ const CONFIRM_MS = 3000;
  * Two-step delete for a snippet, shared by the card, the preview, and the edit
  * form so they behave the same. The first press arms it, the second deletes.
  * Errors stay inline (docs/adr/0017); success is a toast (docs/adr/0021).
+ * Without an id (a snippet not saved yet) pressing does nothing.
  */
-export function useDeleteSnippet(id: string, onDeleted?: () => void) {
+export function useDeleteSnippet(
+  id: string | undefined,
+  onDeleted?: () => void,
+) {
   const router = useRouter();
   const toast = useToast();
   const [deleting, startDeleting] = useTransition();
@@ -24,7 +28,7 @@ export function useDeleteSnippet(id: string, onDeleted?: () => void) {
   useEffect(() => () => clearTimeout(disarmTimer.current), []);
 
   function press() {
-    if (deleting) return;
+    if (!id || deleting) return;
     if (!armed) {
       setArmed(true);
       disarmTimer.current = setTimeout(() => setArmed(false), CONFIRM_MS);

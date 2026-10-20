@@ -4,72 +4,58 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LANGUAGES, SNIPPET_LIMITS } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
+import type { Folder, Snippet } from "@/lib/library-types";
+import {
+  hasRequired,
+  initialFields,
+  isDirty,
+  requestBody,
+} from "@/lib/snippet-form";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 
-type Snippet = {
-  id: string;
-  title: string;
-  code: string;
-  language: string;
-  description?: string | null;
-  tags: string[];
-  folderId?: string | null;
-};
-
-type Folder = {
-  id: string;
-  name: string;
-};
-
-export default function EditSnippetModal({
+/**
+ * The form for a new snippet and for editing one. Pass `snippet` to edit it;
+ * leave it out to create one in `defaultFolderId`.
+ */
+export default function SnippetFormModal({
   snippet,
   folders,
+  defaultFolderId = null,
   onClose,
 }: {
-  snippet: Snippet;
+  snippet?: Snippet;
   folders: Folder[];
+  defaultFolderId?: string | null;
   onClose: () => void;
 }) {
   const router = useRouter();
+  const editing = snippet !== undefined;
   const [saving, startSaving] = useTransition();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [describeError, setDescribeError] = useState<string | null>(null);
-  const del = useDeleteSnippet(snippet.id, onClose);
-  const [form, setForm] = useState({
-    title: snippet.title,
-    code: snippet.code,
-    language: snippet.language,
-    description: snippet.description ?? "",
-    tags: snippet.tags.join(", "),
-    folderId: snippet.folderId ?? "",
-  });
+  // Never pressed for a new snippet, but hooks can't be skipped.
+  const del = useDeleteSnippet(snippet?.id, onClose);
+  const [initial] = useState(() => initialFields(snippet, defaultFolderId));
+  const [form, setForm] = useState(initial);
 
-  const originalTags = snippet.tags.join(", ");
-  const hasChanges =
-    form.title !== snippet.title ||
-    form.code !== snippet.code ||
-    form.language !== snippet.language ||
-    form.description !== (snippet.description ?? "") ||
-    form.tags !== originalTags ||
-    form.folderId !== (snippet.folderId ?? "");
+  const dirty = isDirty(form, initial);
+  const canSave = hasRequired(form) && dirty && !saving && !del.deleting;
+  const heading = editing ? "Edit snippet" : "New snippet";
 
   function handleSubmit() {
-    if (!form.title || !form.code || saving) return;
+    if (!canSave) return;
     setError(null);
 
     startSaving(async () => {
-      const result = await callApi("/api/snippets", "PATCH", {
-        id: snippet.id,
-        ...form,
-        folderId: form.folderId || null,
-        tags: form.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-      });
+      const result = editing
+        ? await callApi("/api/snippets", "PATCH", {
+            id: snippet.id,
+            ...requestBody(form),
+          })
+        : await callApi("/api/snippets", "POST", requestBody(form));
 
-      // Stay open on any failure, so the edits aren't lost.
+      // Stay open on any failure, so nothing typed is lost.
       if (!result.ok) {
         setError(result.error);
         return;
@@ -107,18 +93,18 @@ export default function EditSnippetModal({
     <div
       className="fixed inset-0 bg-black/70 flex overflow-y-auto z-50 p-4"
       onClick={() => {
-        if (!hasChanges) onClose();
+        if (!dirty) onClose();
       }}
     >
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Edit snippet"
+        aria-label={heading}
         className="m-auto bg-gray-900 rounded-xl w-full max-w-3xl p-4 sm:p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-white font-semibold text-lg">Edit snippet</h2>
+          <h2 className="text-white font-semibold text-lg">{heading}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white">
             ✕
           </button>
@@ -134,60 +120,28 @@ export default function EditSnippetModal({
         />
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="relative">
-            <select
-              value={form.language}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, language: e.target.value }))
-              }
-              className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            <svg
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.4a.75.75 0 01-1.08 0l-4.25-4.4a.75.75 0 01.02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
+          <Select
+            value={form.language}
+            onChange={(language) => setForm((f) => ({ ...f, language }))}
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </Select>
 
-          <div className="relative">
-            <select
-              value={form.folderId}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, folderId: e.target.value }))
-              }
-              className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
-            >
-              <option value="">No folder</option>
-              {folders.map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {folder.name}
-                </option>
-              ))}
-            </select>
-            <svg
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.4a.75.75 0 01-1.08 0l-4.25-4.4a.75.75 0 01.02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
+          <Select
+            value={form.folderId}
+            onChange={(folderId) => setForm((f) => ({ ...f, folderId }))}
+          >
+            <option value="">No folder</option>
+            {folders.map((folder) => (
+              <option key={folder.id} value={folder.id}>
+                {folder.name}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <textarea
@@ -241,18 +195,20 @@ export default function EditSnippetModal({
         )}
 
         {/* Deleting throws away unsaved edits too, which is what you'd want. */}
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            onClick={del.press}
-            disabled={del.deleting || saving}
-            className={`mr-auto px-2 py-2 text-sm transition ${
-              del.armed
-                ? "text-red-400 hover:text-red-300"
-                : "text-gray-500 hover:text-red-400"
-            }`}
-          >
-            {del.label}
-          </button>
+        <div className="flex items-center justify-end gap-3 pt-2">
+          {editing && (
+            <button
+              onClick={del.press}
+              disabled={del.deleting || saving}
+              className={`mr-auto px-2 py-2 text-sm transition ${
+                del.armed
+                  ? "text-red-400 hover:text-red-300"
+                  : "text-gray-500 hover:text-red-400"
+              }`}
+            >
+              {del.label}
+            </button>
+          )}
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-400 hover:text-white transition"
@@ -261,15 +217,46 @@ export default function EditSnippetModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={
-              saving || del.deleting || !form.title || !form.code || !hasChanges
-            }
+            disabled={!canSave}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? "Saving..." : "Save changes"}
+            {saving ? "Saving..." : editing ? "Save changes" : "Save snippet"}
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Select({
+  value,
+  onChange,
+  children,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
+      >
+        {children}
+      </select>
+      <svg
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fillRule="evenodd"
+          d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.4a.75.75 0 01-1.08 0l-4.25-4.4a.75.75 0 01.02-1.06z"
+          clipRule="evenodd"
+        />
+      </svg>
     </div>
   );
 }
