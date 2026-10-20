@@ -23,9 +23,11 @@ export type FolderStore = {
   /** Who owns a folder, or null if there's no such folder. */
   findOwner(id: string): Promise<{ userId: string } | null>;
   create(data: { name: string; userId: string }): Promise<Folder>;
-  rename(id: string, name: string): Promise<Folder>;
+  // Like SnippetStore's writes: scoped by userId, null or false when
+  // nothing matched.
+  rename(id: string, userId: string, name: string): Promise<Folder | null>;
   /** Its snippets move to Unorganized (`onDelete: SetNull`). */
-  delete(id: string): Promise<void>;
+  delete(id: string, userId: string): Promise<boolean>;
 };
 
 // Missing and someone else's get the same response, so it can't be used to
@@ -81,7 +83,10 @@ export async function renameFolder(
 
   if (!(await ownsFolder(store, id, user.id))) return folderNotFound();
 
-  return Response.json(await store.rename(id, name));
+  // Null if it was deleted after the check above.
+  const renamed = await store.rename(id, user.id, name);
+  if (!renamed) return folderNotFound();
+  return Response.json(renamed);
 }
 
 export async function deleteFolder(
@@ -97,6 +102,6 @@ export async function deleteFolder(
   if (!(await ownsFolder(store, body.data.id, user.id)))
     return folderNotFound();
 
-  await store.delete(body.data.id);
+  if (!(await store.delete(body.data.id, user.id))) return folderNotFound();
   return Response.json({ success: true });
 }

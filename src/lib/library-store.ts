@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { SnippetStore } from "@/lib/snippets";
 import type { FolderStore } from "@/lib/folders";
@@ -8,6 +9,23 @@ import type { FolderStore } from "@/lib/folders";
  * a real Postgres in library-store.db.test.ts (`npm run test:db`), since a
  * fake can't tell whether a query here forgets its `userId`.
  */
+
+// The writes put `userId` in the `where` next to the id, so the database
+// only touches a row the user owns. `update` throws P2025 when no row
+// matches; that becomes null. `deleteMany` just reports a count.
+async function nullIfMissing<T>(write: Promise<T>): Promise<T | null> {
+  try {
+    return await write;
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
+}
 
 function findFolderOwner(id: string) {
   return prisma.folder.findUnique({ where: { id }, select: { userId: true } });
@@ -29,10 +47,14 @@ export const snippetStore: SnippetStore = {
 
   create: (data) => prisma.snippet.create({ data }),
 
-  update: (id, data) => prisma.snippet.update({ where: { id }, data }),
+  update: (id, userId, data) =>
+    nullIfMissing(prisma.snippet.update({ where: { id, userId }, data })),
 
-  async delete(id) {
-    await prisma.snippet.delete({ where: { id } });
+  async delete(id, userId) {
+    const { count } = await prisma.snippet.deleteMany({
+      where: { id, userId },
+    });
+    return count > 0;
   },
 };
 
@@ -50,9 +72,15 @@ export const folderStore: FolderStore = {
 
   create: (data) => prisma.folder.create({ data }),
 
-  rename: (id, name) => prisma.folder.update({ where: { id }, data: { name } }),
+  rename: (id, userId, name) =>
+    nullIfMissing(
+      prisma.folder.update({ where: { id, userId }, data: { name } }),
+    ),
 
-  async delete(id) {
-    await prisma.folder.delete({ where: { id } });
+  async delete(id, userId) {
+    const { count } = await prisma.folder.deleteMany({
+      where: { id, userId },
+    });
+    return count > 0;
   },
 };

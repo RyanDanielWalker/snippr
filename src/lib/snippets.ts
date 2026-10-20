@@ -40,8 +40,15 @@ export type SnippetStore = {
   findOwner(id: string): Promise<{ userId: string } | null>;
   findFolderOwner: FindFolder;
   create(data: NewSnippet): Promise<Snippet>;
-  update(id: string, data: SnippetChanges): Promise<Snippet>;
-  delete(id: string): Promise<void>;
+  // The writes take the userId too and only touch a row that matches both,
+  // so ownership holds even for a caller that skips `findOwner`. Null or
+  // false means nothing matched.
+  update(
+    id: string,
+    userId: string,
+    data: SnippetChanges,
+  ): Promise<Snippet | null>;
+  delete(id: string, userId: string): Promise<boolean>;
 };
 
 // Missing and someone else's get the same response, so neither can be used
@@ -117,7 +124,10 @@ export async function updateSnippet(
     return folderNotFound();
   }
 
-  return Response.json(await store.update(id, data));
+  // Null if it was deleted after the check above.
+  const updated = await store.update(id, user.id, data);
+  if (!updated) return snippetNotFound();
+  return Response.json(updated);
 }
 
 export async function deleteSnippet(
@@ -133,6 +143,6 @@ export async function deleteSnippet(
   if (!(await ownsSnippet(store, body.data.id, user.id)))
     return snippetNotFound();
 
-  await store.delete(body.data.id);
+  if (!(await store.delete(body.data.id, user.id))) return snippetNotFound();
   return Response.json({ success: true });
 }

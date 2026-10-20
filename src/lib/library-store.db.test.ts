@@ -91,10 +91,40 @@ describe("snippetStore", () => {
       folderId: folder.id,
     });
 
-    const updated = await snippetStore.update(snippet.id, { title: "After" });
+    const updated = await snippetStore.update(snippet.id, ana.id, {
+      title: "After",
+    });
 
-    expect(updated.title).toBe("After");
-    expect(updated.folderId).toBe(folder.id);
+    expect(updated?.title).toBe("After");
+    expect(updated?.folderId).toBe(folder.id);
+  });
+
+  it("won't update or delete another user's snippet", async () => {
+    const snippet = await makeSnippet(ben.id, "Ben's");
+
+    expect(
+      await snippetStore.update(snippet.id, ana.id, { title: "Ana's now" }),
+    ).toBeNull();
+    expect(await snippetStore.delete(snippet.id, ana.id)).toBe(false);
+
+    const after = await prisma.snippet.findUnique({
+      where: { id: snippet.id },
+    });
+    expect(after?.title).toBe("Ben's");
+  });
+
+  it("says so when there's nothing to update or delete", async () => {
+    expect(
+      await snippetStore.update("no-such-id", ana.id, { title: "x" }),
+    ).toBeNull();
+    expect(await snippetStore.delete("no-such-id", ana.id)).toBe(false);
+  });
+
+  it("deletes the user's own snippet", async () => {
+    const snippet = await makeSnippet(ana.id, "Doomed");
+
+    expect(await snippetStore.delete(snippet.id, ana.id)).toBe(true);
+    expect(await snippetStore.findOwner(snippet.id)).toBeNull();
   });
 });
 
@@ -134,11 +164,29 @@ describe("folderStore", () => {
       folderId: folder.id,
     });
 
-    await folderStore.delete(folder.id);
+    expect(await folderStore.delete(folder.id, ana.id)).toBe(true);
 
     const after = await prisma.snippet.findUnique({
       where: { id: snippet.id },
     });
     expect(after?.folderId).toBeNull();
+  });
+
+  it("renames the user's own folder", async () => {
+    const folder = await folderStore.create({ userId: ana.id, name: "Old" });
+
+    const renamed = await folderStore.rename(folder.id, ana.id, "New");
+
+    expect(renamed?.name).toBe("New");
+  });
+
+  it("won't rename or delete another user's folder", async () => {
+    const folder = await folderStore.create({ userId: ben.id, name: "Ben's" });
+
+    expect(await folderStore.rename(folder.id, ana.id, "Ana's now")).toBeNull();
+    expect(await folderStore.delete(folder.id, ana.id)).toBe(false);
+
+    const after = await prisma.folder.findUnique({ where: { id: folder.id } });
+    expect(after?.name).toBe("Ben's");
   });
 });

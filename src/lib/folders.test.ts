@@ -51,13 +51,17 @@ function fakeStore(extraFolders: Folder[] = []) {
       folders.set(created.id, created);
       return created;
     }),
-    rename: vi.fn(async (id: string, name: string) => {
-      const renamed = { ...folders.get(id)!, name };
+    // Writes match on id and userId, like the Prisma store.
+    rename: vi.fn(async (id: string, userId: string, name: string) => {
+      const found = folders.get(id);
+      if (found?.userId !== userId) return null;
+      const renamed = { ...found, name };
       folders.set(id, renamed);
       return renamed;
     }),
-    delete: vi.fn(async (id: string) => {
-      folders.delete(id);
+    delete: vi.fn(async (id: string, userId: string) => {
+      if (folders.get(id)?.userId !== userId) return false;
+      return folders.delete(id);
     }),
   } satisfies FolderStore;
 
@@ -216,6 +220,25 @@ describe("renameFolder", () => {
     expect(store.rename).not.toHaveBeenCalled();
     expect(folders.get("folder-theirs")?.name).toBe("Folder folder-theirs");
   });
+
+  it("is a 403 when the write itself finds nothing of the user's", async () => {
+    // The check said yes (a race, or a caller that skipped it), but the
+    // write is scoped by userId too.
+    const { store, folders } = fakeStore();
+    store.findOwner.mockResolvedValue({ userId: "user-me" });
+    const res = await renameFolder(
+      store,
+      me,
+      request({ id: "folder-theirs", name: "Mine now" }),
+    );
+    await expectError(res, 403, "Folder not found.");
+    expect(store.rename).toHaveBeenCalledWith(
+      "folder-theirs",
+      "user-me",
+      "Mine now",
+    );
+    expect(folders.get("folder-theirs")?.name).toBe("Folder folder-theirs");
+  });
 });
 
 describe("deleteFolder", () => {
@@ -236,6 +259,18 @@ describe("deleteFolder", () => {
       );
     }
     expect(store.delete).not.toHaveBeenCalled();
+    expect(folders.has("folder-theirs")).toBe(true);
+  });
+
+  it("is a 403 when the delete itself finds nothing of the user's", async () => {
+    const { store, folders } = fakeStore();
+    store.findOwner.mockResolvedValue({ userId: "user-me" });
+    await expectError(
+      await deleteFolder(store, me, request({ id: "folder-theirs" })),
+      403,
+      "Folder not found.",
+    );
+    expect(store.delete).toHaveBeenCalledWith("folder-theirs", "user-me");
     expect(folders.has("folder-theirs")).toBe(true);
   });
 });

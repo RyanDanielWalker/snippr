@@ -69,13 +69,17 @@ function fakeStore(extraSnippets: Snippet[] = []) {
       snippets.set(created.id, created);
       return created;
     }),
-    update: vi.fn(async (id, data) => {
-      const updated = { ...snippets.get(id)!, ...data };
+    // Writes match on id and userId, like the Prisma store.
+    update: vi.fn(async (id, userId, data) => {
+      const found = snippets.get(id);
+      if (found?.userId !== userId) return null;
+      const updated = { ...found, ...data };
       snippets.set(id, updated);
       return updated;
     }),
-    delete: vi.fn(async (id: string) => {
-      snippets.delete(id);
+    delete: vi.fn(async (id: string, userId: string) => {
+      if (snippets.get(id)?.userId !== userId) return false;
+      return snippets.delete(id);
     }),
   } satisfies SnippetStore;
 
@@ -266,7 +270,7 @@ describe("updateSnippet", () => {
       request({ id: "snippet-mine", title: "Renamed" }),
     );
     expect(res.status).toBe(200);
-    expect(store.update).toHaveBeenCalledWith("snippet-mine", {
+    expect(store.update).toHaveBeenCalledWith("snippet-mine", "user-me", {
       title: "Renamed",
     });
     expect(snippets.get("snippet-mine")?.folderId).toBe("folder-mine");
@@ -316,7 +320,26 @@ describe("updateSnippet", () => {
       me,
       request({ id: "snippet-mine", userId: "user-other" }),
     );
-    expect(store.update).toHaveBeenCalledWith("snippet-mine", {});
+    expect(store.update).toHaveBeenCalledWith("snippet-mine", "user-me", {});
+  });
+
+  it("is a 403 when the write itself finds nothing of the user's", async () => {
+    // The check said yes (a race, or a caller that skipped it), but the
+    // write is scoped by userId too.
+    const { store, snippets } = fakeStore();
+    store.findOwner.mockResolvedValue({ userId: "user-me" });
+    const res = await updateSnippet(
+      store,
+      me,
+      request({ id: "snippet-theirs", title: "Mine now" }),
+    );
+    await expectError(res, 403, "Snippet not found.");
+    expect(store.update).toHaveBeenCalledWith("snippet-theirs", "user-me", {
+      title: "Mine now",
+    });
+    expect(snippets.get("snippet-theirs")?.title).toBe(
+      "Snippet snippet-theirs",
+    );
   });
 });
 
@@ -338,6 +361,18 @@ describe("deleteSnippet", () => {
       );
     }
     expect(store.delete).not.toHaveBeenCalled();
+    expect(snippets.has("snippet-theirs")).toBe(true);
+  });
+
+  it("is a 403 when the delete itself finds nothing of the user's", async () => {
+    const { store, snippets } = fakeStore();
+    store.findOwner.mockResolvedValue({ userId: "user-me" });
+    await expectError(
+      await deleteSnippet(store, me, request({ id: "snippet-theirs" })),
+      403,
+      "Snippet not found.",
+    );
+    expect(store.delete).toHaveBeenCalledWith("snippet-theirs", "user-me");
     expect(snippets.has("snippet-theirs")).toBe(true);
   });
 });
