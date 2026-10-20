@@ -1,75 +1,20 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-import { aiRateLimitRule, checkRateLimit } from "@/lib/rate-limit";
+import { currentUser } from "@/lib/auth";
+import { withErrors } from "@/lib/api-errors";
+import { snippetStore } from "@/lib/library-store";
 import { incrementAiUsage } from "@/lib/ai-usage";
-import { tooManyRequests, unauthorized, withErrors } from "@/lib/api-errors";
-import { parseBody } from "@/lib/request-body";
-import { searchSchema } from "@/lib/schemas";
+import { askClaude } from "@/lib/ai";
+import { searchSnippets } from "@/lib/ai-search";
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || "",
-});
+// The rules live in src/lib/ai-search.ts, where they're tested (docs/adr/0023).
 
-export const POST = withErrors(async (req: Request) => {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return unauthorized();
-
-  const body = await parseBody(req, searchSchema);
-  if (!body.ok) return body.response;
-  const { query } = body.data;
-  if (!query) return NextResponse.json([]);
-
-  const snippets = await prisma.snippet.findMany({
-    where: { userId: session.user.id },
-  });
-
-  if (snippets.length === 0) return NextResponse.json([]);
-
-  const limit = await checkRateLimit(
-    session.user.id,
-    "search",
-    incrementAiUsage,
-    new Date(),
-    aiRateLimitRule("search", session.user.isGuest),
-  );
-  if (!limit.allowed) return tooManyRequests(limit.retryAfterSeconds);
-
-  const snippetList = snippets
-    .map(
-      (s, i) =>
-        `[${i}] title: "${s.title}" | language: ${s.language} | tags: ${s.tags.join(", ")} | description: "${s.description ?? ""}"`,
-    )
-    .join("\n");
-
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1000,
-    messages: [
-      {
-        role: "user",
-        content: `You are a code snippet search engine. Given a user's search query and a list of snippets, return the indices of the most relevant snippets.
-
-User query: "${query}"
-
-Snippets:
-${snippetList}
-
-Return ONLY a JSON array of indices (e.g. [0, 2, 5]) of the most relevant snippets, ordered by relevance. Return an empty array if nothing matches. No explanation, just the JSON array.`,
-      },
-    ],
-  });
-
-  const text =
-    message.content[0].type === "text" ? message.content[0].text : "[]";
-
-  try {
-    const indices: number[] = JSON.parse(text);
-    const results = indices.map((i) => snippets[i]).filter(Boolean);
-    return NextResponse.json(results);
-  } catch {
-    return NextResponse.json([]);
-  }
-});
+export const POST = withErrors(async (req: Request) =>
+  searchSnippets(
+    {
+      listSnippets: snippetStore.list,
+      increment: incrementAiUsage,
+      ask: askClaude,
+    },
+    await currentUser(),
+    req,
+  ),
+);
