@@ -72,7 +72,7 @@ sequenceDiagram
     DB-->>NA: session + user id
     RH->>DB: find snippet by id
     RH->>RH: snippet.userId === session user id?
-    RH->>DB: update snippet
+    RH->>DB: update snippet where id and userId match
     RH-->>UI: 200 + updated snippet
     UI->>UI: router.refresh()
 ```
@@ -88,7 +88,7 @@ Every Route Handler follows the same pattern. For snippets and folders it lives 
 1. **Who are you?** Resolve the session. No user id means `401`.
 2. **Is it the right shape?** Check the body against its zod schema (`src/lib/schemas.ts`). Wrong types, missing fields, oversized fields, or malformed JSON mean `400` with an `error` message. Fields the schema doesn't list are dropped, so a body can't set `userId` ([0014](./adr/0014-validate-request-bodies-with-zod.md)).
 3. **Is it yours?** For any record addressed by id, load it and compare its `userId` to the session's. Mismatch or missing means `403`.
-4. **Do the work,** scoped by `userId`.
+4. **Do the work,** scoped by `userId`. Updates and deletes match on both the id and the `userId` (`where: { id, userId }`), so the database refuses someone else's row even if step 3 was skipped or the row changed hands in between. A write that matches nothing is the same `403`.
 
 Lists are always filtered with `where: { userId }`, so one user can never see another's data. Foreign keys in a request body get the same rule: when a snippet is created or updated, its `folderId` must be null or a folder you own, or the request gets a `403` (`src/lib/folder-ownership.ts`; history in [0006](./adr/0006-folders-as-optional-one-to-many.md)).
 
