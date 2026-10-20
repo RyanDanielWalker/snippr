@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 
 // The main flow, through the real app and a real database: start a demo, add
 // a snippet, find it with search, and drag it into a folder. AI search isn't
-// covered here; it gets tests against a fake Claude with the shared AI module
-// (roadmap, Phase 4).
+// covered here; its handler is unit-tested against a fake Claude
+// (src/lib/ai-search.test.ts), and a browser test is Parked on the roadmap.
 test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try the demo" }).click();

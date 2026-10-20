@@ -2,7 +2,7 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-20 (after ADR 0022)*
+*Last reviewed: 2026-10-20 (after ADR 0023)*
 
 ## The short version
 
@@ -83,7 +83,7 @@ PATCH is a partial update: fields the request leaves out stay as they are, and `
 
 ### Authorization model
 
-Every Route Handler follows the same pattern. For snippets and folders it lives in `src/lib/snippets.ts` and `src/lib/folders.ts`, which get the database passed in as a store, so each step is tested against an in-memory one with two users; the route files only connect them to NextAuth and Prisma ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)). The AI handlers still do it inline:
+Every Route Handler follows the same pattern. For snippets and folders it lives in `src/lib/snippets.ts` and `src/lib/folders.ts`, which get the database passed in as a store, so each step is tested against an in-memory one with two users; the route files only connect them to NextAuth and Prisma ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)). The AI handlers work the same way, in `src/lib/ai-search.ts` and `src/lib/ai-describe.ts` ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)). The steps:
 
 1. **Who are you?** Resolve the session. No user id means `401`.
 2. **Is it the right shape?** Check the body against its zod schema (`src/lib/schemas.ts`). Wrong types, missing fields, oversized fields, or malformed JSON mean `400` with an `error` message. Fields the schema doesn't list are dropped, so a body can't set `userId` ([0014](./adr/0014-validate-request-bodies-with-zod.md)).
@@ -218,10 +218,12 @@ An adapter wrapper (`src/lib/guest.ts`) enforces the rest. Once `guestExpiresAt`
 
 Both features call Claude synchronously from a Route Handler. The API key never reaches the browser.
 
-- **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets.
+All Claude calls go through `src/lib/ai.ts` ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)): one client, Claude Haiku 5.5 for both features, thinking off, a 15-second timeout and one retry. A timeout or any other failed call is a `502`. The features take its `askClaude` function as an argument, so their tests use a fake Claude.
+
+- **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets. A reply that isn't one is logged and shown as no matches. The dashboard runs one search at a time and ignores a reply that arrives after a newer search or after AI mode is switched off (`src/lib/latest-only.ts`).
 - **AI descriptions** (`POST /api/snippets/describe`): sends the code and language and asks for one sentence under 15 words.
 
-Each user gets 30 calls an hour per feature, or 10 for demo guests. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. Oversized input gets a `400` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md), [0014](./adr/0014-validate-request-bodies-with-zod.md)). Describe also only accepts a language from the dropdown's list, since it goes into the prompt.
+Each user gets 30 calls an hour per feature, or 10 for demo guests. An empty query or empty code is answered without Claude and isn't counted. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. Oversized input gets a `400` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md), [0014](./adr/0014-validate-request-bodies-with-zod.md)). Describe also only accepts a language from the dropdown's list, since it goes into the prompt.
 
 Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md).
 
@@ -263,8 +265,8 @@ src/
 │       ├── folders/            Folder CRUD (logic in lib/folders.ts)
 │       └── snippets/
 │           ├── route.ts        Snippet CRUD (logic in lib/snippets.ts)
-│           ├── search/         AI search, rate-limited
-│           └── describe/       AI descriptions, rate-limited
+│           ├── search/         AI search (logic in lib/ai-search.ts)
+│           └── describe/       AI descriptions (logic in lib/ai-describe.ts)
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders match)
 │   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets
@@ -278,8 +280,11 @@ src/
 │   ├── SnippetFormModal.tsx    New and edit form, unsaved-change guard, delete when editing
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
+│   ├── ai.ts                   The one Claude client: model, timeout, retries, askClaude()
+│   ├── ai-describe.ts          /api/snippets/describe: sign-in, validation, rate limit, in order (tested)
 │   ├── ai-results.ts           AI search results as ids, looked up in the current snippets (tested)
-│   ├── ai-usage.ts             Atomic AI usage counter (SQL)
+│   ├── ai-search.ts            /api/snippets/search, and pickWithClaude for the MCP server (tested)
+│   ├── ai-usage.ts             Atomic AI usage counter (SQL, tested against Postgres)
 │   ├── api-client.ts           callApi: how components call the API and read its errors (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
 │   ├── auth.ts                 NextAuth config, verified-email check, currentUser()
@@ -297,6 +302,7 @@ src/
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
 │   ├── highlight.ts            Shiki passed in: card previews, null instead of a throw (tested)
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
+│   ├── latest-only.ts          Keeps only the latest request's answer, for AI search (tested)
 │   ├── library-types.ts        The Snippet and Folder types the components share
 │   ├── library-store.ts        Database side of snippets.ts and folders.ts (tested against Postgres)
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
@@ -330,4 +336,4 @@ Production's `DATABASE_URL` lives only in Vercel. Production builds use it to ap
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important ones: the AI handlers have no tests yet, and AI search has no end-to-end coverage, both waiting on the shared AI module in Phase 4. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important one: AI search has no end-to-end coverage. Its handler is tested against a fake Claude, but no test drives it through the browser. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.

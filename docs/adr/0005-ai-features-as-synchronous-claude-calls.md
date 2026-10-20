@@ -1,6 +1,6 @@
 # 0005. Implement AI features as synchronous Claude calls, with search as LLM re-ranking
 
-- **Status:** Accepted, revisit (see Consequences)
+- **Status:** Accepted, revisit (see Consequences); amended by [0023](./0023-one-ai-module-on-claude-haiku.md)
 - **Date:** Decided 2026-04-15 (search) and 2026-04-20 (descriptions), recorded 2026-10-17
 - **Related:** `src/app/api/snippets/search/route.ts`, `src/app/api/snippets/describe/route.ts`, [0008](./0008-ten-snippet-free-tier-cap.md)
 
