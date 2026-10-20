@@ -265,7 +265,8 @@ src/
 │   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
-│   ├── SnippetModal.tsx        Preview, highlighted in the browser
+│   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails
+│   ├── useCopy.ts              Copy button shared by the card and preview, toast if it fails
 │   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard only
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
@@ -277,6 +278,7 @@ src/
 │   ├── api-client.ts           callApi: how components call the API and read its errors (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
 │   ├── auth.ts                 NextAuth config, verified-email check, currentUser()
+│   ├── clipboard.ts            copyText: whether a copy actually landed (tested)
 │   ├── demo.ts                 Starting a demo: seed, IP limit, cookie name (tested)
 │   ├── demo-store.ts           Database side of starting a demo
 │   ├── email-case.ts           Lowercases emails in the NextAuth adapter (tested)
@@ -288,7 +290,7 @@ src/
 │   ├── folders.ts              /api/folders: ownership, cap, validation, in order (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
-│   ├── highlight.ts            Highlights the start of each card's code, Shiki passed in (tested)
+│   ├── highlight.ts            Shiki passed in: card previews, null instead of a throw (tested)
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
 │   ├── library-types.ts        The Snippet and Folder types the components share
 │   ├── library-store.ts        Database side of snippets.ts and folders.ts (tested against Postgres)
