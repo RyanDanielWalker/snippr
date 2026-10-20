@@ -24,7 +24,7 @@ import {
 import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
 import { emptyState } from "@/lib/empty-state";
-import { pickByIds } from "@/lib/ai-results";
+import { pickByIds, resultsHeading } from "@/lib/ai-results";
 import { latestOnly } from "@/lib/latest-only";
 import type { Snippet, Folder } from "@/lib/library-types";
 
@@ -96,6 +96,15 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   function selectFolder(id: string | null) {
     setSelectedFolderId(id);
     setFoldersOpen(false);
+    // AI search covers the whole library, so picking a folder means leaving
+    // it for that folder's own cards. A query not yet sent stays.
+    if (aiResultIds !== null || aiLoading) {
+      aiSearches.current.cancel();
+      setAiLoading(false);
+      setAiResultIds(null);
+      setAiError(null);
+      setSearch("");
+    }
   }
 
   function toggleSidebar() {
@@ -211,12 +220,14 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
       ? pickByIds(aiResultIds, snippets)
       : filtered;
 
-  const folderName =
+  const heading = resultsHeading(
     selectedFolderId === null
       ? null
       : selectedFolderId === "unorganized"
         ? "Unorganized"
-        : (folders.find((f) => f.id === selectedFolderId)?.name ?? null);
+        : (folders.find((f) => f.id === selectedFolderId)?.name ?? null),
+    aiMode && (aiLoading || aiResultIds !== null),
+  );
 
   const empty =
     displaySnippets.length === 0
@@ -353,9 +364,9 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 </div>
               )}
 
-              {folderName && (
+              {heading && (
                 <h2 className="text-lg font-medium mb-4 text-gray-300">
-                  {folderName}
+                  {heading}
                 </h2>
               )}
 
@@ -413,7 +424,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
 
               {aiLoading && (
                 <div role="status" className="text-center py-24 text-gray-500">
-                  <p className="text-sm">Searching with AI...</p>
+                  <p className="text-sm">Searching your whole library...</p>
                 </div>
               )}
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickByIds } from "./ai-results";
+import { pickByIds, resultsHeading } from "./ai-results";
 
 const snippet = (id: string, title = id) => ({ id, title });
 
@@ -22,5 +22,23 @@ describe("pickByIds", () => {
 
   it("returns nothing for no results", () => {
     expect(pickByIds([], [snippet("a")])).toEqual([]);
+  });
+});
+
+describe("resultsHeading", () => {
+  it("names the open folder", () => {
+    expect(resultsHeading("Frontend", false)).toBe("Frontend");
+  });
+
+  it("says AI search looked past the open folder", () => {
+    expect(resultsHeading("Frontend", true)).toBe("Whole library");
+  });
+
+  it("says so with no folder open too, since keyword search wouldn't", () => {
+    expect(resultsHeading(null, true)).toBe("Whole library");
+  });
+
+  it("has no heading for all snippets", () => {
+    expect(resultsHeading(null, false)).toBeNull();
   });
 });

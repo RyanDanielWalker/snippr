@@ -54,6 +54,14 @@ describe("emptyState", () => {
     );
   });
 
+  it("says AI search looks past the open folder", () => {
+    for (const view of ["folder", "unorganized"] as const) {
+      expect(
+        emptyState(input({ aiMode: true, view, search: "retry" })).hint,
+      ).toBe("Press Enter to ask Claude, who looks in every folder.");
+    }
+  });
+
   it("says what plain search looks at", () => {
     const state = emptyState(input({ search: "zzz" }));
     expect(state.title).toBe("No snippets match your search.");

@@ -68,7 +68,9 @@ export function emptyState({
 
   if (search.trim()) {
     const hint = aiMode
-      ? "Press Enter to ask Claude instead."
+      ? view === "all"
+        ? "Press Enter to ask Claude instead."
+        : "Press Enter to ask Claude, who looks in every folder."
       : view === "all"
         ? "Search looks at titles, tags, and languages."
         : "Search only looks in the folder that's open.";

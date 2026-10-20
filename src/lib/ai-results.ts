@@ -15,3 +15,16 @@ export function pickByIds<T extends { id: string }>(
   const byId = new Map(snippets.map((s) => [s.id, s]));
   return ids.flatMap((id) => byId.get(id) ?? []);
 }
+
+/**
+ * The heading over the cards. AI search always looks at the whole library,
+ * because you reach for it when you don't remember where something is, so
+ * while it's on screen the heading says that instead of naming the open
+ * folder, which keyword search stays inside.
+ */
+export function resultsHeading(
+  folderName: string | null,
+  showingAiSearch: boolean,
+): string | null {
+  return showingAiSearch ? "Whole library" : folderName;
+}
