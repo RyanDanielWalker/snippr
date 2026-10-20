@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-10-19*
+*Last updated: 2026-10-20*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -49,7 +49,7 @@ Today it reads as default Tailwind dark mode. It should look like someone made c
 - [x] Stop the README overclaiming until Phase 5 rebuilds it: drop "Fully responsive" until the mobile pass lands, fix the `YOUR_USERNAME` clone URL, and replace the stale project structure with a link to the ARCHITECTURE code map ([audit](./audits/2026-10-19.md), finding 1). The README is the first thing a visitor reads, so this can't wait for Phase 5
 - [x] AI search results that update after an edit, move, or delete ([0022](./adr/0022-highlight-cards-on-the-server.md)). They were copies that `router.refresh()` never touched, so a deleted result stayed on screen stuck on "Deleting..." ([audit](./audits/2026-10-19.md), finding 2). Now the dashboard keeps the result ids and looks them up in the current snippets (`src/lib/ai-results.ts`)
 - [x] Delete from the preview and the edit form, not only the card. All three share one two-step delete (`src/components/useDeleteSnippet.ts`), and Delete sits on the far side from Edit and Copy so a near miss on a phone doesn't arm it. `e2e/phone.spec.ts` deletes from both modals
-- [ ] One snippet form for New and Edit, and one `Snippet` and `Folder` type for the components instead of four copies each ([audit](./audits/2026-10-19.md), finding 6). Do it before restyling them, so there's one form to restyle
+- [x] One snippet form for New and Edit, and one `Snippet` and `Folder` type for the components instead of four copies each ([audit](./audits/2026-10-19.md), finding 6). `SnippetFormModal` does both, with its rules in `src/lib/snippet-form.ts`, and the types live in `src/lib/library-types.ts`. A new snippet now has the same guard as an edit: once anything changes, a click outside doesn't close it
 - [ ] Show the failures the interface swallows today: a preview Shiki couldn't load, a copy that didn't copy ([audit](./audits/2026-10-19.md), finding 9). Goes with the toasts
 - [ ] One code style: add Prettier and format everything in one `style:` commit ([audit](./audits/2026-10-19.md), finding 10). Half the files skip semicolons, and the code is part of what's shown
 - [ ] Bring `ARCHITECTURE.md` up to date: its review date, the migration scripts and `prisma/migrations/` in the code map, and the stale "Not unit-tested" comment in `library-store.ts`. Move the finished Phase 2 to Done ([audit](./audits/2026-10-19.md), finding 5)

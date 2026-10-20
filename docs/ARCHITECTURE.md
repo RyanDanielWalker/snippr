@@ -269,8 +269,7 @@ src/
 │   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard only
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
-│   ├── NewSnippetModal.tsx     Create form
-│   ├── EditSnippetModal.tsx    Edit form, unsaved-change guard, delete
+│   ├── SnippetFormModal.tsx    New and edit form, unsaved-change guard, delete when editing
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
 │   ├── ai-results.ts           AI search results as ids, looked up in the current snippets (tested)
@@ -291,11 +290,13 @@ src/
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
 │   ├── highlight.ts            Highlights the start of each card's code, Shiki passed in (tested)
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
+│   ├── library-types.ts        The Snippet and Folder types the components share
 │   ├── library-store.ts        Database side of snippets.ts and folders.ts (tested against Postgres)
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
 │   ├── request-body.ts         Reads a JSON body and checks it against a schema, or returns a 400 (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   ├── site.ts                 Site URL, name, and description for metadata (tested)
+│   ├── snippet-form.ts         The snippet form's starting fields, change check, and request body (tested)
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippets.ts             /api/snippets: ownership, cap, validation, in order (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
