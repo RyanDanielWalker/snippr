@@ -4,8 +4,9 @@ import type { FolderStore } from "@/lib/folders";
 
 /**
  * The database side of `/api/snippets` and `/api/folders` (see
- * docs/adr/0018, src/lib/snippets.ts, src/lib/folders.ts). Not
- * unit-tested: it's only Prisma calls.
+ * docs/adr/0018, src/lib/snippets.ts, src/lib/folders.ts). Tested against
+ * a real Postgres in library-store.db.test.ts (`npm run test:db`), since a
+ * fake can't tell whether a query here forgets its `userId`.
  */
 
 function findFolderOwner(id: string) {
