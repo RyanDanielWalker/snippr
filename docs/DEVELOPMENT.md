@@ -23,6 +23,8 @@ npm run dev               # http://localhost:3000
 
 `npm run db:down` stops the database and keeps its data. `docker compose down -v` deletes the data too, for a clean start.
 
+One more line makes `git blame` skip commits that only reformatted code, the way GitHub already does: `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+
 ## Environment variables
 
 | Variable | What it is | Where to get it |

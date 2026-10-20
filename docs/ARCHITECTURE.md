@@ -228,7 +228,8 @@ Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-feat
 ## Code map
 
 ```
-.github/workflows/ci.yml        CI: lint, types, unit tests, migrations, store tests, e2e
+.github/workflows/ci.yml        CI: formatting, lint, types, unit tests, migrations, store tests, e2e
+.prettierignore                 What Prettier leaves alone: Markdown, the lockfile
 docker-compose.yml              Local Postgres for development and tests
 e2e/
 ├── demo.spec.ts                End-to-end test: demo, create, search, drag into a folder
