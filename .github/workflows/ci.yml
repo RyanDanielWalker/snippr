@@ -6,12 +6,17 @@
 # until `checks` and `database` pass, matched by each job's `name:`. Rename
 # one and production waits forever, so update Vercel in the same push. The
 # audit isn't a Deployment Check, on purpose.
+#
+# It can also be started by hand (`gh workflow run ci.yml`), for when GitHub
+# drops a push event and no run appears. A run on `main` reports against
+# that commit, so it releases a deploy that's waiting on the checks.
 
 name: CI
 
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 # A newer push to the same branch makes an older run pointless.
 concurrency:
