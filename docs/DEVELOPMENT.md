@@ -75,7 +75,7 @@ On a failure, `npx playwright show-trace test-results/<test>/trace.zip` replays 
 
 ## Store tests
 
-`npm test` never touches a database. The Prisma stores in `src/lib/library-store.ts` get their own tests, in `*.db.test.ts` files, that run against Postgres, because a fake store can't tell when a real query forgets its `userId` ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). The AI rate limit's SQL counter (`src/lib/ai-usage.ts`) is tested there too, and so is the migrated schema itself: every foreign key needs an index (`src/lib/foreign-key-indexes.db.test.ts`), so a new relation in `schema.prisma` needs an `@@index` on its column.
+`npm test` never touches a database. The Prisma stores in `src/lib/library-store.ts` and `src/lib/token-store.ts` get their own tests, in `*.db.test.ts` files, that run against Postgres, because a fake store can't tell when a real query forgets its `userId` ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). The AI rate limit's SQL counter (`src/lib/ai-usage.ts`) is tested there too, and so is the migrated schema itself: every foreign key needs an index (`src/lib/foreign-key-indexes.db.test.ts`), so a new relation in `schema.prisma` needs an `@@index` on its column.
 
 ```bash
 npm run db:up
@@ -83,6 +83,16 @@ npm run test:db
 ```
 
 It wipes and migrates `snippr_test`, a third database in the same Docker Postgres, then runs the tests. Set `TEST_DATABASE_URL` to use another database; it has to be local and its name has to end in `_test`.
+
+## Trying the MCP server locally
+
+The MCP server's tests drive it with the SDK's own client and an in-memory store (`src/lib/mcp.test.ts`), so `npm test` covers the protocol. To try it with a real client, sign in on `localhost:3000`, make a token on `/connect`, and point the client at your machine instead of the URL the page shows:
+
+```bash
+claude mcp add --transport http snippr-local http://localhost:3000/api/mcp --header "Authorization: Bearer snippr_..."
+```
+
+A token only works on the database it was made in, so a local token does nothing on snippr.dev and the other way round. `claude mcp remove snippr-local` when you're done.
 
 ## CI
 
@@ -155,6 +165,7 @@ A change is ready to push when:
 - [ ] It works locally, and risky changes have been checked with a production build.
 - [ ] `npm run format:check`, `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`, and changes to a store, `ai-usage.ts`, or `schema.prisma` pass `npm run test:db`. CI runs all of them after the push either way.
 - [ ] New API input goes through a schema in `src/lib/schemas.ts` (via `parseBody`), and every record lookup checks ownership.
+- [ ] New Route Handlers take the user from the session (`currentUser()`), never from a token. `/api/mcp` is the one exception ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)).
 - [ ] New Route Handler logic lives in `src/lib` with the database passed in as a store, and has tests for its `401`, `400`, and ownership cases ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)).
 - [ ] New Route Handlers are wrapped in `withErrors`, send errors as `{ error }` through `src/lib/api-errors.ts`, and the interface calls them with `callApi` and shows the message: inline if the user can fix it, a toast if it happened out of sight ([0017](./adr/0017-one-error-shape-shown-inline.md), [0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)).
 - [ ] Docs are updated if behavior, setup, or architecture changed.

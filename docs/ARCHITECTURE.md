@@ -2,21 +2,23 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-20 (after ADR 0023)*
+*Last reviewed: 2026-10-21 (after ADR 0024)*
 
 ## The short version
 
-Snippr is a single Next.js 16 application deployed on Vercel. Pages render on the server and read from a Supabase Postgres database through Prisma. The browser changes data by calling a small set of JSON endpoints in the same app. Two of those endpoints call the Anthropic API for AI search and AI-written descriptions. Users sign in with GitHub or Google through NextAuth, or start a 24-hour demo as a guest without signing in. Every database query is scoped to the signed-in user.
+Snippr is a single Next.js 16 application deployed on Vercel. Pages render on the server and read from a Supabase Postgres database through Prisma. The browser changes data by calling a small set of JSON endpoints in the same app. Two of those endpoints call the Anthropic API for AI search and AI-written descriptions. Users sign in with GitHub or Google through NextAuth, or start a 24-hour demo as a guest without signing in. MCP clients like Claude Code and Cursor reach the same library through an MCP server in the same app, signed in with a token the user makes. Every database query is scoped to the signed-in user.
 
 ## System overview
 
 ```mermaid
 flowchart LR
     Browser["Browser<br/>React client components"]
+    MCPClient["MCP client<br/>Claude Code, Cursor"]
 
     subgraph Vercel["Vercel: snippr.dev"]
         Pages["Server Components<br/>/, /login, /dashboard<br/>+ start-demo Server Action"]
-        API["Route Handlers<br/>/api/snippets, /api/folders,<br/>/api/snippets/search, /api/snippets/describe"]
+        API["Route Handlers<br/>/api/snippets, /api/folders, /api/tokens,<br/>/api/snippets/search, /api/snippets/describe"]
+        MCP["MCP server<br/>/api/mcp"]
         Auth["NextAuth<br/>/api/auth/*"]
     end
 
@@ -27,6 +29,9 @@ flowchart LR
     Browser -- "page requests" --> Pages
     Browser -- "fetch JSON" --> API
     Browser -- "sign in" --> Auth
+    MCPClient -- "JSON-RPC + Bearer token" --> MCP
+    MCP -- "Prisma" --> DB
+    MCP -- "messages.create" --> Claude
     Pages -- "Prisma" --> DB
     API -- "Prisma" --> DB
     API -- "messages.create" --> Claude
@@ -44,6 +49,7 @@ flowchart LR
 | Demo mode | Expiring guest users, no sign-in needed | [0012](./adr/0012-demo-mode-as-expiring-guest-users.md) |
 | Shiki | Syntax highlighting: cards on the server, the preview modal in the browser | [0022](./adr/0022-highlight-cards-on-the-server.md) |
 | zod | Checks every API request body | [0014](./adr/0014-validate-request-bodies-with-zod.md) |
+| MCP SDK | The MCP server MCP clients connect to, signed in by token | [0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md) |
 
 ## How a request flows
 
@@ -85,7 +91,7 @@ PATCH is a partial update: fields the request leaves out stay as they are, and `
 
 Every Route Handler follows the same pattern. For snippets and folders it lives in `src/lib/snippets.ts` and `src/lib/folders.ts`, which get the database passed in as a store, so each step is tested against an in-memory one with two users; the route files only connect them to NextAuth and Prisma ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)). The AI handlers work the same way, in `src/lib/ai-search.ts` and `src/lib/ai-describe.ts` ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)). The steps:
 
-1. **Who are you?** Resolve the session. No user id means `401`.
+1. **Who are you?** Resolve the session from its cookie, or, for the MCP server only, the user from its token ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). No user id means `401`.
 2. **Is it the right shape?** Check the body against its zod schema (`src/lib/schemas.ts`). Wrong types, missing fields, oversized fields, or malformed JSON mean `400` with an `error` message. Fields the schema doesn't list are dropped, so a body can't set `userId` ([0014](./adr/0014-validate-request-bodies-with-zod.md)).
 3. **Is it yours?** For any record addressed by id, load it and compare its `userId` to the session's. Mismatch or missing means `403`.
 4. **Do the work,** scoped by `userId`. Updates and deletes match on both the id and the `userId` (`where: { id, userId }`), so the database refuses someone else's row even if step 3 was skipped or the row changed hands in between. A write that matches nothing is the same `403`.
@@ -102,8 +108,8 @@ Every error is `{ error: string }` with a status code: the status is for program
 | --- | --- |
 | `400` | The body is the wrong shape |
 | `401` | Not signed in |
-| `403` | The record is missing or someone else's |
-| `409` | The library or folder list is full |
+| `403` | The record is missing or someone else's, or a demo guest tried to make a token |
+| `409` | The library, the folder list, or the token list is full |
 | `429` | Too many AI calls this hour, with `Retry-After` |
 | `500` | Something broke on our side |
 | `502` | Claude didn't answer |
@@ -121,6 +127,7 @@ erDiagram
     User ||--o{ Snippet : "owns"
     User ||--o{ Folder : "owns"
     User ||--o{ AiUsage : "is counted in"
+    User ||--o{ ApiToken : "connects with"
     Folder |o--o{ Snippet : "groups"
 
     User {
@@ -152,6 +159,12 @@ erDiagram
         string name
         string userId FK
     }
+    ApiToken {
+        string id PK
+        string name
+        string tokenHash UK "SHA-256 of the token"
+        string userId FK
+    }
     AiUsage {
         string userId PK, FK
         string bucket PK "describe or search"
@@ -173,6 +186,7 @@ erDiagram
 - **Deleting a user** cascades to everything they own.
 - **Deleting a folder** sets `folderId` to null on its snippets. Code is never deleted as a side effect.
 - `AiUsage` counts AI calls per user, endpoint, and hour for rate limiting ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
+- `ApiToken` holds the personal access tokens MCP clients sign in with, as a SHA-256 of each token, never the token itself ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)).
 - `DemoStart` counts demos started per IP and hour. It isn't linked to any user ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)).
 - `Account`, `Session`, and `VerificationToken` are the standard NextAuth adapter tables. `VerificationToken` is unused because there's no email sign-in.
 - Every foreign key column has an index, since Postgres doesn't add one for the referencing side. A `test:db` test (`src/lib/foreign-key-indexes.db.test.ts`) fails if a new relation arrives without its `@@index`.
@@ -230,6 +244,22 @@ Each user gets 30 calls an hour per feature, or 10 for demo guests. An empty que
 
 Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md).
 
+## MCP server
+
+`POST /api/mcp` is an [MCP](https://modelcontextprotocol.io) server, so Claude Code, Cursor, and other MCP clients can use the library directly ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). It has three tools:
+
+| Tool | What it does | Same rules as |
+| --- | --- | --- |
+| `search_snippets` | AI search over the whole library, counted against the hourly AI limit | `POST /api/snippets/search` |
+| `get_snippet` | One snippet by id, only the caller's | the `403` for anyone else's |
+| `save_snippet` | Creates a snippet, with the field limits, folder check, and cap | `POST /api/snippets` |
+
+1. The client sends `Authorization: Bearer snippr_...`. `userForToken` (`src/lib/api-tokens.ts`) hashes it and looks up the hash. No token, an unknown one, or a guest's means `401` with `WWW-Authenticate: Bearer`, before any MCP code runs.
+2. `handleMcpRequest` (`src/lib/mcp.ts`) builds a fresh server for that user and answers the JSON-RPC request as plain JSON. Nothing is kept between requests, so it works on Vercel's functions. `GET` and `DELETE` get Next's `405`.
+3. Each tool builds a `Request` for the same function the Route Handler calls and turns the `Response` back into a tool result. An error's `{ error }` message becomes the tool's error text, and a tool that throws gets the usual "Something broke" message, never the exception's.
+
+Tokens are made and revoked on `/connect`, through `/api/tokens`, which only accepts a browser session. A token is `snippr_` and 32 random bytes, shown once; up to 10 per user; demo guests can't make any. The Connect page also shows what to paste into Claude Code and Cursor (`src/lib/mcp-config.ts`).
+
 ## Code map
 
 ```
@@ -260,6 +290,7 @@ src/
 │   ├── login/page.tsx          Sign-in page
 │   ├── actions/start-demo.ts   Server Action: create a guest and sign in as it
 │   ├── dashboard/page.tsx      Server Component: auth check + data load
+│   ├── connect/page.tsx        MCP tokens: make one, see what to paste, revoke
 │   ├── layout.tsx              Root layout, fonts, metadata and link previews
 │   ├── error.tsx               What a page that throws shows: retry, a way home, a log reference (tested)
 │   ├── opengraph-image.tsx     Link preview image, rendered at build time
@@ -267,19 +298,22 @@ src/
 │   └── api/
 │       ├── auth/[...nextauth]/ NextAuth handler
 │       ├── folders/            Folder CRUD (logic in lib/folders.ts)
+│       ├── mcp/                MCP server, signed in by token (logic in lib/mcp.ts)
+│       ├── tokens/             Make, list, and revoke MCP tokens (logic in lib/api-tokens.ts)
 │       └── snippets/
 │           ├── route.ts        Snippet CRUD (logic in lib/snippets.ts)
 │           ├── search/         AI search (logic in lib/ai-search.ts)
 │           └── describe/       AI descriptions (logic in lib/ai-describe.ts)
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders match)
+│   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
 │   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails
 │   ├── useCopy.ts              Copy button shared by the card and preview, toast if it fails
 │   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form
-│   ├── Toaster.tsx             ToastProvider and useToast(), dashboard only
+│   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── SnippetFormModal.tsx    New and edit form, unsaved-change guard, delete when editing
 │   └── LoginButton.tsx         OAuth buttons
@@ -287,9 +321,10 @@ src/
 │   ├── ai.ts                   The one Claude client: model, timeout, retries, askClaude()
 │   ├── ai-describe.ts          /api/snippets/describe: sign-in, validation, rate limit, in order (tested)
 │   ├── ai-results.ts           AI search results as ids, looked up in the current snippets (tested)
-│   ├── ai-search.ts            /api/snippets/search, and pickWithClaude for the MCP server (tested)
+│   ├── ai-search.ts            /api/snippets/search and the MCP search tool (tested)
 │   ├── ai-usage.ts             Atomic AI usage counter (SQL, tested against Postgres)
 │   ├── api-client.ts           callApi: how components call the API and read its errors (tested)
+│   ├── api-tokens.ts           MCP tokens: make, hash, revoke, sign in by Bearer header (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
 │   ├── auth.ts                 NextAuth config, verified-email check, currentUser()
 │   ├── clipboard.ts            copyText: whether a copy actually landed (tested)
@@ -309,6 +344,8 @@ src/
 │   ├── latest-only.ts          Keeps only the latest request's answer, for AI search (tested)
 │   ├── library-types.ts        The Snippet and Folder types the components share
 │   ├── library-store.ts        Database side of snippets.ts and folders.ts (tested against Postgres)
+│   ├── mcp.ts                  The MCP server: token sign-in, three tools on the API's functions (tested)
+│   ├── mcp-config.ts           What to paste into each MCP client (tested)
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
 │   ├── request-body.ts         Reads a JSON body and checks it against a schema, or returns a 400 (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
@@ -317,6 +354,7 @@ src/
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippets.ts             /api/snippets: ownership, cap, validation, in order (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
+│   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
 │   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id to the Session type

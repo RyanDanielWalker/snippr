@@ -26,7 +26,7 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind v4, Prisma 5 
 
 - **Commit, never push.** Work on local `main` in small commits. The owner reviews (`git log origin/main..HEAD`) and pushes. A push to `main` deploys to production.
 - **Small commits** using Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `style:`). Subject says what, body says why.
-- **Every Route Handler** resolves the session first (401 without one), checks ownership of every record it touches by id (403 on mismatch), and scopes every query by `userId`. That includes foreign keys like `folderId`.
+- **Every Route Handler** resolves the user first (401 without one): from the session, or from a Bearer token for `/api/mcp` only (ADR 0024). It checks ownership of every record it touches by id (403 on mismatch), and scopes every query by `userId`. That includes foreign keys like `folderId`.
 - **Significant decisions get an ADR** in `docs/adr/`, committed alongside the change. ADRs are append-only; supersede, don't rewrite.
 - **Keep docs true.** If a change makes `ARCHITECTURE.md`, `DEVELOPMENT.md`, or the roadmap wrong, fix them in the same set of commits.
 - **Secrets** stay in `.env` (never committed) and Vercel Sensitive environment variables. Never log them.

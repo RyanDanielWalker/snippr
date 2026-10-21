@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-10-20*
+*Last updated: 2026-10-21*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -19,21 +19,11 @@ Everything else is in [Parked](#parked), with the reason it waits. New ideas go 
 
 Phases run in order. Items inside a phase can ship in any order. Each item lands as its own small set of commits.
 
-### Phase 4: The differentiator
-
-The part that makes Snippr more than a CRUD app.
-
-- [x] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). The MCP server's search tool will call it too. Move the `search` and `describe` handlers' logic into `src/lib` with the session, rate limit, and Claude call passed in, and test their `401`, `400`, and `429` order ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)). Also test `incrementAiUsage` against Postgres in `npm run test:db`: today its raw SQL runs in no test at all ([audit](./audits/2026-10-19.md), finding 7). While AI search is open: ignore Enter while a search is running and drop a reply that lands after a newer search, since today two searches cost two calls and the slower one wins ([audit](./audits/2026-10-20.md), finding 2). And log replies that don't parse: today they quietly become "nothing matches," so nobody can tell how often that happens (finding 4). Done on Claude Haiku 5.5 with a 15-second timeout and one retry ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)). `incrementAiUsage` runs in CI's `test:db` job
-- [x] Indexes on the foreign keys the app filters and cascades by: `Snippet.userId`, `Snippet.folderId`, `Folder.userId`, `Session.userId`, `Account.userId` ([audit](./audits/2026-10-19.md), finding 3). One additive migration. Postgres doesn't create them on its own. Done in `20261020120000_index_foreign_keys`, and a `test:db` test fails if a later foreign key arrives without one
-- [x] Scope updates and deletes by `userId` in the query itself (`where: { id, userId }`), not only in the check before it ([audit](./audits/2026-10-19.md), finding 4). Before the MCP server, which adds new callers that could skip the check. Done for snippets and folders in `src/lib/library-store.ts`; the store's writes take the `userId`, and `test:db` checks they leave another user's rows alone
-- [x] Decide whether AI search looks in the open folder or the whole library, and make the screen say which. Today it searches everything but leaves the folder's heading up, while the keyword hint says search only looks in the open folder ([audit](./audits/2026-10-20.md), finding 3). Under 1.0 because the demo opens with folders, so a visitor hits it. Decided: the whole library, like the MCP server's search will. The heading says "Whole library" while AI results are up, picking a folder clears them, and inside a folder the Enter hint says Claude looks in every folder
-- [x] An error page (`src/app/error.tsx`) with a way back, so a page that throws on the server shows Snippr's words instead of Next's bare "Application error" ([audit](./audits/2026-10-20.md), finding 1). Under 1.0 because "errors show up in the interface" is a 1.0 criterion and nothing else covers it. Done at the root, so it covers every page and the demo's Server Action. It offers Try again and a link home, and shows the error's digest for finding it in Vercel's logs, never its message
-- [ ] **MCP server:** expose search, get, and save as tools so Claude, Cursor, or any MCP client can use your snippet library directly
-
 ### Phase 5: Tell the story
 
 The identity comes first, so the screenshots and the README show the finished look.
 
+- [ ] Clear `npm audit`'s advisories. On 2026-10-21 it reported critical ones in `next` and `next-auth` and others in their dependencies (`postcss`, `sharp`, `uuid`) and `@anthropic-ai/sdk`. None come from the MCP SDK. Under 1.0 because a reviewer can run it in a second, and the auth library is one of them. Check each advisory against how Snippr uses the package before upgrading, and keep Prisma on 5 ([0003](./adr/0003-supabase-postgres-with-prisma-5.md))
 - [ ] Visual identity: type, color, logo, a point of view, from the design direction decision below. Redo the Open Graph image to match; today it borrows the landing page's gray and blue and only has Geist Regular, so the wordmark can't be bold
 - [ ] Labels and accessible names: a `<label>` on every form input, names on the icon-only buttons (✕, ⋯, the sidebar chevrons), and Escape closing the edit form like it closes the preview ([audit](./audits/2026-10-20.md), finding 5). Under 1.0 because it's most of what a Lighthouse run flags, and a reviewer can run one in a minute. Before the screenshots, so they show the finished forms. Keyboard drag and drop and card roles stay Parked
 - [ ] README rebuilt around screenshots, a short demo GIF, and the architecture
@@ -96,14 +86,23 @@ The identity comes first, so the screenshots and the README show the finished lo
 - [x] One code style: add Prettier and format everything in one `style:` commit ([audit](./audits/2026-10-19.md), finding 10). Prettier's defaults, pinned to an exact version, with `npm run format` and a `format:check` step in CI. Markdown is left alone, since accepted ADRs are append-only. `.git-blame-ignore-revs` keeps blame pointing past the formatting commit
 - [x] Bring `ARCHITECTURE.md` up to date: its review date, the migration scripts and `prisma/migrations/` in the code map, and the stale "Not unit-tested" comment in `library-store.ts`. Move the finished Phase 2 to Done ([audit](./audits/2026-10-19.md), finding 5)
 
+### Phase 4: The differentiator
+
+The part that makes Snippr more than a CRUD app.
+
+- [x] One shared AI module: single client, single model setting, timeouts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). The MCP server's search tool will call it too. Move the `search` and `describe` handlers' logic into `src/lib` with the session, rate limit, and Claude call passed in, and test their `401`, `400`, and `429` order ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)). Also test `incrementAiUsage` against Postgres in `npm run test:db`: today its raw SQL runs in no test at all ([audit](./audits/2026-10-19.md), finding 7). While AI search is open: ignore Enter while a search is running and drop a reply that lands after a newer search, since today two searches cost two calls and the slower one wins ([audit](./audits/2026-10-20.md), finding 2). And log replies that don't parse: today they quietly become "nothing matches," so nobody can tell how often that happens (finding 4). Done on Claude Haiku 5.5 with a 15-second timeout and one retry ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)). `incrementAiUsage` runs in CI's `test:db` job
+- [x] Indexes on the foreign keys the app filters and cascades by: `Snippet.userId`, `Snippet.folderId`, `Folder.userId`, `Session.userId`, `Account.userId` ([audit](./audits/2026-10-19.md), finding 3). One additive migration. Postgres doesn't create them on its own. Done in `20261020120000_index_foreign_keys`, and a `test:db` test fails if a later foreign key arrives without one
+- [x] Scope updates and deletes by `userId` in the query itself (`where: { id, userId }`), not only in the check before it ([audit](./audits/2026-10-19.md), finding 4). Before the MCP server, which adds new callers that could skip the check. Done for snippets and folders in `src/lib/library-store.ts`; the store's writes take the `userId`, and `test:db` checks they leave another user's rows alone
+- [x] Decide whether AI search looks in the open folder or the whole library, and make the screen say which. Today it searches everything but leaves the folder's heading up, while the keyword hint says search only looks in the open folder ([audit](./audits/2026-10-20.md), finding 3). Under 1.0 because the demo opens with folders, so a visitor hits it. Decided: the whole library, like the MCP server's search will. The heading says "Whole library" while AI results are up, picking a folder clears them, and inside a folder the Enter hint says Claude looks in every folder
+- [x] An error page (`src/app/error.tsx`) with a way back, so a page that throws on the server shows Snippr's words instead of Next's bare "Application error" ([audit](./audits/2026-10-20.md), finding 1). Under 1.0 because "errors show up in the interface" is a 1.0 criterion and nothing else covers it. Done at the root, so it covers every page and the demo's Server Action. It offers Try again and a link home, and shows the error's digest for finding it in Vercel's logs, never its message
+- [x] **MCP server:** expose search, get, and save as tools so Claude, Cursor, or any MCP client can use your snippet library directly. Done as `POST /api/mcp` in the app, signed in with personal access tokens made on `/connect` ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). The tools call the same functions as the API, so they follow its ownership checks, cap, and AI limit. Works in Claude Code and Cursor; claude.ai's web connectors need OAuth, which is Parked
+
 ## Open decisions
 
 These need a call before the related work starts. Each one becomes an ADR.
 
 | Decision | Options | Needed for |
 | --- | --- | --- |
-| MCP transport | Local (stdio, runs on your machine); remote (HTTP, anyone can connect with a token) | Phase 4 |
-| How an MCP client signs in | Personal access tokens; OAuth for MCP clients. Even a local stdio server has to reach your library on snippr.dev, so the API needs a way in besides NextAuth cookies either way, and the "resolve the session first" rule changes with it ([audit](./audits/2026-10-19.md)) | Phase 4 |
 | Design direction | To be explored with mockups | Phase 5 |
 
 ## Parked
@@ -114,6 +113,8 @@ Not deleted, just not part of 1.0.
 
 Real improvements that a visitor won't notice and that aren't urgent at today's traffic.
 
+- OAuth for MCP clients, so claude.ai's web connectors can use Snippr without copying a token ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). Tokens cover Claude Code and Cursor today. Means an authorization server: discovery metadata, client registration, PKCE, refresh tokens. Sits on top of the token table, not in place of it
+- A "last used" date on MCP tokens, and maybe an expiry, so a forgotten token is easy to spot and revoke ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). Costs a write on every MCP request
 - Embedding-based semantic search with pgvector, replacing whole-library prompts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). Was Phase 4. The MCP server works with today's search, and the 50-snippet cap keeps prompts small. Pulls in the embedding provider decision (Voyage AI, OpenAI, or an open model), and removes the cost reason for the cap, so revisit [0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md) then
 - Structured output for AI search instead of parsing free text ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). Embeddings would replace it anyway. Unparseable replies are now logged ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)), so check Vercel's logs for "AI search reply didn't parse" before deciding ([audit](./audits/2026-10-20.md), finding 4)
 - Unique index on `lower(email)` so the database refuses case-only duplicate users ([0010](./adr/0010-store-emails-lowercased.md)). The app already lowercases emails; this is the backstop. Small once migrations exist
