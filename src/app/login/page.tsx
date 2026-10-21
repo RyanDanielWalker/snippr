@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -20,7 +21,11 @@ export default async function LoginPage({
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-950">
       <div className="text-center space-y-6 max-w-sm px-4">
-        <h1 className="text-4xl font-bold text-white">Snippr</h1>
+        <h1 className="text-4xl font-bold text-white">
+          <Link href="/" className="hover:text-gray-200 transition">
+            Snippr
+          </Link>
+        </h1>
         <p className="text-gray-400">Your personal code snippet manager</p>
         {errorMessage && (
           <p

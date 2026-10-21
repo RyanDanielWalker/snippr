@@ -292,9 +292,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
               </Link>
             )}
             <button
-              onClick={() =>
-                signOut({ callbackUrl: user.isGuest ? "/" : "/login" })
-              }
+              onClick={() => signOut({ callbackUrl: "/" })}
               className="text-xs text-gray-500 hover:text-white transition"
             >
               {user.isGuest ? "Leave demo" : "Sign out"}
