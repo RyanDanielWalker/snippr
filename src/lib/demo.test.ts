@@ -184,6 +184,25 @@ describe("usesSecureCookies and sessionCookieName", () => {
     expect(usesSecureCookies({}, null)).toBe(false);
   });
 
+  it("lets NEXTAUTH_URL win over Vercel's forwarded protocol", () => {
+    expect(
+      usesSecureCookies(
+        { VERCEL: "1", NEXTAUTH_URL: "http://localhost:3000" },
+        "https",
+      ),
+    ).toBe(false);
+    expect(
+      usesSecureCookies(
+        { AUTH_TRUST_HOST: "1", NEXTAUTH_URL: "https://snippr.dev" },
+        "http",
+      ),
+    ).toBe(true);
+    // An empty NEXTAUTH_URL counts as unset, as it does in next-auth.
+    expect(usesSecureCookies({ VERCEL: "1", NEXTAUTH_URL: "" }, "https")).toBe(
+      true,
+    );
+  });
+
   it("names the cookie the way NextAuth does", () => {
     expect(sessionCookieName(true)).toBe("__Secure-next-auth.session-token");
     expect(sessionCookieName(false)).toBe("next-auth.session-token");

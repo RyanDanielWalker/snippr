@@ -134,14 +134,17 @@ export function hashIp(ip: string, secret: string): string {
 /**
  * Whether NextAuth uses its `__Secure-` cookie names for this request. This
  * mirrors next-auth's own rule (utils/detect-origin.js and core/init.js), so
- * the cookie set here is the one `getServerSession` reads.
+ * the cookie set here is the one `getServerSession` reads. Since 4.24.15 a
+ * set NEXTAUTH_URL wins over the forwarded protocol, so check it first.
+ * Recheck this whenever next-auth is upgraded.
  */
 export function usesSecureCookies(
   env: { VERCEL?: string; AUTH_TRUST_HOST?: string; NEXTAUTH_URL?: string },
   forwardedProto: string | null,
 ): boolean {
+  if (env.NEXTAUTH_URL) return env.NEXTAUTH_URL.startsWith("https://");
   if (env.VERCEL ?? env.AUTH_TRUST_HOST) return forwardedProto !== "http";
-  return (env.NEXTAUTH_URL ?? "").startsWith("https://");
+  return false;
 }
 
 export function sessionCookieName(secure: boolean): string {
