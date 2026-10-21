@@ -315,13 +315,15 @@ src/
 │   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
-│   ├── SnippetFormModal.tsx    New and edit form, unsaved-change guard, delete when editing
+│   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing
+│   ├── accessible-names.test.ts  Every field and button on the forms, preview, and dashboard has a name
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
 │   ├── ai.ts                   The one Claude client: model, timeout, retries, askClaude()
 │   ├── ai-describe.ts          /api/snippets/describe: sign-in, validation, rate limit, in order (tested)
 │   ├── ai-results.ts           AI search results as ids, looked up in the current snippets (tested)
 │   ├── ai-search.ts            /api/snippets/search and the MCP search tool (tested)
+│   ├── accessible-names.ts     unnamedControls: fields and buttons with no name in rendered HTML (tested)
 │   ├── ai-usage.ts             Atomic AI usage counter (SQL, tested against Postgres)
 │   ├── api-client.ts           callApi: how components call the API and read its errors (tested)
 │   ├── api-tokens.ts           MCP tokens: make, hash, revoke, sign in by Bearer header (tested)
