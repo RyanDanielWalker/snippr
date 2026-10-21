@@ -98,7 +98,9 @@ A token only works on the database it was made in, so a local token does nothing
 
 `.github/workflows/ci.yml` runs on every push. One job checks formatting, then runs lint, typecheck, and `npm test`. The other starts Postgres, applies the migrations to an empty database with `prisma migrate deploy`, then runs `test:db` and `test:e2e`. A third runs `npm audit --omit=dev` ([0026](./adr/0026-audit-production-dependencies-in-ci.md)). Plain `npm audit` still reports `braces`, which comes in under `eslint-config-next`, only runs at lint time, and has no fixed release; the ADR says why that's accepted. If the end-to-end test fails, the run's **Artifacts** section has a `playwright-trace` to download and open with `npx playwright show-trace`.
 
-Vercel's Deployment Checks hold a production deploy until the first two jobs pass, so a red run there means the previous version stays live. The audit isn't one of them: when it goes red, a new advisory was published, production still deploys, and the fix is an upgrade. Fix it and push again, or, if it's urgent and the failure is the test's fault, promote the build by hand in Vercel.
+Vercel's Deployment Checks hold a production deploy until the first two jobs pass, so a red run there means the previous version stays live. Fix it and push again, or, if it's urgent and the failure is the test's fault, promote the build by hand in Vercel.
+
+The audit isn't one of the checks. When it goes red, an advisory was published against a production dependency since the last push. Production still deploys, and the fix is an upgrade.
 
 Vercel finds the checks by the jobs' `name:` in `ci.yml`. Renaming a job means production waits for a check that never reports, so change the name in Vercel's Deployment Checks in the same push.
 
