@@ -17,6 +17,7 @@ import {
   LANGUAGES,
   SEARCH_QUERY_MAX,
   SNIPPET_LIMITS,
+  TOKEN_NAME_MAX,
 } from "@/lib/field-limits";
 
 const n = (value: number) => value.toLocaleString("en-US");
@@ -110,4 +111,11 @@ export const searchSchema = body({
   query: z.string({ error: "A search has to be text." }).max(SEARCH_QUERY_MAX, {
     error: `That search is too long. The limit is ${n(SEARCH_QUERY_MAX)} characters.`,
   }),
+});
+
+export const createTokenSchema = body({
+  name: requiredText(
+    TOKEN_NAME_MAX,
+    `Give the token a name, up to ${n(TOKEN_NAME_MAX)} characters.`,
+  ),
 });

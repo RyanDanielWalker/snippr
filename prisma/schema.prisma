@@ -18,6 +18,7 @@ model User {
   snippets      Snippet[]
   folders       Folder[]
   aiUsage       AiUsage[]
+  apiTokens     ApiToken[]
   // Set only for demo guests: after this the guest is signed out and can be
   // deleted, along with everything it owns. See docs/adr/0012.
   guestExpiresAt DateTime?
@@ -50,6 +51,18 @@ model Snippet {
   updatedAt   DateTime @updatedAt
   @@index([userId])
   @@index([folderId])
+}
+
+// A personal access token for MCP clients. Only the token's SHA-256 is
+// stored; the token itself is shown once, when it's made. See docs/adr/0024.
+model ApiToken {
+  id        String   @id @default(cuid())
+  name      String
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([userId])
 }
 
 // One row per user, AI endpoint, and rate-limit window. See docs/adr/0011.

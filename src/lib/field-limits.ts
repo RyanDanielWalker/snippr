@@ -35,3 +35,6 @@ export const FOLDER_NAME_MAX = 100;
 
 // A search is a sentence, not an essay (see docs/adr/0011).
 export const SEARCH_QUERY_MAX = 1_000;
+
+// Enough for "Claude Code on the work laptop" (see docs/adr/0024).
+export const TOKEN_NAME_MAX = 60;
