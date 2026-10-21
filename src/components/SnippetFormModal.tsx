@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LANGUAGES, SNIPPET_LIMITS } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
@@ -43,6 +43,18 @@ export default function SnippetFormModal({
   const canSave = hasRequired(form) && dirty && !saving && !del.deleting;
   const heading = editing ? "Edit snippet" : "New snippet";
   const id = useId();
+
+  // Escape closes it like a click outside does: only until anything changes.
+  // After that only Cancel and ✕ do, so a stray key can't lose a pasted
+  // snippet.
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      // Escape also cancels an IME composition; that one isn't for us.
+      if (e.key === "Escape" && !e.isComposing && !dirty) onClose();
+    }
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [dirty, onClose]);
 
   function handleSubmit() {
     if (!canSave) return;

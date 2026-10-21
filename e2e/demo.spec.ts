@@ -22,11 +22,18 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(card("Debounce")).toBeVisible();
   await expect(card("Retry with backoff")).toBeVisible();
 
-  // Create. The fields are found by their labels, so this fails if one
-  // loses its label.
+  // Escape closes an untouched form, and leaves one you've typed in alone.
   const newForm = page.getByRole("dialog", { name: "New snippet" });
   await page.getByRole("button", { name: "+ New snippet" }).click();
+  await page.keyboard.press("Escape");
+  await expect(newForm).toBeHidden();
+
+  // Create. The fields are found by their labels, so this fails if one
+  // loses its label.
+  await page.getByRole("button", { name: "+ New snippet" }).click();
   await newForm.getByLabel("Title", { exact: true }).fill("Slugify");
+  await page.keyboard.press("Escape");
+  await expect(newForm).toBeVisible();
   await newForm
     .getByLabel("Code", { exact: true })
     .fill(
