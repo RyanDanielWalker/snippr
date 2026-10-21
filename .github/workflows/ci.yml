@@ -1,9 +1,11 @@
 # Every push and pull request: lint, typecheck, and unit tests, then the
-# tests that need Postgres. See docs/adr/0020.
+# tests that need Postgres. See docs/adr/0020. Alongside them, an audit of
+# the production dependencies (docs/adr/0026).
 #
 # Vercel deploys on its own. Its Deployment Checks hold a production deploy
-# until both jobs here pass, matched by each job's `name:`. Rename a job and
-# production waits forever, so update Vercel in the same push.
+# until `checks` and `database` pass, matched by each job's `name:`. Rename
+# one and production waits forever, so update Vercel in the same push. The
+# audit isn't a Deployment Check, on purpose.
 
 name: CI
 
@@ -42,6 +44,20 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+
+  audit:
+    name: Production dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      # Reads package-lock.json, so nothing needs installing. Dev tools are
+      # left out: they only run on our own files, and one of them (braces,
+      # under eslint-config-next) has no fixed release to move to.
+      - run: npm audit --omit=dev
 
   database:
     name: Migrations, store tests, end-to-end

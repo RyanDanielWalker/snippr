@@ -57,5 +57,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0023](./0023-one-ai-module-on-claude-haiku.md) | Call Claude from one module, on Claude Haiku 5.5, with a short timeout | Accepted |
 | [0024](./0024-remote-mcp-server-with-personal-access-tokens.md) | Serve MCP over HTTP from the app, and sign clients in with personal access tokens | Accepted |
 | [0025](./0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md) | Serialize each user's snippet creates with a Postgres advisory lock | Accepted |
+| [0026](./0026-audit-production-dependencies-in-ci.md) | Audit production dependencies in CI, without gating deploys | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
