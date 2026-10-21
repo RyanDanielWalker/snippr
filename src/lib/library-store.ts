@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { SnippetStore } from "@/lib/snippets";
+import type { CreateStore, SnippetStore } from "@/lib/snippets";
 import type { FolderStore } from "@/lib/folders";
 
 /**
@@ -27,27 +27,45 @@ async function nullIfMissing<T>(write: Promise<T>): Promise<T | null> {
   }
 }
 
-function findFolderOwner(id: string) {
-  return prisma.folder.findUnique({ where: { id }, select: { userId: true } });
+function findFolderOwner(id: string, db: Prisma.TransactionClient = prisma) {
+  return db.folder.findUnique({ where: { id }, select: { userId: true } });
+}
+
+// The queries a create makes, on the plain client or inside a transaction.
+function createStore(db: Prisma.TransactionClient): CreateStore {
+  return {
+    count: (userId) => db.snippet.count({ where: { userId } }),
+    findFolderOwner: (id) => findFolderOwner(id, db),
+    create: (data) => db.snippet.create({ data }),
+  };
 }
 
 export const snippetStore: SnippetStore = {
+  ...createStore(prisma),
+
   list: (userId) =>
     prisma.snippet.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
     }),
 
-  count: (userId) => prisma.snippet.count({ where: { userId } }),
-
   get: (id, userId) => prisma.snippet.findFirst({ where: { id, userId } }),
 
   findOwner: (id) =>
     prisma.snippet.findUnique({ where: { id }, select: { userId: true } }),
 
-  findFolderOwner,
-
-  create: (data) => prisma.snippet.create({ data }),
+  // One transaction per create, which first takes a lock keyed on the user.
+  // A second create for the same user waits at the lock until the first
+  // commits, then counts the row it added. Other users' creates don't wait.
+  // A transaction lock, not a session one, so it's released on commit or
+  // rollback and never left behind on a pooled connection (docs/adr/0025).
+  withCreateLock: (userId, work) =>
+    prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`
+        SELECT pg_advisory_xact_lock(hashtextextended(${`snippet-create:${userId}`}, 0))
+      `;
+      return work(createStore(tx));
+    }),
 
   update: (id, userId, data) =>
     nullIfMissing(prisma.snippet.update({ where: { id, userId }, data })),

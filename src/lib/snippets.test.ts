@@ -6,6 +6,7 @@ import {
   getSnippet,
   listSnippets,
   updateSnippet,
+  type CreateStore,
   type SnippetStore,
 } from "./snippets";
 import { SNIPPET_CAPS } from "./snippet-cap";
@@ -49,6 +50,14 @@ function fakeStore(extraSnippets: Snippet[] = []) {
   ]);
   let nextId = 1;
 
+  // Nothing here runs at once, so the lock just hands over the store.
+  function withCreateLock<T>(
+    _userId: string,
+    work: (locked: CreateStore) => Promise<T>,
+  ): Promise<T> {
+    return work(store);
+  }
+
   const store = {
     list: vi.fn(async (userId: string) =>
       [...snippets.values()].filter((s) => s.userId === userId),
@@ -86,6 +95,8 @@ function fakeStore(extraSnippets: Snippet[] = []) {
       if (snippets.get(id)?.userId !== userId) return false;
       return snippets.delete(id);
     }),
+    // vi.fn drops the type parameter, so give it back.
+    withCreateLock: vi.fn(withCreateLock) as SnippetStore["withCreateLock"],
   } satisfies SnippetStore;
 
   return { store, snippets };

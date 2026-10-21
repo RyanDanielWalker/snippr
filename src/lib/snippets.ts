@@ -32,6 +32,12 @@ type NewSnippet = Omit<
 
 type SnippetChanges = Omit<z.output<typeof updateSnippetSchema>, "id">;
 
+/** What creating a snippet reads and writes, all under one lock. */
+export type CreateStore = Pick<
+  SnippetStore,
+  "count" | "findFolderOwner" | "create"
+>;
+
 export type SnippetStore = {
   /** The user's snippets, newest first. */
   list(userId: string): Promise<Snippet[]>;
@@ -51,6 +57,15 @@ export type SnippetStore = {
     data: SnippetChanges,
   ): Promise<Snippet | null>;
   delete(id: string, userId: string): Promise<boolean>;
+  /**
+   * Runs `work` with the user's other creates held until it finishes, and
+   * hands it a store that reads and writes inside that lock. Without it, two
+   * creates at 49 both count 49 and both insert (docs/adr/0025).
+   */
+  withCreateLock<T>(
+    userId: string,
+    work: (store: CreateStore) => Promise<T>,
+  ): Promise<T>;
 };
 
 // Missing and someone else's get the same response, so neither can be used
@@ -102,24 +117,28 @@ export async function createSnippet(
   if (!body.ok) return body.response;
   const { description, tags, folderId, ...fields } = body.data;
 
-  // 409, not 403: the request is fine, the library is full (docs/adr/0013).
-  const cap = snippetCap(user.isGuest);
-  if ((await store.count(user.id)) >= cap) {
-    return apiError(409, snippetCapMessage(cap, user.isGuest));
-  }
+  // The count and the insert share one lock, so the count is still true
+  // when the insert lands (docs/adr/0025).
+  return store.withCreateLock(user.id, async (locked) => {
+    // 409, not 403: the request is fine, the library is full (docs/adr/0013).
+    const cap = snippetCap(user.isGuest);
+    if ((await locked.count(user.id)) >= cap) {
+      return apiError(409, snippetCapMessage(cap, user.isGuest));
+    }
 
-  if (!(await canUseFolder(folderId, user.id, store.findFolderOwner))) {
-    return folderNotFound();
-  }
+    if (!(await canUseFolder(folderId, user.id, locked.findFolderOwner))) {
+      return folderNotFound();
+    }
 
-  const snippet = await store.create({
-    ...fields,
-    description: description ?? "",
-    tags: tags ?? [],
-    folderId: folderId ?? null,
-    userId: user.id,
+    const snippet = await locked.create({
+      ...fields,
+      description: description ?? "",
+      tags: tags ?? [],
+      folderId: folderId ?? null,
+      userId: user.id,
+    });
+    return Response.json(snippet);
   });
-  return Response.json(snippet);
 }
 
 export async function updateSnippet(

@@ -1,6 +1,6 @@
 # 0013. Cap libraries at 50 snippets for members and 10 for guests, with a 409
 
-- **Status:** Accepted, supersedes [0008](./0008-ten-snippet-free-tier-cap.md)
+- **Status:** Accepted, supersedes [0008](./0008-ten-snippet-free-tier-cap.md). Its race note is superseded by [0025](./0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md)
 - **Date:** 2026-10-18
 - **Related:** `src/lib/snippet-cap.ts`, `src/app/api/snippets/route.ts`, `src/components/DashboardClient.tsx`, [0005](./0005-ai-features-as-synchronous-claude-calls.md), [0011](./0011-rate-limit-ai-endpoints-in-postgres.md), [0012](./0012-demo-mode-as-expiring-guest-users.md)
 

@@ -71,6 +71,7 @@ function fakeDeps(extra: Snippet[] = []) {
     }),
     update: vi.fn(),
     delete: vi.fn(),
+    withCreateLock: (_userId, work) => work(store),
   };
 
   const deps = {

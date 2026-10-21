@@ -44,7 +44,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0010](./0010-store-emails-lowercased.md) | Store and match emails in lowercase | Accepted |
 | [0011](./0011-rate-limit-ai-endpoints-in-postgres.md) | Rate-limit the AI endpoints with a fixed-window counter in Postgres | Accepted |
 | [0012](./0012-demo-mode-as-expiring-guest-users.md) | Run demo mode as expiring guest users | Accepted |
-| [0013](./0013-snippet-cap-of-50-for-members-and-10-for-guests.md) | Cap libraries at 50 snippets for members and 10 for guests, with a 409 | Accepted |
+| [0013](./0013-snippet-cap-of-50-for-members-and-10-for-guests.md) | Cap libraries at 50 snippets for members and 10 for guests, with a 409 | Accepted, race note superseded by 0025 |
 | [0014](./0014-validate-request-bodies-with-zod.md) | Validate every request body with zod, with field limits and a folder cap | Accepted |
 | [0015](./0015-local-postgres-in-docker-for-development.md) | Develop against a local Postgres in Docker, and refuse remote databases by default | Accepted |
 | [0016](./0016-apply-migrations-in-the-production-build.md) | Track schema changes with `prisma migrate`, applied during the production build | Accepted |
@@ -56,5 +56,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0022](./0022-highlight-cards-on-the-server.md) | Highlight snippet cards on the server, and keep AI search results as ids | Accepted |
 | [0023](./0023-one-ai-module-on-claude-haiku.md) | Call Claude from one module, on Claude Haiku 5.5, with a short timeout | Accepted |
 | [0024](./0024-remote-mcp-server-with-personal-access-tokens.md) | Serve MCP over HTTP from the app, and sign clients in with personal access tokens | Accepted |
+| [0025](./0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md) | Serialize each user's snippet creates with a Postgres advisory lock | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
