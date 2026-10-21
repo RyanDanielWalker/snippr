@@ -63,6 +63,14 @@ describe("snippetStore", () => {
     expect(await snippetStore.count(ben.id)).toBe(2);
   });
 
+  it("gets a snippet only for its owner", async () => {
+    const snippet = await makeSnippet(ben.id, "Ben's");
+
+    expect((await snippetStore.get(snippet.id, ben.id))?.title).toBe("Ben's");
+    expect(await snippetStore.get(snippet.id, ana.id)).toBeNull();
+    expect(await snippetStore.get("no-such-id", ben.id)).toBeNull();
+  });
+
   it("finds a snippet's owner, or null when there's no such snippet", async () => {
     const snippet = await makeSnippet(ben.id, "Ben's");
 

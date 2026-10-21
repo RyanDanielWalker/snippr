@@ -40,6 +40,8 @@ export const snippetStore: SnippetStore = {
 
   count: (userId) => prisma.snippet.count({ where: { userId } }),
 
+  get: (id, userId) => prisma.snippet.findFirst({ where: { id, userId } }),
+
   findOwner: (id) =>
     prisma.snippet.findUnique({ where: { id }, select: { userId: true } }),
 

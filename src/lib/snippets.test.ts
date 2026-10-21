@@ -3,6 +3,7 @@ import type { Folder, Snippet } from "@prisma/client";
 import {
   createSnippet,
   deleteSnippet,
+  getSnippet,
   listSnippets,
   updateSnippet,
   type SnippetStore,
@@ -56,6 +57,10 @@ function fakeStore(extraSnippets: Snippet[] = []) {
       async (userId: string) =>
         [...snippets.values()].filter((s) => s.userId === userId).length,
     ),
+    get: vi.fn(async (id: string, userId: string) => {
+      const found = snippets.get(id);
+      return found?.userId === userId ? found : null;
+    }),
     findOwner: vi.fn(async (id: string) => {
       const found = snippets.get(id);
       return found ? { userId: found.userId } : null;
@@ -167,6 +172,28 @@ describe("listSnippets", () => {
       "snippet-mine",
     ]);
     expect(store.list).toHaveBeenCalledWith("user-me");
+  });
+});
+
+describe("getSnippet", () => {
+  it("is 401 without a user", async () => {
+    const { store } = fakeStore();
+    expect((await getSnippet(store, null, "snippet-mine")).status).toBe(401);
+  });
+
+  it("returns the user's own snippet", async () => {
+    const { store } = fakeStore();
+    const res = await getSnippet(store, me, "snippet-mine");
+    expect(res.status).toBe(200);
+    expect((await res.json()).id).toBe("snippet-mine");
+  });
+
+  it("is 403 for someone else's snippet, the same as a missing one", async () => {
+    const { store } = fakeStore();
+    const theirs = await getSnippet(store, me, "snippet-theirs");
+    const missing = await getSnippet(store, me, "no-such-id");
+    expect(theirs.status).toBe(403);
+    expect(await theirs.json()).toEqual(await missing.json());
   });
 });
 

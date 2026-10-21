@@ -36,6 +36,8 @@ export type SnippetStore = {
   /** The user's snippets, newest first. */
   list(userId: string): Promise<Snippet[]>;
   count(userId: string): Promise<number>;
+  /** One snippet, only if the user owns it. Null otherwise. */
+  get(id: string, userId: string): Promise<Snippet | null>;
   /** Who owns a snippet, or null if there's no such snippet. */
   findOwner(id: string): Promise<{ userId: string } | null>;
   findFolderOwner: FindFolder;
@@ -72,6 +74,21 @@ export async function listSnippets(
 ): Promise<Response> {
   if (!user) return unauthorized();
   return Response.json(await store.list(user.id));
+}
+
+/**
+ * One snippet by id. Not behind a Route Handler: the interface already has
+ * every snippet, so only the MCP server asks for one (docs/adr/0024).
+ */
+export async function getSnippet(
+  store: SnippetStore,
+  user: ApiUser,
+  id: string,
+): Promise<Response> {
+  if (!user) return unauthorized();
+  const snippet = await store.get(id, user.id);
+  if (!snippet) return snippetNotFound();
+  return Response.json(snippet);
 }
 
 export async function createSnippet(
