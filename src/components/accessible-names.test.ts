@@ -16,7 +16,7 @@ vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
 
 // Every field and button a screen reader reaches should have a name (audit
 // 2026-10-20, finding 5). The folder name inputs only appear after a click,
-// so the end-to-end tests find those by name instead.
+// which a server render can't do, so nothing here checks those two.
 
 const snippet: Snippet = {
   id: "s1",
