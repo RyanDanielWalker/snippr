@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LANGUAGES, SNIPPET_LIMITS } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
@@ -42,6 +42,7 @@ export default function SnippetFormModal({
   const dirty = isDirty(form, initial);
   const canSave = hasRequired(form) && dirty && !saving && !del.deleting;
   const heading = editing ? "Edit snippet" : "New snippet";
+  const id = useId();
 
   function handleSubmit() {
     if (!canSave) return;
@@ -105,85 +106,113 @@ export default function SnippetFormModal({
       >
         <div className="flex items-center justify-between">
           <h2 className="text-white font-semibold text-lg">{heading}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white">
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="text-gray-500 hover:text-white"
+          >
             ✕
           </button>
         </div>
 
-        <input
-          type="text"
-          placeholder="Title"
-          maxLength={SNIPPET_LIMITS.title}
-          value={form.title}
-          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-          className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
-        />
+        <div>
+          <Label htmlFor={`${id}-title`}>Title</Label>
+          <input
+            id={`${id}-title`}
+            type="text"
+            placeholder="Debounce a function"
+            maxLength={SNIPPET_LIMITS.title}
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Select
-            value={form.language}
-            onChange={(language) => setForm((f) => ({ ...f, language }))}
-          >
-            {LANGUAGES.map((l) => (
-              <option key={l} value={l}>
-                {l}
-              </option>
-            ))}
-          </Select>
+          <div>
+            <Label htmlFor={`${id}-language`}>Language</Label>
+            <Select
+              id={`${id}-language`}
+              value={form.language}
+              onChange={(language) => setForm((f) => ({ ...f, language }))}
+            >
+              {LANGUAGES.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </Select>
+          </div>
 
-          <Select
-            value={form.folderId}
-            onChange={(folderId) => setForm((f) => ({ ...f, folderId }))}
-          >
-            <option value="">No folder</option>
-            {folders.map((folder) => (
-              <option key={folder.id} value={folder.id}>
-                {folder.name}
-              </option>
-            ))}
-          </Select>
+          <div>
+            <Label htmlFor={`${id}-folder`}>Folder</Label>
+            <Select
+              id={`${id}-folder`}
+              value={form.folderId}
+              onChange={(folderId) => setForm((f) => ({ ...f, folderId }))}
+            >
+              <option value="">No folder</option>
+              {folders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.name}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
 
-        <textarea
-          placeholder="Paste your code here..."
-          value={form.code}
-          onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-          rows={8}
-          className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm font-mono outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-        />
-
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Description (optional)"
-            maxLength={SNIPPET_LIMITS.description}
-            value={form.description}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, description: e.target.value }))
-            }
-            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-28 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+        <div>
+          <Label htmlFor={`${id}-code`}>Code</Label>
+          <textarea
+            id={`${id}-code`}
+            placeholder="Paste your code here..."
+            value={form.code}
+            onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+            rows={8}
+            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm font-mono outline-none focus:ring-1 focus:ring-blue-500 resize-none"
           />
-          <button
-            onClick={handleGenerateDescription}
-            disabled={!form.code || generating}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-400 hover:text-blue-300 px-2 py-1 disabled:opacity-40"
-          >
-            {generating ? "..." : "✦ Generate"}
-          </button>
         </div>
-        {describeError && (
-          <p role="alert" className="-mt-2 text-xs text-red-400">
-            {describeError}
-          </p>
-        )}
 
-        <input
-          type="text"
-          placeholder="Tags (comma separated: react, hooks, auth)"
-          value={form.tags}
-          onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
-          className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
-        />
+        <div>
+          <Label htmlFor={`${id}-description`}>Description (optional)</Label>
+          <div className="relative">
+            <input
+              id={`${id}-description`}
+              type="text"
+              placeholder="Or let Claude write one"
+              maxLength={SNIPPET_LIMITS.description}
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+              className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-28 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleGenerateDescription}
+              disabled={!form.code || generating}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-400 hover:text-blue-300 px-2 py-1 disabled:opacity-40"
+            >
+              {generating ? "..." : "✦ Generate"}
+            </button>
+          </div>
+          {describeError && (
+            <p role="alert" className="mt-2 text-xs text-red-400">
+              {describeError}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor={`${id}-tags`}>Tags, separated by commas</Label>
+          <input
+            id={`${id}-tags`}
+            type="text"
+            placeholder="react, hooks, auth"
+            value={form.tags}
+            onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
+            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
 
         {(error ?? del.error) && (
           <p
@@ -228,11 +257,27 @@ export default function SnippetFormModal({
   );
 }
 
+function Label({
+  htmlFor,
+  children,
+}: {
+  htmlFor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label htmlFor={htmlFor} className="block text-xs text-gray-400 mb-1.5">
+      {children}
+    </label>
+  );
+}
+
 function Select({
+  id,
   value,
   onChange,
   children,
 }: {
+  id: string;
   value: string;
   onChange: (value: string) => void;
   children: React.ReactNode;
@@ -240,6 +285,7 @@ function Select({
   return (
     <div className="relative">
       <select
+        id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
@@ -247,6 +293,7 @@ function Select({
         {children}
       </select>
       <svg
+        aria-hidden="true"
         className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
         viewBox="0 0 20 20"
         fill="currentColor"

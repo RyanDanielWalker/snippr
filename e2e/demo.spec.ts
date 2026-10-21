@@ -22,22 +22,24 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(card("Debounce")).toBeVisible();
   await expect(card("Retry with backoff")).toBeVisible();
 
-  // Create.
+  // Create. The fields are found by their labels, so this fails if one
+  // loses its label.
+  const newForm = page.getByRole("dialog", { name: "New snippet" });
   await page.getByRole("button", { name: "+ New snippet" }).click();
-  await page.getByPlaceholder("Title").fill("Slugify");
-  await page
-    .getByPlaceholder("Paste your code here...")
+  await newForm.getByLabel("Title", { exact: true }).fill("Slugify");
+  await newForm
+    .getByLabel("Code", { exact: true })
     .fill(
       'const slugify = (s: string) =>\n  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");',
     );
-  await page.getByPlaceholder(/^Tags/).fill("strings, urls");
+  await newForm.getByLabel(/^Tags/).fill("strings, urls");
   await page.getByRole("button", { name: "Save snippet" }).click();
 
   await expect(page.getByRole("heading", { name: "New snippet" })).toBeHidden();
   await expect(card("Slugify")).toBeVisible();
 
   // Search: the plain filter matches titles, tags, and languages.
-  const search = page.getByPlaceholder("Search snippets...");
+  const search = page.getByRole("textbox", { name: "Search snippets" });
   await search.fill("urls");
   await expect(card("Slugify")).toBeVisible();
   await expect(card("Debounce")).toBeHidden();

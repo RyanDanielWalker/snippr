@@ -202,8 +202,10 @@ export default function FolderSidebar({
           onClick={onToggleCollapse}
           className="w-full h-[42px] flex items-center justify-center text-gray-500 hover:text-white transition rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-800"
           title="Expand sidebar"
+          aria-label="Expand sidebar"
         >
           <svg
+            aria-hidden="true"
             width="16"
             height="16"
             viewBox="0 0 24 24"
@@ -233,6 +235,7 @@ export default function FolderSidebar({
           aria-label={drawer ? "Close folders" : "Collapse sidebar"}
         >
           <svg
+            aria-hidden="true"
             width="16"
             height="16"
             viewBox="0 0 24 24"
@@ -293,6 +296,7 @@ export default function FolderSidebar({
               }}
               readOnly={saving}
               aria-busy={saving}
+              aria-label={`New name for ${folder.name}`}
               autoFocus
               className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500 read-only:opacity-60"
             />
@@ -317,6 +321,8 @@ export default function FolderSidebar({
                 e.stopPropagation();
                 setMenuOpenId(menuOpenId === folder.id ? null : folder.id);
               }}
+              aria-label={`Rename or delete ${folder.name}`}
+              aria-expanded={menuOpenId === folder.id}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 pointer-coarse:px-2 transition px-1"
             >
               ⋯
@@ -364,6 +370,7 @@ export default function FolderSidebar({
           }}
           readOnly={saving}
           aria-busy={saving}
+          aria-label="Folder name"
           autoFocus
           placeholder="Folder name"
           className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500 read-only:opacity-60"

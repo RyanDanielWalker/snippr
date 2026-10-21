@@ -84,6 +84,7 @@ export default function SnippetModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="text-gray-500 hover:text-white text-xl shrink-0"
           >
             ✕

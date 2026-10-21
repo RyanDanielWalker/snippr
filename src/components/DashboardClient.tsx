@@ -384,6 +384,11 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                   <input
                     type="text"
                     maxLength={SEARCH_QUERY_MAX}
+                    aria-label={
+                      aiMode
+                        ? "Describe the snippet you're looking for"
+                        : "Search snippets"
+                    }
                     placeholder={
                       aiMode
                         ? "Describe what you're looking for..."
