@@ -55,7 +55,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run typecheck` | TypeScript type check, no output files |
 | `npm test` | Run the test suite once (Vitest) |
 | `npm run test:watch` | Re-run tests as files change |
-| `npm run test:db` | The store, AI usage counter, and foreign key index tests, against a real Postgres. Resets the `snippr_test` database first |
+| `npm run test:db` | The store, snippet cap race, AI usage counter, and foreign key index tests, against a real Postgres. Resets the `snippr_test` database first |
 | `npm run test:e2e` | The end-to-end test in a real browser. Resets the e2e database, builds, and serves on port 3100 first, so it takes a minute or two |
 | `npm run e2e:db` | Wipe the e2e database and apply every migration. `test:e2e` runs it for you |
 
@@ -75,7 +75,7 @@ On a failure, `npx playwright show-trace test-results/<test>/trace.zip` replays 
 
 ## Store tests
 
-`npm test` never touches a database. The Prisma stores in `src/lib/library-store.ts` and `src/lib/token-store.ts` get their own tests, in `*.db.test.ts` files, that run against Postgres, because a fake store can't tell when a real query forgets its `userId` ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). The AI rate limit's SQL counter (`src/lib/ai-usage.ts`) is tested there too, and so is the migrated schema itself: every foreign key needs an index (`src/lib/foreign-key-indexes.db.test.ts`), so a new relation in `schema.prisma` needs an `@@index` on its column.
+`npm test` never touches a database. The Prisma stores in `src/lib/library-store.ts` and `src/lib/token-store.ts` get their own tests, in `*.db.test.ts` files, that run against Postgres, because a fake store can't tell when a real query forgets its `userId` ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). The AI rate limit's SQL counter (`src/lib/ai-usage.ts`) is tested there too, as is the snippet cap under parallel creates (`src/lib/snippets.db.test.ts`, [0025](./adr/0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md)), and so is the migrated schema itself: every foreign key needs an index (`src/lib/foreign-key-indexes.db.test.ts`), so a new relation in `schema.prisma` needs an `@@index` on its column.
 
 ```bash
 npm run db:up
