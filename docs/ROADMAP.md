@@ -124,6 +124,7 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
 - Remember the collapsed sidebar in a cookie instead of `localStorage`, so the server can render it collapsed. Today it's drawn open and snaps shut once the page's JavaScript runs, which only shows on a slow connection
 - Command palette (⌘K) and keyboard shortcuts
+- A Format button in the snippet form, like the broom in an online editor. Prettier, loaded on first click, for TypeScript, JavaScript, CSS, HTML, and JSON only; Python, Rust, and Go have no good formatter that runs in a browser, so the button is disabled for them and says why. Snippets are often fragments Prettier can't parse, so a failure says where inline instead of looking broken, and Undo brings back the original, since setting the textarea from code wipes the browser's own undo. Gets an ADR for where it stops
 - Give the dashboard's controls accessible names and roles (the cards are `div`s with dnd-kit's `role="button"`, and the sidebar's `⋯` menu button has no label). The end-to-end test finds cards by `aria-roledescription` and folders by text for now; it can switch to roles once they exist ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)). The inputs' labels and the icon buttons' names landed in Phase 5 ([audit](./audits/2026-10-20.md), finding 5); the cards' roles and the rest stay here
 - Smaller screen reader gaps the Phase 5 pass left: the AI search toggle doesn't say whether it's on (`aria-pressed`), Generate reads as "..." while Claude writes, and the avatar's alt text is "avatar" next to the email it repeats. Lighthouse doesn't flag them
 - Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
@@ -139,5 +140,5 @@ Good ideas that don't serve a portfolio piece.
 - Public snippet sharing (revisit after MCP, since it changes the security model)
 - VS Code extension
 - Stripe and a paid tier
-- Format code on paste
+- Format code on paste. It rewrites code you didn't ask to change. The Format button in Parked does the same job only when you ask
 - Keep your demo snippets when you sign up. Needs a deliberate merge, not NextAuth account linking ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md))
