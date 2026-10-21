@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
@@ -281,6 +282,14 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 alt="avatar"
                 className="w-8 h-8 rounded-full"
               />
+            )}
+            {!user.isGuest && (
+              <Link
+                href="/connect"
+                className="text-xs text-gray-500 hover:text-white transition"
+              >
+                Connect
+              </Link>
             )}
             <button
               onClick={() =>
