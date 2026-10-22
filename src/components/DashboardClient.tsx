@@ -16,6 +16,7 @@ import {
 import SnippetCard from "@/components/SnippetCard";
 import SnippetFormModal from "@/components/SnippetFormModal";
 import FolderSidebar from "@/components/FolderSidebar";
+import { Wordmark } from "@/components/LogoMark";
 import { useToast } from "@/components/Toaster";
 import {
   snippetCap,
@@ -264,7 +265,9 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
 
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
         <div className="flex items-center justify-between gap-4 mb-8">
-          <h1 className="text-2xl font-bold">Snippr</h1>
+          <h1 className="text-2xl">
+            <Wordmark />
+          </h1>
           <div className="flex items-center gap-4 min-w-0">
             <button
               onClick={() => setFoldersOpen(true)}

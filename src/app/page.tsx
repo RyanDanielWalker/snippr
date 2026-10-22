@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import SnippetCardView from "@/components/SnippetCardView";
 import DemoButton from "@/components/DemoButton";
+import { Wordmark } from "@/components/LogoMark";
 import { landingSamples, searchExample } from "@/lib/landing-samples";
 import { withCardHtml } from "@/lib/highlight";
 
@@ -38,7 +39,7 @@ export default async function Home({
   return (
     <div className="min-h-screen bg-page text-fg-muted">
       <header className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between">
-        <span className="text-fg font-bold text-lg">Snippr</span>
+        <Wordmark className="text-fg text-lg" />
         <Link
           href="/login"
           className="text-sm text-fg-subtle hover:text-fg transition"
