@@ -287,7 +287,8 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 className="w-8 h-8 rounded-full"
               />
             )}
-            <ThemeToggle className="text-xs" />
+            {/* No room on a phone; the landing page's footer has one. */}
+            <ThemeToggle className="hidden sm:inline text-xs" />
             {!user.isGuest && (
               <Link
                 href="/connect"

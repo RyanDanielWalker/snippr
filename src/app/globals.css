@@ -197,6 +197,7 @@ select:disabled {
 
 /* Shiki writes ayu-dark's colors inline and the 8-bit palette as variables
    beside them (ADR 0029). */
+[data-theme="8bit"] .shiki,
 [data-theme="8bit"] .shiki span {
   color: var(--shiki-8bit) !important;
 }
