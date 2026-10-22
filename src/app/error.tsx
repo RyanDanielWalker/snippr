@@ -27,7 +27,7 @@ export default function ErrorPage({
   return (
     <main className="min-h-screen flex items-center justify-center bg-page">
       <div className="text-center space-y-6 max-w-sm px-4">
-        <h1 className="text-2xl font-bold text-fg">
+        <h1 className="font-display text-2xl font-bold text-fg">
           Something broke on our side.
         </h1>
         <p className="text-fg-subtle">

@@ -33,7 +33,9 @@ export default function ConnectClient({
     <main className="min-h-screen bg-page text-fg">
       <div className="max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-8 space-y-8">
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold">Connect an MCP client</h1>
+          <h1 className="font-display text-2xl font-bold">
+            Connect an MCP client
+          </h1>
           <Link
             href="/dashboard"
             className="text-sm text-fg-subtle hover:text-fg transition"

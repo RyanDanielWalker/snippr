@@ -21,7 +21,7 @@ export default async function LoginPage({
   return (
     <main className="min-h-screen flex items-center justify-center bg-page">
       <div className="text-center space-y-6 max-w-sm px-4">
-        <h1 className="text-4xl font-bold text-fg">
+        <h1 className="font-display text-4xl font-bold text-fg">
           <Link href="/" className="hover:text-fg-muted transition">
             Snippr
           </Link>
