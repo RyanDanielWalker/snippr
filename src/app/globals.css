@@ -7,45 +7,46 @@
    image, which can't read CSS; a test keeps the two the same. */
 :root {
   /* Surfaces, darkest to lightest */
-  --page: #030712;
-  --surface: #111827;
-  --surface-raised: #1f2937;
-  --surface-hover: #374151;
-  --overlay: rgb(0 0 0 / 0.75);
-  --code: #030712;
+  --page: #0b1020;
+  --surface: #121829;
+  --surface-raised: #1a2236;
+  --surface-hover: #263049;
+  --overlay: rgb(5 8 18 / 0.78);
+  --code: #080c18;
 
   /* Lines */
-  --line: #1f2937;
-  --line-strong: #374151;
+  --line: #1f2840;
+  --line-strong: #323e5c;
 
-  /* Text. All three pass WCAG AA on every surface. */
-  --fg: #ffffff;
-  --fg-muted: #d1d5db;
-  --fg-subtle: #9ca3af;
+  /* Text. theme-tokens.test.ts checks every pairing against WCAG AA. */
+  --fg: #f5f2ea;
+  --fg-muted: #cfd4e0;
+  --fg-subtle: #98a2b8;
 
-  /* Accent: primary actions, links, AI */
-  --accent: #2563eb;
-  --accent-hover: #3b82f6;
-  --accent-fg: #ffffff;
-  --accent-text: #60a5fa;
-  --accent-soft: #172554;
-  --accent-line: #1e3a8a;
-  --focus: #3b82f6;
+  /* Accent: primary actions, links, AI. Text on it is ink, since white on
+     tangerine fails AA. */
+  --accent: #ff7a3d;
+  --accent-hover: #ff9361;
+  --accent-fg: #0b1020;
+  --accent-text: #ff9a66;
+  --accent-soft: #36190f;
+  --accent-line: #7a3417;
+  --focus: #ff8a4f;
 
-  /* Inverse: the white call-to-action buttons */
-  --inverse: #ffffff;
-  --inverse-hover: #f3f4f6;
-  --inverse-fg: #111827;
+  /* Inverse: the paper-colored call-to-action buttons */
+  --inverse: #f5f2ea;
+  --inverse-hover: #e4dfd3;
+  --inverse-fg: #0b1020;
 
   /* Status */
   --danger: #dc2626;
-  --danger-hover: #ef4444;
+  --danger-hover: #b91c1c;
   --danger-fg: #ffffff;
-  --danger-text: #f87171;
-  --danger-soft: #450a0a;
-  --danger-line: #7f1d1d;
-  --warning-text: #eab308;
-  --warning-soft: #422006;
+  --danger-text: #ff6b7a;
+  --danger-soft: #3d0f17;
+  --danger-line: #7a1d2b;
+  --warning-text: #f2c94c;
+  --warning-soft: #382c0a;
 
   /* Shape */
   --chip-radius: 0.375rem;
