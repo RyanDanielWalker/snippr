@@ -77,16 +77,16 @@ function ToastItem({
   return (
     <div
       role={isError ? "alert" : undefined}
-      className={`pointer-events-auto flex items-start justify-between gap-4 text-sm rounded-lg px-4 py-3 border shadow-lg ${
+      className={`pointer-events-auto flex items-start justify-between gap-4 text-sm rounded-box px-4 py-3 border shadow-popover ${
         isError
-          ? "text-red-300 bg-red-950 border-red-900"
-          : "text-gray-200 bg-gray-800 border-gray-700"
+          ? "text-danger-text bg-danger-soft border-danger-line"
+          : "text-fg-muted bg-surface-raised border-line-strong"
       }`}
     >
       <span>{toast.message}</span>
       <button
         onClick={() => onDismiss(toast.id)}
-        className={`shrink-0 hover:text-white ${isError ? "text-red-400" : "text-gray-500"}`}
+        className={`shrink-0 hover:text-fg ${isError ? "text-danger-text" : "text-fg-subtle"}`}
         aria-label="Dismiss"
       >
         ✕

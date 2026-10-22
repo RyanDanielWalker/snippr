@@ -26,12 +26,12 @@ function DroppableFolder({
     <button
       ref={setNodeRef}
       onClick={onClick}
-      className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition ${
+      className={`w-full text-left px-3 py-2 rounded-box text-sm flex items-center justify-between transition ${
         isOver
-          ? "bg-blue-600 text-white ring-2 ring-blue-400"
+          ? "bg-accent text-accent-fg ring-2 ring-focus"
           : selected
-            ? "bg-gray-800 text-white"
-            : "text-gray-400 hover:text-white hover:bg-gray-900"
+            ? "bg-surface-raised text-fg"
+            : "text-fg-subtle hover:text-fg hover:bg-surface"
       }`}
     >
       {children}
@@ -200,7 +200,7 @@ export default function FolderSidebar({
       <aside className="w-10 shrink-0">
         <button
           onClick={onToggleCollapse}
-          className="w-full h-[42px] flex items-center justify-center text-gray-500 hover:text-white transition rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-800"
+          className="w-full h-[42px] flex items-center justify-center text-fg-subtle hover:text-fg transition rounded-box bg-surface hover:bg-surface-raised border border-line"
           title="Expand sidebar"
           aria-label="Expand sidebar"
         >
@@ -225,12 +225,12 @@ export default function FolderSidebar({
   return (
     <aside className="w-56 shrink-0 space-y-1">
       <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-xs text-gray-600 uppercase tracking-wider">
+        <span className="text-xs text-fg-subtle uppercase tracking-wider">
           Library
         </span>
         <button
           onClick={onToggleCollapse}
-          className="text-gray-500 hover:text-white transition"
+          className="text-fg-subtle hover:text-fg transition"
           title={drawer ? "Close folders" : "Collapse sidebar"}
           aria-label={drawer ? "Close folders" : "Collapse sidebar"}
         >
@@ -252,14 +252,14 @@ export default function FolderSidebar({
 
       <button
         onClick={() => onSelectFolder(null)}
-        className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition ${
+        className={`w-full text-left px-3 py-2 rounded-box text-sm flex items-center justify-between transition ${
           selectedFolderId === null
-            ? "bg-gray-800 text-white"
-            : "text-gray-400 hover:text-white hover:bg-gray-900"
+            ? "bg-surface-raised text-fg"
+            : "text-fg-subtle hover:text-fg hover:bg-surface"
         }`}
       >
         <span>All snippets</span>
-        <span className="text-xs text-gray-500">{totalSnippets}</span>
+        <span className="text-xs text-fg-subtle">{totalSnippets}</span>
       </button>
 
       <DroppableFolder
@@ -268,10 +268,10 @@ export default function FolderSidebar({
         onClick={() => onSelectFolder("unorganized")}
       >
         <span>Unorganized</span>
-        <span className="text-xs text-gray-500">{unorganizedCount}</span>
+        <span className="text-xs text-fg-subtle">{unorganizedCount}</span>
       </DroppableFolder>
 
-      <div className="pt-4 pb-2 px-3 text-xs text-gray-600 uppercase tracking-wider">
+      <div className="pt-4 pb-2 px-3 text-xs text-fg-subtle uppercase tracking-wider">
         Folders
       </div>
 
@@ -298,7 +298,7 @@ export default function FolderSidebar({
               aria-busy={saving}
               aria-label={`New name for ${folder.name}`}
               autoFocus
-              className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500 read-only:opacity-60"
+              className="w-full bg-surface-raised text-fg rounded-box px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
             />
           ) : (
             <DroppableFolder
@@ -307,7 +307,7 @@ export default function FolderSidebar({
               onClick={() => onSelectFolder(folder.id)}
             >
               <span className="truncate pr-6">{folder.name}</span>
-              <span className="text-xs text-gray-500 group-hover:opacity-0 pointer-coarse:mr-6 transition">
+              <span className="text-xs text-fg-subtle group-hover:opacity-0 pointer-coarse:mr-6 transition">
                 {folder._count.snippets}
               </span>
             </DroppableFolder>
@@ -323,7 +323,7 @@ export default function FolderSidebar({
               }}
               aria-label={`Rename or delete ${folder.name}`}
               aria-expanded={menuOpenId === folder.id}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 pointer-coarse:px-2 transition px-1"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 pointer-coarse:px-2 transition px-1"
             >
               ⋯
             </button>
@@ -332,17 +332,17 @@ export default function FolderSidebar({
           {menuOpenId === folder.id && (
             <div
               ref={menuRef}
-              className="absolute right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 overflow-hidden"
+              className="absolute right-0 top-full mt-1 bg-surface-raised border border-line-strong rounded-box shadow-popover z-10 overflow-hidden"
             >
               <button
                 onClick={() => startEdit(folder)}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                className="block w-full text-left px-4 py-2 text-sm text-fg-muted hover:bg-surface-hover"
               >
                 Rename
               </button>
               <button
                 onClick={() => handleDelete(folder.id)}
-                className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
+                className="block w-full text-left px-4 py-2 text-sm text-danger-text hover:bg-surface-hover"
               >
                 Delete
               </button>
@@ -352,7 +352,7 @@ export default function FolderSidebar({
       ))}
 
       {error && (
-        <p role="alert" className="px-3 py-2 text-xs text-red-400">
+        <p role="alert" className="px-3 py-2 text-xs text-danger-text">
           {error}
         </p>
       )}
@@ -373,7 +373,7 @@ export default function FolderSidebar({
           aria-label="Folder name"
           autoFocus
           placeholder="Folder name"
-          className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500 read-only:opacity-60"
+          className="w-full bg-surface-raised text-fg rounded-box px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
         />
       ) : (
         <button
@@ -382,7 +382,7 @@ export default function FolderSidebar({
             setError(null);
             setFailedName(null);
           }}
-          className="w-full text-left px-3 py-2 text-sm text-gray-500 hover:text-white transition"
+          className="w-full text-left px-3 py-2 text-sm text-fg-subtle hover:text-fg transition"
         >
           + New folder
         </button>

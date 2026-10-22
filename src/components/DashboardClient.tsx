@@ -249,7 +249,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
       : null;
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
+    <main className="min-h-screen bg-page text-fg">
       {showModal && (
         <SnippetFormModal
           folders={folders}
@@ -269,11 +269,11 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
             <button
               onClick={() => setFoldersOpen(true)}
               aria-expanded={foldersOpen}
-              className="md:hidden text-sm text-gray-300 hover:text-white bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5"
+              className="md:hidden text-sm text-fg-muted hover:text-fg bg-surface border border-line rounded-box px-3 py-1.5"
             >
               Folders
             </button>
-            <span className="hidden sm:inline text-gray-400 text-sm truncate">
+            <span className="hidden sm:inline text-fg-subtle text-sm truncate">
               {user.isGuest ? "Demo" : user.email}
             </span>
             {user.image && (
@@ -286,14 +286,14 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
             {!user.isGuest && (
               <Link
                 href="/connect"
-                className="text-xs text-gray-500 hover:text-white transition"
+                className="text-xs text-fg-subtle hover:text-fg transition"
               >
                 Connect
               </Link>
             )}
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-xs text-gray-500 hover:text-white transition"
+              className="text-xs text-fg-subtle hover:text-fg transition"
             >
               {user.isGuest ? "Leave demo" : "Sign out"}
             </button>
@@ -301,7 +301,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
         </div>
 
         {user.isGuest && (
-          <div className="flex flex-wrap items-center justify-between gap-3 text-sm bg-blue-950/50 border border-blue-900 text-blue-200 rounded-lg px-4 py-3 mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm bg-accent-soft/50 border border-accent-line text-fg-muted rounded-box px-4 py-3 mb-8">
             <span>
               This is a demo. It and everything in it is deleted 24 hours after
               you started.
@@ -310,7 +310,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 try to attach your account to the guest (docs/adr/0012). */}
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-white underline underline-offset-4 hover:text-blue-100"
+              className="text-fg underline underline-offset-4 hover:text-accent-text"
             >
               Sign in to keep your own
             </button>
@@ -329,7 +329,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
           <div className="flex gap-8">
             {foldersOpen && (
               <div
-                className="fixed inset-0 z-40 bg-black/70"
+                className="fixed inset-0 z-40 bg-overlay"
                 onClick={() => setFoldersOpen(false)}
               />
             )}
@@ -338,7 +338,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
             <div
               className={
                 foldersOpen
-                  ? "fixed inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-gray-950 border-r border-gray-800 p-4"
+                  ? "fixed inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-page border-r border-line p-4"
                   : "hidden md:block"
               }
             >
@@ -359,10 +359,10 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
             <div className="flex-1 min-w-0">
               {capStatus !== "ok" && (
                 <div
-                  className={`text-xs px-4 py-2 rounded-lg mb-4 ${
+                  className={`text-xs px-4 py-2 rounded-box mb-4 ${
                     capStatus === "full"
-                      ? "bg-red-950 text-red-400"
-                      : "bg-yellow-950 text-yellow-500"
+                      ? "bg-danger-soft text-danger-text"
+                      : "bg-warning-soft text-warning-text"
                   }`}
                 >
                   {capStatus === "full"
@@ -372,7 +372,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
               )}
 
               {heading && (
-                <h2 className="text-lg font-medium mb-4 text-gray-300">
+                <h2 className="text-lg font-medium mb-4 text-fg-muted">
                   {heading}
                 </h2>
               )}
@@ -398,10 +398,10 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                       if (!aiMode) setAiResultIds(null);
                     }}
                     onKeyDown={handleSearchKeyDown}
-                    className={`w-full bg-gray-900 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 border border-gray-800 ${aiMode ? "pr-36" : ""}`}
+                    className={`w-full bg-surface text-fg rounded-box px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-focus border border-line ${aiMode ? "pr-36" : ""}`}
                   />
                   {aiMode && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-blue-400">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-accent-text">
                       press enter to search
                     </span>
                   )}
@@ -410,10 +410,10 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 <div className="flex gap-3">
                   <button
                     onClick={handleModeToggle}
-                    className={`flex-1 sm:flex-none px-4 py-2.5 rounded-lg text-sm font-medium transition shrink-0 border ${
+                    className={`flex-1 sm:flex-none px-4 py-2.5 rounded-box text-sm font-medium transition shrink-0 border ${
                       aiMode
-                        ? "bg-blue-600 text-white border-blue-500"
-                        : "bg-gray-900 text-gray-400 border-gray-800 hover:text-white"
+                        ? "bg-accent text-accent-fg border-accent"
+                        : "bg-surface text-fg-subtle border-line hover:text-fg"
                     }`}
                   >
                     ✦ AI search
@@ -427,7 +427,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                         ? snippetCapMessage(cap, user.isGuest)
                         : undefined
                     }
-                    className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+                    className="flex-1 sm:flex-none bg-accent hover:bg-accent-hover text-accent-fg px-4 py-2.5 rounded-box text-sm font-medium transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent"
                   >
                     + New snippet
                   </button>
@@ -435,16 +435,16 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
               </div>
 
               {aiLoading && (
-                <div role="status" className="text-center py-24 text-gray-500">
+                <div role="status" className="text-center py-24 text-fg-subtle">
                   <p className="text-sm">Searching your whole library...</p>
                 </div>
               )}
 
               {!aiLoading && empty && (
-                <div className="text-center py-24 text-gray-500">
+                <div className="text-center py-24 text-fg-subtle">
                   <p
                     role={empty.tone === "error" ? "alert" : undefined}
-                    className={`text-lg ${empty.tone === "error" ? "text-red-400" : ""}`}
+                    className={`text-lg ${empty.tone === "error" ? "text-danger-text" : ""}`}
                   >
                     {empty.title}
                   </p>
@@ -452,7 +452,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                   {empty.offerNewSnippet && (
                     <button
                       onClick={() => setShowModal(true)}
-                      className="mt-6 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+                      className="mt-6 bg-accent hover:bg-accent-hover text-accent-fg px-4 py-2.5 rounded-box text-sm font-medium transition"
                     >
                       New snippet
                     </button>
@@ -477,12 +477,12 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
 
           <DragOverlay>
             {draggedSnippet ? (
-              <div className="bg-gray-900 rounded-xl p-5 border border-blue-500 shadow-2xl opacity-90 cursor-grabbing">
+              <div className="bg-surface rounded-panel p-5 border border-accent shadow-lifted opacity-90 cursor-grabbing">
                 <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-white font-medium">
+                  <h3 className="text-fg font-medium">
                     {draggedSnippet.title}
                   </h3>
-                  <span className="text-xs text-blue-400 bg-blue-950 px-2 py-1 rounded-md shrink-0">
+                  <span className="text-xs text-accent-text bg-accent-soft px-2 py-1 rounded-chip shrink-0">
                     {draggedSnippet.language}
                   </span>
                 </div>
