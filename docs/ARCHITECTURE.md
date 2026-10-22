@@ -2,7 +2,7 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-22 (after ADR 0027)*
+*Last reviewed: 2026-10-22 (after ADR 0028)*
 
 ## The short version
 
@@ -262,15 +262,18 @@ Tokens are made and revoked on `/connect`, through `/api/tokens`, which only acc
 
 ## Styling
 
-Components are styled with Tailwind, but never with its palette ([0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md)). `globals.css` defines design tokens as CSS variables named by role: surfaces (`page`, `surface`, `surface-raised`, `code`), lines, three text levels (`fg`, `fg-muted`, `fg-subtle`), accent, inverse, danger, warning, three corner radii, and two shadows. `@theme inline` turns them into utilities (`bg-surface`, `text-fg-muted`, `rounded-box`, `shadow-popover`) that read the variable at runtime, so a theme only has to override the variables. Tailwind's own palette is switched off, so `bg-gray-800` builds to nothing, and a test fails on any palette class in a `.tsx` file.
+Components are styled with Tailwind, but never with its palette ([0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md)). `globals.css` defines design tokens as CSS variables named by role: surfaces (`page`, `surface`, `surface-raised`, `code`), lines, three text levels (`fg`, `fg-muted`, `fg-subtle`), accent, inverse, danger, warning, a display font, three corner radii, and two shadows. `@theme inline` turns them into utilities (`bg-surface`, `text-fg-muted`, `rounded-box`, `shadow-popover`) that read the variable at runtime, so a theme only has to override the variables. Tailwind's own palette is switched off, so `bg-gray-800` builds to nothing, and a test fails on any palette class in a `.tsx` file.
 
-The Open Graph image can't read CSS, so `src/lib/theme-tokens.ts` holds a copy of the default theme's colors, and a test keeps it equal to `globals.css`. The default identity is the only theme today; the 8-bit theme comes next.
+The default identity is "cut and keep" ([0028](./adr/0028-cut-and-keep-as-the-default-identity.md)): blue-black ink surfaces, warm off-white text, one tangerine accent, Space Grotesk for the wordmark and page headings (`font-display`), Geist for everything else, and Shiki's `ayu-dark` for code. The logo is `src/components/LogoMark.tsx`, which takes its colors as props so the headers, the favicon (`icon.tsx`), the Apple touch icon (`apple-icon.tsx`), and the Open Graph image all draw the same shape.
+
+Those images are drawn by `next/og` at build time and can't read CSS, so `src/lib/theme-tokens.ts` holds a copy of the default theme's colors, and a test keeps it equal to `globals.css`. The same test checks every text and background pairing the components use against WCAG AA (`src/lib/contrast.ts`). `next/og` can't use `next/font` either, so the Open Graph image loads its fonts from `assets/fonts`. The default identity is the only theme today; the 8-bit theme comes next.
 
 ## Code map
 
 ```
 .github/workflows/ci.yml        CI: formatting, lint, types, unit tests, migrations, store tests, e2e
 .git-blame-ignore-revs          Formatting-only commits for git blame to skip
+assets/fonts/                   Font files and licenses for the Open Graph image, which can't use next/font
 .prettierignore                 What Prettier leaves alone: Markdown, the lockfile
 docker-compose.yml              Local Postgres for development and tests
 e2e/
@@ -300,6 +303,7 @@ src/
 │   ├── layout.tsx              Root layout, fonts, metadata and link previews
 │   ├── error.tsx               What a page that throws shows: retry, a way home, a log reference (tested)
 │   ├── opengraph-image.tsx     Link preview image, rendered at build time from the theme tokens
+│   ├── icon.tsx, apple-icon.tsx  Favicon and home screen icon, drawn from LogoMark at build time
 │   ├── globals.css             Tailwind v4 entry, the design tokens, global styles
 │   └── api/
 │       ├── auth/[...nextauth]/ NextAuth handler
@@ -323,6 +327,7 @@ src/
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing
 │   ├── accessible-names.test.ts  Every field and button on the forms, preview, and dashboard has a name
+│   ├── LogoMark.tsx            The logo, colors passed in, and the Wordmark for page headers
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
 │   ├── ai.ts                   The one Claude client: model, timeout, retries, askClaude()
@@ -335,6 +340,7 @@ src/
 │   ├── api-tokens.ts           MCP tokens: make, hash, revoke, sign in by Bearer header (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
 │   ├── auth.ts                 NextAuth config, verified-email check, currentUser()
+│   ├── contrast.ts             WCAG contrast ratio between two colors (tested)
 │   ├── clipboard.ts            copyText: whether a copy actually landed (tested)
 │   ├── demo.ts                 Starting a demo: seed, IP limit, cookie name (tested)
 │   ├── demo-store.ts           Database side of starting a demo
@@ -362,7 +368,7 @@ src/
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippets.ts             /api/snippets: ownership, cap, validation, in order (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
-│   ├── theme-tokens.ts         The default theme's colors for the Open Graph image (tested: match globals.css, no palette classes)
+│   ├── theme-tokens.ts         The default theme's colors for the generated images (tested: match globals.css, WCAG AA, no palette classes)
 │   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
 │   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
 │   └── prisma.ts               Prisma client singleton
