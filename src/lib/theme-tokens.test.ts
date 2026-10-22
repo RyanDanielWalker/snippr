@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { AA_NON_TEXT, AA_TEXT, contrastRatio } from "./contrast";
 import { defaultTheme } from "./theme-tokens";
 
 const css = readFileSync(join(__dirname, "../app/globals.css"), "utf8");
@@ -39,6 +40,52 @@ describe("defaultTheme", () => {
     expect(defaultTheme[camel(name) as keyof typeof defaultTheme]).toBe(
       root.get(name),
     );
+  });
+});
+
+type Token = keyof typeof defaultTheme;
+
+const surfaces: Token[] = [
+  "page",
+  "surface",
+  "surfaceRaised",
+  "surfaceHover",
+  "code",
+];
+const textOnSurfaces: Token[] = [
+  "fg",
+  "fgMuted",
+  "fgSubtle",
+  "accentText",
+  "dangerText",
+  "warningText",
+];
+
+// Every text and background pairing the components use (ADR 0028). Text
+// that sits on a surface is checked against all of them, since a card can
+// end up on any one.
+const pairings: [text: Token, background: Token, minimum: number][] = [
+  ...textOnSurfaces.flatMap((text) =>
+    surfaces.map((bg): [Token, Token, number] => [text, bg, AA_TEXT]),
+  ),
+  ["accentText", "accentSoft", AA_TEXT],
+  ["fgMuted", "accentSoft", AA_TEXT],
+  ["accentFg", "accent", AA_TEXT],
+  ["accentFg", "accentHover", AA_TEXT],
+  ["inverseFg", "inverse", AA_TEXT],
+  ["inverseFg", "inverseHover", AA_TEXT],
+  ["dangerFg", "danger", AA_TEXT],
+  ["dangerFg", "dangerHover", AA_TEXT],
+  ["dangerText", "dangerSoft", AA_TEXT],
+  ["warningText", "warningSoft", AA_TEXT],
+  ...surfaces.map((bg): [Token, Token, number] => ["focus", bg, AA_NON_TEXT]),
+];
+
+describe("defaultTheme contrast", () => {
+  it.each(pairings)("%s on %s is at least %s:1", (text, bg, minimum) => {
+    expect(
+      contrastRatio(defaultTheme[text], defaultTheme[bg]),
+    ).toBeGreaterThanOrEqual(minimum);
   });
 });
 
