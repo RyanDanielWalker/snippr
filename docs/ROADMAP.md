@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-10-21*
+*Last updated: 2026-10-22*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -24,7 +24,7 @@ Phases run in order. Items inside a phase can ship in any order. Each item lands
 The identity comes first, so the screenshots and the README show the finished look.
 
 - [x] Clear `npm audit`'s advisories. On 2026-10-21 it reported critical ones in `next` and `next-auth` and others in their dependencies (`postcss`, `sharp`, `uuid`) and `@anthropic-ai/sdk`. None come from the MCP SDK. Under 1.0 because a reviewer can run it in a second, and the auth library is one of them. Check each advisory against how Snippr uses the package before upgrading, and keep Prisma on 5 ([0003](./adr/0003-supabase-postgres-with-prisma-5.md)). Done: `next` 16.4.2, `next-auth` 4.24.15, `@anthropic-ai/sdk` 0.137, Prisma still 5.22. `npm audit --omit=dev` is clean and a CI job keeps checking it, without holding up deploys ([0026](./adr/0026-audit-production-dependencies-in-ci.md)). Plain `npm audit` still lists `braces`, a lint-time dependency with no fixed release. The `next-auth` upgrade changed its cookie rule, which demo mode copies, so `usesSecureCookies` changed with it
-- [ ] Visual identity: type, color, logo, a point of view, from the design direction decision below. Redo the Open Graph image to match; today it borrows the landing page's gray and blue and only has Geist Regular, so the wordmark can't be bold
+- [ ] Visual identity: type, color, logo, a point of view, as one default identity plus one selectable 8-bit theme on semantic tokens ([0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md)). A token pass that changes almost nothing on screen comes first. Redo the Open Graph image to match; today it borrows the landing page's gray and blue and only has Geist Regular, so the wordmark can't be bold
 - [x] Labels and accessible names: a `<label>` on every form input, names on the icon-only buttons (✕, ⋯, the sidebar chevrons), and Escape closing the edit form like it closes the preview ([audit](./audits/2026-10-20.md), finding 5). Under 1.0 because it's most of what a Lighthouse run flags, and a reviewer can run one in a minute. Before the screenshots, so they show the finished forms. Keyboard drag and drop and card roles stay Parked. Done: the snippet form has visible labels, the search box and folder name inputs have `aria-label`s, and ✕, ⋯, and the expand chevron are named. A test renders the forms, preview, and dashboard on the server and fails on any field or button without a name (`src/lib/accessible-names.ts`), and the end-to-end test fills the form by label. Escape closes the form only while nothing has changed, like a click outside
 - [ ] README rebuilt around screenshots, a short demo GIF, and the architecture
 - [ ] A case study: what was built, what broke, what was decided, and why
@@ -101,9 +101,7 @@ The part that makes Snippr more than a CRUD app.
 
 These need a call before the related work starts. Each one becomes an ADR.
 
-| Decision | Options | Needed for |
-| --- | --- | --- |
-| Design direction | To be explored with mockups | Phase 5 |
+None open. Design direction was decided in [0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md).
 
 ## Parked
 
@@ -124,6 +122,7 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - Pick a Node version on purpose: set it in Vercel and `package.json` `engines`, align `@types/node`, then move to Vitest 5
 - Remember the collapsed sidebar in a cookie instead of `localStorage`, so the server can render it collapsed. Today it's drawn open and snaps shut once the page's JavaScript runs, which only shows on a slow connection
 - Command palette (⌘K) and keyboard shortcuts
+- A synthwave theme and a light minimalist theme ([0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md)). Each should be one block of token values and a Shiki palette. The light one is also the answer to "no light mode"
 - A Format button in the snippet form, like the broom in an online editor. Prettier, loaded on first click, for TypeScript, JavaScript, CSS, HTML, and JSON only; Python, Rust, and Go have no good formatter that runs in a browser, so the button is disabled for them and says why. Snippets are often fragments Prettier can't parse, so a failure says where inline instead of looking broken, and Undo brings back the original, since setting the textarea from code wipes the browser's own undo. Gets an ADR for where it stops
 - Give the dashboard's controls accessible names and roles (the cards are `div`s with dnd-kit's `role="button"`, and the sidebar's `⋯` menu button has no label). The end-to-end test finds cards by `aria-roledescription` and folders by text for now; it can switch to roles once they exist ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)). The inputs' labels and the icon buttons' names landed in Phase 5 ([audit](./audits/2026-10-20.md), finding 5); the cards' roles and the rest stay here
 - Smaller screen reader gaps the Phase 5 pass left: the AI search toggle doesn't say whether it's on (`aria-pressed`), Generate reads as "..." while Claude writes, and the avatar's alt text is "avatar" next to the email it repeats. Lighthouse doesn't flag them
