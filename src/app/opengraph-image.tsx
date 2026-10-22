@@ -1,4 +1,7 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import LogoMark from "@/components/LogoMark";
 import { landingSamples, searchExample } from "@/lib/landing-samples";
 import { defaultTheme } from "@/lib/theme-tokens";
 import { siteHeadline, siteName } from "@/lib/site";
@@ -6,9 +9,11 @@ import { siteHeadline, siteName } from "@/lib/site";
 // The picture that shows up when someone shares a snippr.dev link. It's
 // built at deploy time from the same copy as the landing page, so it can't
 // go stale the way a hand-exported PNG would. ImageResponse supports flexbox
-// and a subset of CSS, not Tailwind, hence the inline styles. Its built-in
-// font is Geist, which matches the site. Stick to characters Geist has: a
-// missing glyph makes it fetch a fallback font over the network at build.
+// and a subset of CSS, not Tailwind, hence the inline styles. It can't use
+// next/font, so the fonts are files in assets/fonts: Space Grotesk Bold for
+// the wordmark and headline, Geist for the rest, like the site. Stick to
+// characters they have: a missing glyph makes it fetch a fallback font over
+// the network at build.
 
 export const alt = `${siteName}: an AI search for "${searchExample.query}" finding a saved snippet.`;
 export const size = { width: 1200, height: 630 };
@@ -17,7 +22,15 @@ export const contentType = "image/png";
 // The default identity's tokens, so the image matches the site (ADR 0027).
 const colors = defaultTheme;
 
-export default function Image() {
+const font = (file: string) =>
+  readFile(join(process.cwd(), "assets/fonts", file));
+
+export default async function Image() {
+  const [geist, spaceGrotesk] = await Promise.all([
+    font("Geist-Regular.ttf"),
+    font("SpaceGrotesk-Bold.ttf"),
+  ]);
+
   const result = landingSamples.find((s) => s.id === searchExample.resultId);
   if (!result) throw new Error("searchExample.resultId has no matching sample");
 
@@ -32,12 +45,26 @@ export default function Image() {
         padding: 72,
         background: colors.page,
         color: colors.fgSubtle,
+        fontFamily: "Geist",
       }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <div style={{ fontSize: 32, color: colors.fg }}>{siteName}</div>
         <div
           style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            fontFamily: "Space Grotesk",
+            fontSize: 36,
+            color: colors.fg,
+          }}
+        >
+          <LogoMark size={44} braces={colors.fg} cut={colors.accent} />
+          {siteName}
+        </div>
+        <div
+          style={{
+            fontFamily: "Space Grotesk",
             fontSize: 64,
             lineHeight: 1.1,
             color: colors.fg,
@@ -108,6 +135,18 @@ export default function Image() {
         </div>
       </div>
     </div>,
-    size,
+    {
+      ...size,
+      // Replaces next/og's built-in Geist, so Geist comes back in here.
+      fonts: [
+        { name: "Geist", data: geist, weight: 400, style: "normal" },
+        {
+          name: "Space Grotesk",
+          data: spaceGrotesk,
+          weight: 700,
+          style: "normal",
+        },
+      ],
+    },
   );
 }
