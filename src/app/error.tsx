@@ -25,7 +25,7 @@ export default function ErrorPage({
   }, [error]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-page">
+    <main className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-6 max-w-sm px-4">
         <h1 className="font-display text-2xl font-bold text-fg">
           Something broke on our side.
@@ -37,7 +37,7 @@ export default function ErrorPage({
           <button
             type="button"
             onClick={() => unstable_retry()}
-            className="bg-inverse text-inverse-fg font-medium rounded-box px-4 py-2 hover:bg-inverse-hover transition"
+            className="bg-inverse text-inverse-fg shadow-press case-control font-medium rounded-box px-4 py-2 hover:bg-inverse-hover transition"
           >
             Try again
           </button>

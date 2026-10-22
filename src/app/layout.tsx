@@ -4,6 +4,7 @@ import {
   Geist_Mono,
   Press_Start_2P,
   Space_Grotesk,
+  VT323,
 } from "next/font/google";
 import { cookies } from "next/headers";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
@@ -32,6 +33,14 @@ const spaceGrotesk = Space_Grotesk({
 // fetches it once something on the page uses it.
 const pressStart = Press_Start_2P({
   variable: "--font-press-start",
+  subsets: ["latin"],
+  weight: "400",
+  preload: false,
+});
+
+// The 8-bit theme's UI text (ADR 0030). Not preloaded either.
+const vt323 = VT323({
+  variable: "--font-vt323",
   subsets: ["latin"],
   weight: "400",
   preload: false,
@@ -74,7 +83,7 @@ export default async function RootLayout({
     <html
       lang="en"
       data-theme={themeAttribute(theme)}
-      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${pressStart.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${pressStart.variable} ${vt323.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider initial={theme}>{children}</ThemeProvider>

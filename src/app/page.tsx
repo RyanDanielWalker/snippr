@@ -38,12 +38,12 @@ export default async function Home({
   const samples = await withCardHtml(landingSamples, codeToHtml);
 
   return (
-    <div className="min-h-screen bg-page text-fg-muted">
+    <div className="min-h-screen text-fg-muted">
       <header className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between">
         <Wordmark className="text-fg text-lg" />
         <Link
           href="/login"
-          className="text-sm text-fg-subtle hover:text-fg transition"
+          className="text-sm case-control text-fg-subtle hover:text-fg transition"
         >
           Sign in
         </Link>
@@ -62,7 +62,7 @@ export default async function Home({
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
               href="/login"
-              className="bg-inverse text-inverse-fg px-6 py-3 rounded-box font-medium hover:bg-inverse-hover transition"
+              className="bg-inverse text-inverse-fg shadow-press case-control px-6 py-3 rounded-box font-medium hover:bg-inverse-hover transition"
             >
               Sign in to start
             </Link>

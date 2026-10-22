@@ -95,14 +95,14 @@ export default function SnippetCard({
                 <button
                   onClick={handleEdit}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="text-xs text-fg-subtle hover:text-fg transition"
+                  className="text-xs case-control text-fg-subtle hover:text-fg transition"
                 >
                   Edit
                 </button>
                 <button
                   onClick={handleCopy}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="text-xs text-fg-subtle hover:text-fg transition"
+                  className="text-xs case-control text-fg-subtle hover:text-fg transition"
                 >
                   {copied ? "✓ Copied" : "Copy"}
                 </button>
@@ -111,7 +111,7 @@ export default function SnippetCard({
                 onClick={handleDelete}
                 onPointerDown={(e) => e.stopPropagation()}
                 disabled={del.deleting}
-                className={`text-xs transition ${
+                className={`text-xs case-control transition ${
                   del.armed
                     ? "text-danger-text"
                     : "text-fg-subtle hover:text-danger-text"

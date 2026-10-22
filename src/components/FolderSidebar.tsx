@@ -225,7 +225,7 @@ export default function FolderSidebar({
   return (
     <aside className="w-56 shrink-0 space-y-1">
       <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-xs text-fg-subtle uppercase tracking-wider">
+        <span className="font-title text-xs text-fg-subtle uppercase tracking-wider">
           Library
         </span>
         <button
@@ -271,7 +271,7 @@ export default function FolderSidebar({
         <span className="text-xs text-fg-subtle">{unorganizedCount}</span>
       </DroppableFolder>
 
-      <div className="pt-4 pb-2 px-3 text-xs text-fg-subtle uppercase tracking-wider">
+      <div className="pt-4 pb-2 px-3 font-title text-xs text-fg-subtle uppercase tracking-wider">
         Folders
       </div>
 

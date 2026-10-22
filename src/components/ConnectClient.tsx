@@ -30,7 +30,7 @@ export default function ConnectClient({
   const [created, setCreated] = useState<string | null>(null);
 
   return (
-    <main className="min-h-screen bg-page text-fg">
+    <main className="min-h-screen text-fg">
       <div className="max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-8 space-y-8">
         <div className="flex items-center justify-between gap-4">
           <h1 className="font-display text-2xl font-bold">
@@ -124,7 +124,7 @@ function CreateToken({ onCreated }: { onCreated: (token: string) => void }) {
         <button
           type="submit"
           disabled={saving}
-          className="bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-60 text-sm font-medium rounded-box px-4 py-2 transition"
+          className="bg-accent text-accent-fg shadow-press case-control hover:bg-accent-hover disabled:opacity-60 text-sm font-medium rounded-box px-4 py-2 transition"
         >
           {saving ? "Making..." : "Make a token"}
         </button>

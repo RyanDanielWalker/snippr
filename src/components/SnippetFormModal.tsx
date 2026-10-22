@@ -259,7 +259,7 @@ export default function SnippetFormModal({
           <button
             onClick={handleSubmit}
             disabled={!canSave}
-            className="px-4 py-2 text-sm bg-accent text-accent-fg rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? "Saving..." : editing ? "Save changes" : "Save snippet"}
           </button>

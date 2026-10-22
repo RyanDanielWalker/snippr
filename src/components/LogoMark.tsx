@@ -42,14 +42,84 @@ export default function LogoMark({
   );
 }
 
+// The 8-bit theme's mark: the same cut, as a pair of pixel scissors (ADR
+// 0030). b is a blade pixel, h a handle pixel.
+const SCISSORS = [
+  "................",
+  "................",
+  "..b..........b..",
+  "...b........b...",
+  "....b......b....",
+  ".....b....b.....",
+  "......b..b......",
+  ".......bb.......",
+  ".......bb.......",
+  "......b..b......",
+  ".....b....b.....",
+  "...hh......hh...",
+  "..h..h....h..h..",
+  "..h..h....h..h..",
+  "...hh......hh...",
+  "................",
+];
+
+const PIXELS = SCISSORS.flatMap((row, y) =>
+  [...row].flatMap((cell, x) => (cell === "." ? [] : [{ x, y, cell }])),
+);
+
+export function PixelScissors({
+  size,
+  blades,
+  handles,
+  className,
+}: {
+  size: number | string;
+  blades: string;
+  handles: string;
+  className?: string;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      shapeRendering="crispEdges"
+      aria-hidden="true"
+      className={className}
+    >
+      {PIXELS.map(({ x, y, cell }) => (
+        <rect
+          key={`${x},${y}`}
+          x={x}
+          y={y}
+          width={1}
+          height={1}
+          fill={cell === "b" ? blades : handles}
+        />
+      ))}
+    </svg>
+  );
+}
+
 /** The mark and the name together, for page headers. */
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-2 font-display font-bold ${className}`}
+      className={`wordmark inline-flex items-center gap-2 font-display font-bold ${className}`}
     >
-      <LogoMark size="1.2em" braces="currentColor" cut="var(--accent)" />
-      Snippr
+      <LogoMark
+        size="1.2em"
+        braces="currentColor"
+        cut="var(--mark-cut)"
+        className="eightbit:hidden"
+      />
+      <PixelScissors
+        size="1.6em"
+        blades="currentColor"
+        handles="var(--mark-cut)"
+        className="hidden eightbit:block"
+      />
+      <span className="text-shadow-wordmark">Snippr</span>
     </span>
   );
 }

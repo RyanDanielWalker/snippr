@@ -251,7 +251,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
       : null;
 
   return (
-    <main className="min-h-screen bg-page text-fg">
+    <main className="min-h-screen text-fg">
       {showModal && (
         <SnippetFormModal
           folders={folders}
@@ -273,7 +273,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
             <button
               onClick={() => setFoldersOpen(true)}
               aria-expanded={foldersOpen}
-              className="md:hidden text-sm text-fg-muted hover:text-fg bg-surface border border-line rounded-box px-3 py-1.5"
+              className="md:hidden text-sm case-control text-fg-muted hover:text-fg bg-surface border border-line rounded-box px-3 py-1.5"
             >
               Folders
             </button>
@@ -288,18 +288,18 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
               />
             )}
             {/* No room on a phone; the landing page's footer has one. */}
-            <ThemeToggle className="hidden sm:inline text-xs" />
+            <ThemeToggle className="hidden sm:inline text-xs case-control" />
             {!user.isGuest && (
               <Link
                 href="/connect"
-                className="text-xs text-fg-subtle hover:text-fg transition"
+                className="text-xs case-control text-fg-subtle hover:text-fg transition"
               >
                 Connect
               </Link>
             )}
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-xs text-fg-subtle hover:text-fg transition"
+              className="text-xs case-control text-fg-subtle hover:text-fg transition"
             >
               {user.isGuest ? "Leave demo" : "Sign out"}
             </button>
@@ -416,7 +416,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 <div className="flex gap-3">
                   <button
                     onClick={handleModeToggle}
-                    className={`flex-1 sm:flex-none px-4 py-2.5 rounded-box text-sm font-medium transition shrink-0 border ${
+                    className={`flex-1 sm:flex-none px-4 py-2.5 rounded-box font-title case-control text-sm font-medium transition shrink-0 border ${
                       aiMode
                         ? "bg-accent text-accent-fg border-accent"
                         : "bg-surface text-fg-subtle border-line hover:text-fg"
@@ -433,7 +433,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                         ? snippetCapMessage(cap, user.isGuest)
                         : undefined
                     }
-                    className="flex-1 sm:flex-none bg-accent hover:bg-accent-hover text-accent-fg px-4 py-2.5 rounded-box text-sm font-medium transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent"
+                    className="flex-1 sm:flex-none bg-accent hover:bg-accent-hover text-accent-fg shadow-press px-4 py-2.5 rounded-box font-title case-control text-sm font-medium transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent"
                   >
                     + New snippet
                   </button>
@@ -458,7 +458,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                   {empty.offerNewSnippet && (
                     <button
                       onClick={() => setShowModal(true)}
-                      className="mt-6 bg-accent hover:bg-accent-hover text-accent-fg px-4 py-2.5 rounded-box text-sm font-medium transition"
+                      className="mt-6 bg-accent hover:bg-accent-hover text-accent-fg shadow-press px-4 py-2.5 rounded-box font-title case-control text-sm font-medium transition"
                     >
                       New snippet
                     </button>

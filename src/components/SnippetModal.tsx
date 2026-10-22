@@ -138,7 +138,7 @@ export default function SnippetModal({
             </button>
             <button
               onClick={copy}
-              className="px-4 py-2 text-sm bg-accent text-accent-fg rounded-box hover:bg-accent-hover transition shrink-0"
+              className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition shrink-0"
             >
               {copied ? "✓ Copied" : "Copy code"}
             </button>
