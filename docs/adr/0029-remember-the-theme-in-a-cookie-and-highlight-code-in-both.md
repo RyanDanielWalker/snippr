@@ -1,6 +1,6 @@
 # 0029. Remember the theme in a cookie, and highlight code in both themes at once
 
-- **Status:** Accepted
+- **Status:** Accepted. Its palette and type are superseded by [0030](./0030-commit-the-8-bit-theme-to-sweetie-16-and-pixel-ui-text.md)
 - **Date:** 2026-10-22
 - **Related:** [0027](./0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md), [0028](./0028-cut-and-keep-as-the-default-identity.md), [0022](./0022-highlight-cards-on-the-server.md), `src/lib/theme.ts`, `src/lib/shiki-8bit.ts`, `src/components/ThemeToggle.tsx`, [ROADMAP](../ROADMAP.md) Phase 5
 

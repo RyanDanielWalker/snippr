@@ -1,6 +1,6 @@
 # 0027. Ship one default identity and one 8-bit theme for 1.0, both on semantic CSS-variable tokens
 
-- **Status:** Accepted
+- **Status:** Accepted. Its "headings only" follow-up is superseded by [0030](./0030-commit-the-8-bit-theme-to-sweetie-16-and-pixel-ui-text.md)
 - **Date:** 2026-10-22
 - **Related:** `src/app/globals.css`, `src/app/opengraph-image.tsx`, `src/lib/highlight.ts`, [0022](./0022-highlight-cards-on-the-server.md), [ROADMAP](../ROADMAP.md) Phase 5
 

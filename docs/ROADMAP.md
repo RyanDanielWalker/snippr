@@ -132,7 +132,7 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
 - Drag and drop on touch screens ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). A finger drag is a scroll, so on a phone you move a snippet with the folder field in Edit. A long press with dnd-kit's `TouchSensor` could start a drag, but the folders are in a closed drawer by then, so it needs somewhere to drop first (a "Move to" sheet, say)
 - End-to-end tests beyond the main flow, including real OAuth sign-in. AI search is the first candidate: the features take `askClaude` as an argument ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)), but the production build the e2e test runs still calls the real one, so it needs a way to swap in a fake Claude there
-- An end-to-end check of the 8-bit theme: click the toggle, reload, and confirm `data-theme` survived and nothing overflows at 375px with the pixel headings. Unit tests cover the cookie and the contrast, not the page
+- An end-to-end check of the 8-bit theme: click the toggle, reload, and confirm `data-theme` survived and nothing overflows at 375px with the pixel type. Unit tests cover the cookie and the contrast, not the page
 - Replace the folder delete `confirm()` with a confirmation in the page, like the snippet card's "Click again to confirm". The browser dialog works; it just doesn't look like Snippr
 
 ### Not planned
