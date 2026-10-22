@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { defaultTheme } from "./theme-tokens";
@@ -39,5 +39,30 @@ describe("defaultTheme", () => {
     expect(defaultTheme[camel(name) as keyof typeof defaultTheme]).toBe(
       root.get(name),
     );
+  });
+});
+
+// globals.css removes Tailwind's palette, so a class like bg-gray-800 builds
+// to nothing and the element quietly loses its color. This catches it first.
+const palette =
+  "slate|gray|zinc|neutral|stone|taupe|mauve|mist|olive|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|white|black";
+const paletteClass = new RegExp(
+  `\\b(?:bg|text|border(?:-[xytrbl])?|ring|divide|outline|fill|stroke|from|via|to|decoration|placeholder|caret|accent|shadow)-(?:${palette})(?:-\\d{2,3})?(?:/\\d+)?\\b`,
+  "g",
+);
+
+describe("components", () => {
+  const src = join(__dirname, "..");
+  const files = readdirSync(src, { recursive: true, encoding: "utf8" }).filter(
+    (f) => f.endsWith(".tsx"),
+  );
+
+  it("finds the components to check", () => {
+    expect(files.length).toBeGreaterThan(10);
+  });
+
+  it.each(files)("%s uses tokens, not palette colors", (file) => {
+    const source = readFileSync(join(src, file), "utf8");
+    expect(source.match(paletteClass) ?? []).toEqual([]);
   });
 });

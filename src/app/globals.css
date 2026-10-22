@@ -56,6 +56,11 @@
   --lifted-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 }
 
+/* Drop Tailwind's palette, so bg-gray-800 and friends don't exist. */
+@theme {
+  --color-*: initial;
+}
+
 /* inline makes each utility read the variable at runtime, so overriding a
    token restyles the page without new CSS. */
 @theme inline {
