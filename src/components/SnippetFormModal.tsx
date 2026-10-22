@@ -104,7 +104,7 @@ export default function SnippetFormModal({
   // (a phone with its keyboard up) then scrolls instead of losing its top.
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex overflow-y-auto z-50 p-4"
+      className="fixed inset-0 bg-overlay flex overflow-y-auto z-50 p-4"
       onClick={() => {
         if (!dirty) onClose();
       }}
@@ -113,15 +113,15 @@ export default function SnippetFormModal({
         role="dialog"
         aria-modal="true"
         aria-label={heading}
-        className="m-auto bg-gray-900 rounded-xl w-full max-w-3xl p-4 sm:p-6 space-y-4"
+        className="m-auto bg-surface rounded-panel w-full max-w-3xl p-4 sm:p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-white font-semibold text-lg">{heading}</h2>
+          <h2 className="text-fg font-semibold text-lg">{heading}</h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-gray-500 hover:text-white"
+            className="text-fg-subtle hover:text-fg"
           >
             ✕
           </button>
@@ -136,7 +136,7 @@ export default function SnippetFormModal({
             maxLength={SNIPPET_LIMITS.title}
             value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-focus"
           />
         </div>
 
@@ -181,7 +181,7 @@ export default function SnippetFormModal({
             value={form.code}
             onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
             rows={8}
-            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm font-mono outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+            className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm font-mono outline-none focus:ring-1 focus:ring-focus resize-none"
           />
         </div>
 
@@ -197,18 +197,18 @@ export default function SnippetFormModal({
               onChange={(e) =>
                 setForm((f) => ({ ...f, description: e.target.value }))
               }
-              className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-28 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 pr-28 text-sm outline-none focus:ring-1 focus:ring-focus"
             />
             <button
               onClick={handleGenerateDescription}
               disabled={!form.code || generating}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-400 hover:text-blue-300 px-2 py-1 disabled:opacity-40"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-accent-text hover:text-fg px-2 py-1 disabled:opacity-40"
             >
               {generating ? "..." : "✦ Generate"}
             </button>
           </div>
           {describeError && (
-            <p role="alert" className="mt-2 text-xs text-red-400">
+            <p role="alert" className="mt-2 text-xs text-danger-text">
               {describeError}
             </p>
           )}
@@ -222,14 +222,14 @@ export default function SnippetFormModal({
             placeholder="react, hooks, auth"
             value={form.tags}
             onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
-            className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-focus"
           />
         </div>
 
         {(error ?? del.error) && (
           <p
             role="alert"
-            className="text-sm text-red-300 bg-red-950/60 border border-red-900 rounded-lg px-4 py-3"
+            className="text-sm text-danger-text bg-danger-soft/60 border border-danger-line rounded-box px-4 py-3"
           >
             {error ?? del.error}
           </p>
@@ -243,8 +243,8 @@ export default function SnippetFormModal({
               disabled={del.deleting || saving}
               className={`mr-auto px-2 py-2 text-sm transition ${
                 del.armed
-                  ? "text-red-400 hover:text-red-300"
-                  : "text-gray-500 hover:text-red-400"
+                  ? "text-danger-text"
+                  : "text-fg-subtle hover:text-danger-text"
               }`}
             >
               {del.label}
@@ -252,14 +252,14 @@ export default function SnippetFormModal({
           )}
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-400 hover:text-white transition"
+            className="px-4 py-2 text-sm text-fg-subtle hover:text-fg transition"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSave}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm bg-accent text-accent-fg rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? "Saving..." : editing ? "Save changes" : "Save snippet"}
           </button>
@@ -277,7 +277,7 @@ function Label({
   children: React.ReactNode;
 }) {
   return (
-    <label htmlFor={htmlFor} className="block text-xs text-gray-400 mb-1.5">
+    <label htmlFor={htmlFor} className="block text-xs text-fg-subtle mb-1.5">
       {children}
     </label>
   );
@@ -300,13 +300,13 @@ function Select({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-gray-800 text-white rounded-lg px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
+        className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 pr-10 text-sm outline-none focus:ring-1 focus:ring-focus appearance-none"
       >
         {children}
       </select>
       <svg
         aria-hidden="true"
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-subtle pointer-events-none"
         viewBox="0 0 20 20"
         fill="currentColor"
       >

@@ -81,11 +81,11 @@ export default function SnippetCard({
         snippet={snippet}
         folderName={folderName}
         aria-busy={moving || del.deleting}
-        className="hover:border-gray-700 transition cursor-grab active:cursor-grabbing"
+        className="hover:border-line-strong transition cursor-grab active:cursor-grabbing"
         footer={
           <div className="pt-1 mt-auto space-y-2">
             {del.error && (
-              <p role="alert" className="text-xs text-red-400">
+              <p role="alert" className="text-xs text-danger-text">
                 {del.error}
               </p>
             )}
@@ -95,14 +95,14 @@ export default function SnippetCard({
                 <button
                   onClick={handleEdit}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="text-xs text-gray-500 hover:text-white transition"
+                  className="text-xs text-fg-subtle hover:text-fg transition"
                 >
                   Edit
                 </button>
                 <button
                   onClick={handleCopy}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="text-xs text-gray-500 hover:text-white transition"
+                  className="text-xs text-fg-subtle hover:text-fg transition"
                 >
                   {copied ? "✓ Copied" : "Copy"}
                 </button>
@@ -113,8 +113,8 @@ export default function SnippetCard({
                 disabled={del.deleting}
                 className={`text-xs transition ${
                   del.armed
-                    ? "text-red-400 hover:text-red-300"
-                    : "text-gray-600 hover:text-red-400"
+                    ? "text-danger-text"
+                    : "text-fg-subtle hover:text-danger-text"
                 }`}
               >
                 {del.label}

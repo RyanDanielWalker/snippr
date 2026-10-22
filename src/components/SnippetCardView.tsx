@@ -28,26 +28,24 @@ export default function SnippetCardView({
   return (
     <div
       {...divProps}
-      className={`bg-gray-900 rounded-xl p-5 flex flex-col gap-3 border border-gray-800 ${className}`}
+      className={`bg-surface rounded-panel p-5 flex flex-col gap-3 border border-line ${className}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="text-white font-medium break-words">
-            {snippet.title}
-          </h3>
+          <h3 className="text-fg font-medium break-words">{snippet.title}</h3>
           {snippet.description && (
-            <p className="text-gray-500 text-sm mt-0.5">
+            <p className="text-fg-subtle text-sm mt-0.5">
               {snippet.description}
             </p>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {folderName && (
-            <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded-md">
+            <span className="text-xs text-fg-subtle bg-surface-raised px-2 py-1 rounded-chip">
               {folderName}
             </span>
           )}
-          <span className="text-xs text-blue-400 bg-blue-950 px-2 py-1 rounded-md">
+          <span className="text-xs text-accent-text bg-accent-soft px-2 py-1 rounded-chip">
             {snippet.language}
           </span>
         </div>
@@ -56,11 +54,11 @@ export default function SnippetCardView({
       {snippet.codeHtml ? (
         // Shiki escapes the code, so this is its markup and nothing else.
         <div
-          className="snippet-code bg-gray-950 rounded-lg text-sm overflow-hidden"
+          className="snippet-code bg-code rounded-box text-sm overflow-hidden"
           dangerouslySetInnerHTML={{ __html: snippet.codeHtml }}
         />
       ) : (
-        <pre className="bg-gray-950 rounded-lg p-4 text-sm text-gray-300 font-mono overflow-x-auto max-h-40">
+        <pre className="bg-code rounded-box p-4 text-sm text-fg-muted font-mono overflow-x-auto max-h-40">
           <code>{snippet.code}</code>
         </pre>
       )}
@@ -70,7 +68,7 @@ export default function SnippetCardView({
           {snippet.tags.map((tag) => (
             <span
               key={tag}
-              className="text-xs text-gray-400 bg-gray-800 px-2 py-0.5 rounded-md"
+              className="text-xs text-fg-subtle bg-surface-raised px-2 py-0.5 rounded-chip"
             >
               {tag}
             </span>
