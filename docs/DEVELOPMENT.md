@@ -111,6 +111,7 @@ Vercel finds the checks by the jobs' `name:` in `ci.yml`. Renaming a job means p
 - **`dev`, `start`, `db:migrate`, and `db:studio` refuse a database that isn't on your machine.** They check `DATABASE_URL` in the shell and in every `.env` file first ([0015](./adr/0015-local-postgres-in-docker-for-development.md)). If you mean it, say so: `ALLOW_REMOTE_DB=1 npm run db:studio`. The check ignores that variable in `.env`, on purpose. Running `npx prisma ...` directly skips the check, so use the npm scripts.
 - **`docker: unknown command: docker compose`** means Docker Desktop's command-line plugins aren't linked. Docker Desktop installs them; its Settings → Advanced page controls where. Reinstalling the CLI tools from there fixes it.
 - **"Try the demo" works locally.** Each IP can start 5 demos an hour, and if the dev server doesn't pass an IP, every local request shares one bucket. `docker compose down -v` resets it along with everything else.
+- **`bg-gray-800` does nothing.** Tailwind's palette is switched off; style with the tokens in `globals.css` (`bg-surface-raised`, `text-fg-subtle`, `border-line`). A test names any palette class that slips in. A new color means a new token, added to `globals.css` and `src/lib/theme-tokens.ts` together ([0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md)).
 - **`firebase-messaging-sw.js` 404s in the terminal** come from a browser extension, not from Snippr. Ignore them.
 
 ## How work gets done

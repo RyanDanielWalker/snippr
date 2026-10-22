@@ -2,7 +2,7 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-21 (after ADR 0026)*
+*Last reviewed: 2026-10-22 (after ADR 0027)*
 
 ## The short version
 
@@ -260,6 +260,12 @@ Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-feat
 
 Tokens are made and revoked on `/connect`, through `/api/tokens`, which only accepts a browser session. A token is `snippr_` and 32 random bytes, shown once; up to 10 per user; demo guests can't make any. The Connect page also shows what to paste into Claude Code and Cursor (`src/lib/mcp-config.ts`).
 
+## Styling
+
+Components are styled with Tailwind, but never with its palette ([0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md)). `globals.css` defines design tokens as CSS variables named by role: surfaces (`page`, `surface`, `surface-raised`, `code`), lines, three text levels (`fg`, `fg-muted`, `fg-subtle`), accent, inverse, danger, warning, three corner radii, and two shadows. `@theme inline` turns them into utilities (`bg-surface`, `text-fg-muted`, `rounded-box`, `shadow-popover`) that read the variable at runtime, so a theme only has to override the variables. Tailwind's own palette is switched off, so `bg-gray-800` builds to nothing, and a test fails on any palette class in a `.tsx` file.
+
+The Open Graph image can't read CSS, so `src/lib/theme-tokens.ts` holds a copy of the default theme's colors, and a test keeps it equal to `globals.css`. The default identity is the only theme today; the 8-bit theme comes next.
+
 ## Code map
 
 ```
@@ -293,8 +299,8 @@ src/
 │   ├── connect/page.tsx        MCP tokens: make one, see what to paste, revoke
 │   ├── layout.tsx              Root layout, fonts, metadata and link previews
 │   ├── error.tsx               What a page that throws shows: retry, a way home, a log reference (tested)
-│   ├── opengraph-image.tsx     Link preview image, rendered at build time
-│   ├── globals.css             Tailwind v4 entry + global styles
+│   ├── opengraph-image.tsx     Link preview image, rendered at build time from the theme tokens
+│   ├── globals.css             Tailwind v4 entry, the design tokens, global styles
 │   └── api/
 │       ├── auth/[...nextauth]/ NextAuth handler
 │       ├── folders/            Folder CRUD (logic in lib/folders.ts)
@@ -356,6 +362,7 @@ src/
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippets.ts             /api/snippets: ownership, cap, validation, in order (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
+│   ├── theme-tokens.ts         The default theme's colors for the Open Graph image (tested: match globals.css, no palette classes)
 │   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
 │   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
 │   └── prisma.ts               Prisma client singleton
