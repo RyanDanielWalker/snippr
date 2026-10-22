@@ -25,31 +25,31 @@ export default function ErrorPage({
   }, [error]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-950">
+    <main className="min-h-screen flex items-center justify-center bg-page">
       <div className="text-center space-y-6 max-w-sm px-4">
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-fg">
           Something broke on our side.
         </h1>
-        <p className="text-gray-400">
+        <p className="text-fg-subtle">
           It wasn&apos;t anything you did. Trying again usually fixes it.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <button
             type="button"
             onClick={() => unstable_retry()}
-            className="bg-white text-gray-950 font-medium rounded-lg px-4 py-2 hover:bg-gray-200 transition"
+            className="bg-inverse text-inverse-fg font-medium rounded-box px-4 py-2 hover:bg-inverse-hover transition"
           >
             Try again
           </button>
           <Link
             href="/"
-            className="text-sm text-gray-400 hover:text-white transition"
+            className="text-sm text-fg-subtle hover:text-fg transition"
           >
             Back to Snippr
           </Link>
         </div>
         {error.digest && (
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-fg-subtle">
             Reference: <code className="font-mono">{error.digest}</code>
           </p>
         )}
