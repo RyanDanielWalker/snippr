@@ -6,9 +6,22 @@
  * the real `codeToHtml`, and the tests pass fakes.
  */
 
+import { eightBitShikiTheme } from "./shiki-8bit";
+import type { Theme } from "./theme";
+
 // Its orange keywords pick up the accent. The background is ignored: the
 // code token in globals.css draws it (ADR 0028).
 export const SHIKI_THEME = "ayu-dark";
+
+/**
+ * Every theme's palette in one pass (ADR 0029). Shiki writes the default's
+ * colors inline and each other one as a --shiki-<key> variable, which
+ * globals.css switches to under that data-theme. The keys match THEMES.
+ */
+export const SHIKI_THEMES = {
+  default: SHIKI_THEME,
+  "8bit": eightBitShikiTheme,
+} satisfies Record<Theme, unknown>;
 
 /** A card shows about six lines; this leaves room to scroll a little. */
 export const CARD_PREVIEW_LINES = 20;
@@ -17,7 +30,11 @@ export const CARD_PREVIEW_CHARS = 2_000;
 
 export type CodeToHtml = (
   code: string,
-  options: { lang: string; theme: string },
+  options: {
+    lang: string;
+    themes: typeof SHIKI_THEMES;
+    defaultColor: "default";
+  },
 ) => Promise<string>;
 
 /** Shiki has no "other"; plain text is its name for no highlighting. */
@@ -44,7 +61,8 @@ export async function highlightCode(
   try {
     return await codeToHtml(code, {
       lang: shikiLanguage(language),
-      theme: SHIKI_THEME,
+      themes: SHIKI_THEMES,
+      defaultColor: "default",
     });
   } catch {
     return null;

@@ -3,7 +3,7 @@ import { codeToHtml } from "shiki";
 import {
   CARD_PREVIEW_CHARS,
   CARD_PREVIEW_LINES,
-  SHIKI_THEME,
+  SHIKI_THEMES,
   cardPreviewCode,
   highlightCode,
   shikiLanguage,
@@ -46,7 +46,7 @@ describe("shikiLanguage", () => {
 });
 
 describe("highlightCode", () => {
-  it("passes the whole code, Shiki's language name, and the theme", async () => {
+  it("passes the whole code, Shiki's language name, and the themes", async () => {
     const calls: Parameters<CodeToHtml>[] = [];
     const fake: CodeToHtml = async (code, options) => {
       calls.push([code, options]);
@@ -55,7 +55,9 @@ describe("highlightCode", () => {
     const long = Array.from({ length: 100 }, () => "x").join("\n");
 
     expect(await highlightCode(long, "other", fake)).toBe("<pre>ok</pre>");
-    expect(calls).toEqual([[long, { lang: "text", theme: SHIKI_THEME }]]);
+    expect(calls).toEqual([
+      [long, { lang: "text", themes: SHIKI_THEMES, defaultColor: "default" }],
+    ]);
   });
 
   // In the browser this is Shiki failing to load its language or theme.
@@ -80,7 +82,10 @@ describe("withCardHtml", () => {
     const [result] = await withCardHtml([snippet(long, "other")], fake);
 
     expect(calls).toEqual([
-      [cardPreviewCode(long), { lang: "text", theme: SHIKI_THEME }],
+      [
+        cardPreviewCode(long),
+        { lang: "text", themes: SHIKI_THEMES, defaultColor: "default" },
+      ],
     ]);
     expect(result).toEqual({
       ...snippet(long, "other"),
@@ -111,5 +116,15 @@ describe("withCardHtml", () => {
 
     expect(result.codeHtml).toContain("<pre");
     expect(result.codeHtml).not.toContain("<script>");
+  });
+
+  // ayu-dark inline, the 8-bit palette beside it for globals.css to switch to.
+  it("colors the code for every theme with the real Shiki", async () => {
+    const [result] = await withCardHtml(
+      [snippet('const a = "x";')],
+      codeToHtml,
+    );
+
+    expect(result.codeHtml).toMatch(/style="color:#[0-9A-F]{6};--shiki-8bit:/i);
   });
 });
