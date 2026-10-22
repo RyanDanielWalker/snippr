@@ -1,30 +1,115 @@
 @import "tailwindcss";
 
+/* Design tokens (ADR 0027). Components use these by role, through the
+   utilities @theme makes from them (bg-surface, text-fg-muted, rounded-box),
+   and never name a palette color. A theme is a block that overrides them.
+   The color values are mirrored in src/lib/theme-tokens.ts for the Open Graph
+   image, which can't read CSS; a test keeps the two the same. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces, darkest to lightest */
+  --page: #030712;
+  --surface: #111827;
+  --surface-raised: #1f2937;
+  --surface-hover: #374151;
+  --overlay: rgb(0 0 0 / 0.75);
+  --code: #030712;
+
+  /* Lines */
+  --line: #1f2937;
+  --line-strong: #374151;
+
+  /* Text. All three pass WCAG AA on every surface. */
+  --fg: #ffffff;
+  --fg-muted: #d1d5db;
+  --fg-subtle: #9ca3af;
+
+  /* Accent: primary actions, links, AI */
+  --accent: #2563eb;
+  --accent-hover: #3b82f6;
+  --accent-fg: #ffffff;
+  --accent-text: #60a5fa;
+  --accent-soft: #172554;
+  --accent-line: #1e3a8a;
+  --focus: #3b82f6;
+
+  /* Inverse: the white call-to-action buttons */
+  --inverse: #ffffff;
+  --inverse-hover: #f3f4f6;
+  --inverse-fg: #111827;
+
+  /* Status */
+  --danger: #dc2626;
+  --danger-hover: #ef4444;
+  --danger-fg: #ffffff;
+  --danger-text: #f87171;
+  --danger-soft: #450a0a;
+  --danger-line: #7f1d1d;
+  --warning-text: #eab308;
+  --warning-soft: #422006;
+
+  /* Shape */
+  --chip-radius: 0.375rem;
+  --box-radius: 0.5rem;
+  --panel-radius: 0.75rem;
+  --popover-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --lifted-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 }
 
+/* inline makes each utility read the variable at runtime, so overriding a
+   token restyles the page without new CSS. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-hover: var(--surface-hover);
+  --color-overlay: var(--overlay);
+  --color-code: var(--code);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-focus: var(--focus);
+
+  --color-inverse: var(--inverse);
+  --color-inverse-hover: var(--inverse-hover);
+  --color-inverse-fg: var(--inverse-fg);
+
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-text: var(--danger-text);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-warning-text: var(--warning-text);
+  --color-warning-soft: var(--warning-soft);
+
+  --radius-chip: var(--chip-radius);
+  --radius-box: var(--box-radius);
+  --radius-panel: var(--panel-radius);
+  --shadow-popover: var(--popover-shadow);
+  --shadow-lifted: var(--lifted-shadow);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--page);
 }
 
 body {
-  color: var(--foreground);
-}
-
-html {
-  background: #030712;
+  color: var(--fg);
 }
 
 button:not(:disabled),
@@ -40,7 +125,7 @@ select:disabled {
 .shiki-wrapper pre {
   padding: 1.25rem;
   overflow-x: auto;
-  background: #0d1117 !important;
+  background: var(--code) !important;
 }
 
 .shiki-wrapper code {
