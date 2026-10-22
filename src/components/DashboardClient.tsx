@@ -17,6 +17,7 @@ import SnippetCard from "@/components/SnippetCard";
 import SnippetFormModal from "@/components/SnippetFormModal";
 import FolderSidebar from "@/components/FolderSidebar";
 import { Wordmark } from "@/components/LogoMark";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/components/Toaster";
 import {
   snippetCap,
@@ -286,6 +287,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 className="w-8 h-8 rounded-full"
               />
             )}
+            <ThemeToggle className="text-xs" />
             {!user.isGuest && (
               <Link
                 href="/connect"

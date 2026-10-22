@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Press_Start_2P,
+  Space_Grotesk,
+} from "next/font/google";
+import { cookies } from "next/headers";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
+import { THEME_COOKIE, parseTheme, themeAttribute } from "@/lib/theme";
+import { ThemeProvider } from "@/components/ThemeToggle";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,6 +26,15 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
   weight: "700",
+});
+
+// The 8-bit theme's headings (ADR 0029). Not preloaded: a browser only
+// fetches it once something on the page uses it.
+const pressStart = Press_Start_2P({
+  variable: "--font-press-start",
+  subsets: ["latin"],
+  weight: "400",
+  preload: false,
 });
 
 // The image itself comes from opengraph-image.tsx next to this file; Next.js
@@ -45,17 +62,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read here so the first paint is already in the chosen theme.
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      data-theme={themeAttribute(theme)}
+      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${pressStart.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider initial={theme}>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

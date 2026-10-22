@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import SnippetCardView from "@/components/SnippetCardView";
 import DemoButton from "@/components/DemoButton";
 import { Wordmark } from "@/components/LogoMark";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { landingSamples, searchExample } from "@/lib/landing-samples";
 import { withCardHtml } from "@/lib/highlight";
 
@@ -132,6 +133,7 @@ export default async function Home({
         >
           Source on GitHub
         </a>
+        <ThemeToggle className="sm:ml-auto" />
       </footer>
     </div>
   );

@@ -23,12 +23,13 @@ function declarations(body: string): Map<string, string> {
 const camel = (kebab: string) =>
   kebab.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 
+// The color tokens are the ones @theme turns into utilities (bg-*, text-*).
+const colorTokens = [...declarations(block("@theme inline")).keys()]
+  .filter((name) => name.startsWith("color-"))
+  .map((name) => name.slice("color-".length));
+
 describe("defaultTheme", () => {
   const root = declarations(block(":root"));
-  // The color tokens are the ones @theme turns into utilities (bg-*, text-*).
-  const colorTokens = [...declarations(block("@theme inline")).keys()]
-    .filter((name) => name.startsWith("color-"))
-    .map((name) => name.slice("color-".length));
 
   it("has every color token globals.css has, and no others", () => {
     expect(Object.keys(defaultTheme).sort()).toEqual(
@@ -44,6 +45,26 @@ describe("defaultTheme", () => {
 });
 
 type Token = keyof typeof defaultTheme;
+
+// The 8-bit theme has no TypeScript copy, since nothing outside CSS draws
+// it. Its values come straight from its block.
+const eightBit = declarations(block('[data-theme="8bit"]'));
+
+describe("the 8-bit theme", () => {
+  it.each(colorTokens)("overrides --%s", (name) => {
+    expect(eightBit.has(name)).toBe(true);
+  });
+});
+
+const themes: [name: string, values: Record<Token, string>][] = [
+  ["default", defaultTheme],
+  [
+    "8bit",
+    Object.fromEntries(
+      colorTokens.map((name) => [camel(name), eightBit.get(name) ?? ""]),
+    ) as Record<Token, string>,
+  ],
+];
 
 const surfaces: Token[] = [
   "page",
@@ -81,11 +102,11 @@ const pairings: [text: Token, background: Token, minimum: number][] = [
   ...surfaces.map((bg): [Token, Token, number] => ["focus", bg, AA_NON_TEXT]),
 ];
 
-describe("defaultTheme contrast", () => {
+describe.each(themes)("%s theme contrast", (_, theme) => {
   it.each(pairings)("%s on %s is at least %s:1", (text, bg, minimum) => {
-    expect(
-      contrastRatio(defaultTheme[text], defaultTheme[bg]),
-    ).toBeGreaterThanOrEqual(minimum);
+    expect(contrastRatio(theme[text], theme[bg])).toBeGreaterThanOrEqual(
+      minimum,
+    );
   });
 });
 
