@@ -2,7 +2,7 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-22 (after ADR 0028)*
+*Last reviewed: 2026-10-22 (after ADR 0029)*
 
 ## The short version
 
@@ -262,11 +262,13 @@ Tokens are made and revoked on `/connect`, through `/api/tokens`, which only acc
 
 ## Styling
 
-Components are styled with Tailwind, but never with its palette ([0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md)). `globals.css` defines design tokens as CSS variables named by role: surfaces (`page`, `surface`, `surface-raised`, `code`), lines, three text levels (`fg`, `fg-muted`, `fg-subtle`), accent, inverse, danger, warning, a display font, three corner radii, and two shadows. `@theme inline` turns them into utilities (`bg-surface`, `text-fg-muted`, `rounded-box`, `shadow-popover`) that read the variable at runtime, so a theme only has to override the variables. Tailwind's own palette is switched off, so `bg-gray-800` builds to nothing, and a test fails on any palette class in a `.tsx` file.
+Components are styled with Tailwind, but never with its palette ([0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md)). `globals.css` defines design tokens as CSS variables named by role: surfaces (`page`, `surface`, `surface-raised`, `code`), lines, three text levels (`fg`, `fg-muted`, `fg-subtle`), accent, inverse, danger, warning, a display font, three corner radii, a border width, and two shadows. `@theme inline` turns them into utilities (`bg-surface`, `text-fg-muted`, `rounded-box`, `shadow-popover`) that read the variable at runtime, so a theme only has to override the variables. Tailwind's own palette is switched off, so `bg-gray-800` builds to nothing, and a test fails on any palette class in a `.tsx` file.
 
 The default identity is "cut and keep" ([0028](./adr/0028-cut-and-keep-as-the-default-identity.md)): blue-black ink surfaces, warm off-white text, one tangerine accent, Space Grotesk for the wordmark and page headings (`font-display`), Geist for everything else, and Shiki's `ayu-dark` for code. The logo is `src/components/LogoMark.tsx`, which takes its colors as props so the headers, the favicon (`icon.tsx`), the Apple touch icon (`apple-icon.tsx`), and the Open Graph image all draw the same shape.
 
-Those images are drawn by `next/og` at build time and can't read CSS, so `src/lib/theme-tokens.ts` holds a copy of the default theme's colors, and a test keeps it equal to `globals.css`. The same test checks every text and background pairing the components use against WCAG AA (`src/lib/contrast.ts`). `next/og` can't use `next/font` either, so the Open Graph image loads its fonts from `assets/fonts`. The default identity is the only theme today; the 8-bit theme comes next.
+Those images are drawn by `next/og` at build time and can't read CSS, so `src/lib/theme-tokens.ts` holds a copy of the default theme's colors, and a test keeps it equal to `globals.css`. The same test checks every text and background pairing the components use against WCAG AA (`src/lib/contrast.ts`). `next/og` can't use `next/font` either, so the Open Graph image loads its fonts from `assets/fonts`.
+
+The 8-bit theme is a `[data-theme="8bit"]` block in `globals.css` that overrides every color token, plus the shape ones: PICO-8's palette, square corners, two-pixel borders, hard shadows, and Press Start 2P for headings. The contrast test runs every pairing against it too, reading its values straight from the CSS ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)). The toggle (`ThemeToggle`, on the dashboard and the landing page) writes a `snippr-theme` cookie and the attribute in the browser, with no request. The root layout reads the cookie, so the server draws the page in the chosen theme from the first frame; that's also why every route is dynamic. Code is highlighted with both palettes in one pass: Shiki writes `ayu-dark` inline and the 8-bit color as `--shiki-8bit`, and one rule in `globals.css` switches to it.
 
 ## Code map
 
@@ -300,7 +302,7 @@ src/
 │   ├── actions/start-demo.ts   Server Action: create a guest and sign in as it
 │   ├── dashboard/page.tsx      Server Component: auth check + data load
 │   ├── connect/page.tsx        MCP tokens: make one, see what to paste, revoke
-│   ├── layout.tsx              Root layout, fonts, metadata and link previews
+│   ├── layout.tsx              Root layout, fonts, metadata and link previews, the theme from its cookie
 │   ├── error.tsx               What a page that throws shows: retry, a way home, a log reference (tested)
 │   ├── opengraph-image.tsx     Link preview image, rendered at build time from the theme tokens
 │   ├── icon.tsx, apple-icon.tsx  Favicon and home screen icon, drawn from LogoMark at build time
@@ -328,6 +330,7 @@ src/
 │   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing
 │   ├── accessible-names.test.ts  Every field and button on the forms, preview, and dashboard has a name
 │   ├── LogoMark.tsx            The logo, colors passed in, and the Wordmark for page headers
+│   ├── ThemeToggle.tsx         ThemeProvider and the 8-bit toggle: cookie and data-theme, in the browser
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
 │   ├── ai.ts                   The one Claude client: model, timeout, retries, askClaude()
@@ -353,7 +356,7 @@ src/
 │   ├── folders.ts              /api/folders: ownership, cap, validation, in order (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
-│   ├── highlight.ts            Shiki passed in: card previews, null instead of a throw (tested)
+│   ├── highlight.ts            Shiki passed in: card previews, both themes' colors, null instead of a throw (tested)
 │   ├── landing-samples.ts      Sample snippets for the landing page (tested)
 │   ├── latest-only.ts          Keeps only the latest request's answer, for AI search (tested)
 │   ├── library-types.ts        The Snippet and Folder types the components share
@@ -368,7 +371,9 @@ src/
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippets.ts             /api/snippets: ownership, cap, validation, in order (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
-│   ├── theme-tokens.ts         The default theme's colors for the generated images (tested: match globals.css, WCAG AA, no palette classes)
+│   ├── shiki-8bit.ts           The 8-bit theme's syntax colors (tested: AA on the code background)
+│   ├── theme.ts                The theme list and its cookie (tested)
+│   ├── theme-tokens.ts         The default theme's colors for the generated images (tested: match globals.css, WCAG AA in both themes, no palette classes)
 │   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
 │   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
 │   └── prisma.ts               Prisma client singleton
