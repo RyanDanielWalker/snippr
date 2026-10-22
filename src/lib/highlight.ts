@@ -6,7 +6,9 @@
  * the real `codeToHtml`, and the tests pass fakes.
  */
 
-export const SHIKI_THEME = "github-dark";
+// Its orange keywords pick up the accent. The background is ignored: the
+// code token in globals.css draws it (ADR 0028).
+export const SHIKI_THEME = "ayu-dark";
 
 /** A card shows about six lines; this leaves room to scroll a little. */
 export const CARD_PREVIEW_LINES = 20;
