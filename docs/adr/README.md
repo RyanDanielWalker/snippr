@@ -59,5 +59,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0025](./0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md) | Serialize each user's snippet creates with a Postgres advisory lock | Accepted |
 | [0026](./0026-audit-production-dependencies-in-ci.md) | Audit production dependencies in CI, without gating deploys | Accepted |
 | [0027](./0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md) | Ship one default identity and one 8-bit theme for 1.0, on semantic CSS-variable tokens | Accepted |
+| [0028](./0028-cut-and-keep-as-the-default-identity.md) | Use "cut and keep" as Snippr's default identity | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
