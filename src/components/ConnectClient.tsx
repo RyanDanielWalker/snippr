@@ -30,33 +30,33 @@ export default function ConnectClient({
   const [created, setCreated] = useState<string | null>(null);
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
+    <main className="min-h-screen bg-page text-fg">
       <div className="max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-8 space-y-8">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold">Connect an MCP client</h1>
           <Link
             href="/dashboard"
-            className="text-sm text-gray-400 hover:text-white transition"
+            className="text-sm text-fg-subtle hover:text-fg transition"
           >
             Back to snippets
           </Link>
         </div>
 
-        <p className="text-gray-300">
+        <p className="text-fg-muted">
           Claude Code, Cursor, and other MCP clients can search your snippets,
           read one, and save new ones. Make a token, paste it into the client,
           and it works as you. Revoke it here when you&apos;re done with it.
         </p>
 
         {isGuest ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 text-sm bg-blue-950/50 border border-blue-900 text-blue-200 rounded-lg px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm bg-accent-soft/50 border border-accent-line text-fg-muted rounded-box px-4 py-3">
             <span>
               Demo guests can&apos;t make tokens, since the demo is gone in 24
               hours.
             </span>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-white underline underline-offset-4 hover:text-blue-100"
+              className="text-fg underline underline-offset-4 hover:text-accent-text"
             >
               Sign in to connect a client
             </button>
@@ -105,9 +105,9 @@ function CreateToken({ onCreated }: { onCreated: (token: string) => void }) {
   return (
     <form
       onSubmit={submit}
-      className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3"
+      className="bg-surface border border-line rounded-panel p-4 space-y-3"
     >
-      <label htmlFor="token-name" className="block text-sm text-gray-300">
+      <label htmlFor="token-name" className="block text-sm text-fg-muted">
         Name it after where it&apos;ll live
       </label>
       <div className="flex flex-wrap gap-3">
@@ -117,18 +117,18 @@ function CreateToken({ onCreated }: { onCreated: (token: string) => void }) {
           onChange={(e) => setName(e.target.value)}
           maxLength={TOKEN_NAME_MAX}
           placeholder="Claude Code on my laptop"
-          className="flex-1 min-w-0 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+          className="flex-1 min-w-0 bg-page border border-line rounded-box px-3 py-2 text-sm focus:outline-none focus:border-focus"
         />
         <button
           type="submit"
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-sm font-medium rounded-lg px-4 py-2 transition"
+          className="bg-accent text-accent-fg hover:bg-accent-hover disabled:opacity-60 text-sm font-medium rounded-box px-4 py-2 transition"
         >
           {saving ? "Making..." : "Make a token"}
         </button>
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-300">
+        <p role="alert" className="text-sm text-danger-text">
           {error}
         </p>
       )}
@@ -138,10 +138,10 @@ function CreateToken({ onCreated }: { onCreated: (token: string) => void }) {
 
 function NewToken({ token, onDone }: { token: string; onDone: () => void }) {
   return (
-    <section className="bg-gray-900 border border-blue-900 rounded-xl p-4 space-y-4">
+    <section className="bg-surface border border-accent-line rounded-panel p-4 space-y-4">
       <div className="space-y-1">
         <h2 className="font-semibold">Here&apos;s your token</h2>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-fg-subtle">
           Copy it now. Snippr only keeps a fingerprint of it, so it can&apos;t
           show it to you again.
         </p>
@@ -150,13 +150,13 @@ function NewToken({ token, onDone }: { token: string; onDone: () => void }) {
       {clientSetups(token).map((setup) => (
         <div key={setup.client} className="space-y-2">
           <h3 className="text-sm font-medium">{setup.client}</h3>
-          <p className="text-sm text-gray-400">{setup.where}</p>
+          <p className="text-sm text-fg-subtle">{setup.where}</p>
           <CopyBlock text={setup.text} label={`${setup.client} setup`} />
         </div>
       ))}
       <button
         onClick={onDone}
-        className="text-sm text-gray-300 hover:text-white bg-gray-800 rounded-lg px-4 py-2 transition"
+        className="text-sm text-fg-muted hover:text-fg bg-surface-raised rounded-box px-4 py-2 transition"
       >
         Done
       </button>
@@ -168,13 +168,13 @@ function CopyBlock({ text, label }: { text: string; label: string }) {
   const { copy, copied } = useCopy(text);
   return (
     <div className="relative">
-      <pre className="bg-gray-950 border border-gray-800 rounded-lg p-3 pr-20 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all">
+      <pre className="bg-code border border-line rounded-box p-3 pr-20 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all">
         {text}
       </pre>
       <button
         onClick={copy}
         aria-label={`Copy ${label}`}
-        className="absolute top-2 right-2 text-xs text-gray-300 hover:text-white bg-gray-800 rounded px-2 py-1"
+        className="absolute top-2 right-2 text-xs text-fg-muted hover:text-fg bg-surface-raised rounded-chip px-2 py-1"
       >
         {copied ? "Copied" : "Copy"}
       </button>
@@ -187,11 +187,11 @@ function TokenList({ tokens }: { tokens: TokenRow[] }) {
     <section className="space-y-3">
       <h2 className="font-semibold">Your tokens</h2>
       {tokens.length === 0 ? (
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-fg-subtle">
           None yet. Nothing outside this browser can reach your snippets.
         </p>
       ) : (
-        <ul className="divide-y divide-gray-800 border border-gray-800 rounded-xl">
+        <ul className="divide-y divide-line border border-line rounded-panel">
           {tokens.map((token) => (
             <TokenItem key={token.id} token={token} />
           ))}
@@ -241,9 +241,9 @@ function TokenItem({ token }: { token: TokenRow }) {
     <li className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
       <div className="min-w-0">
         <p className="text-sm truncate">{token.name}</p>
-        <p className="text-xs text-gray-500">Made {token.created}</p>
+        <p className="text-xs text-fg-subtle">Made {token.created}</p>
         {error && (
-          <p role="alert" className="text-xs text-red-300 mt-1">
+          <p role="alert" className="text-xs text-danger-text mt-1">
             {error}
           </p>
         )}
@@ -253,10 +253,10 @@ function TokenItem({ token }: { token: TokenRow }) {
         disabled={revoking}
         // The visible label plus which token, so a screen reader hears both.
         aria-label={`${label} ${token.name}`}
-        className={`text-xs rounded-lg px-3 py-1.5 transition ${
+        className={`text-xs rounded-box px-3 py-1.5 transition ${
           armed
-            ? "bg-red-600 hover:bg-red-500 text-white"
-            : "text-gray-300 hover:text-white bg-gray-800"
+            ? "bg-danger hover:bg-danger-hover text-danger-fg"
+            : "text-fg-muted hover:text-fg bg-surface-raised"
         }`}
       >
         {label}
