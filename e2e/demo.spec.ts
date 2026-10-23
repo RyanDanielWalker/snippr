@@ -1,4 +1,26 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+// Tabs past the end of a dialog and fails if focus ever lands on the page
+// behind it. Leaving for the browser's own toolbar (body is focused then) is
+// fine, and has to happen with the dialog after it: that's the wrap from the
+// last button back to the first.
+async function expectTabToStayIn(page: Page, dialog: Locator) {
+  const stops: string[] = [];
+  for (let i = 0; i < 20; i++) {
+    await page.keyboard.press("Tab");
+    stops.push(
+      await dialog.evaluate((el) => {
+        const focused = document.activeElement;
+        if (!focused || focused === document.body) return "browser";
+        if (el.contains(focused)) return "dialog";
+        return focused.outerHTML.slice(0, 80);
+      }),
+    );
+  }
+  expect(stops.filter((s) => s !== "dialog" && s !== "browser")).toEqual([]);
+  expect(stops).toContain("browser");
+  expect(stops.lastIndexOf("dialog")).toBeGreaterThan(stops.indexOf("browser"));
+}
 
 // The main flow, through the real app and a real database: start a demo, add
 // a snippet, find it with search, and drag it into a folder. AI search isn't
@@ -22,9 +44,21 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(card("Debounce")).toBeVisible();
   await expect(card("Retry with backoff")).toBeVisible();
 
+  // Tab stays in the preview while it's open, and closing it puts focus back
+  // on the card, which only works once the page behind is live again.
+  await card("Debounce").getByRole("heading").click();
+  const preview = page.getByRole("dialog", { name: "Debounce" });
+  await expect(preview).toBeFocused();
+  await expectTabToStayIn(page, preview);
+  await page.keyboard.press("Escape");
+  await expect(preview).toBeHidden();
+  await expect(card("Debounce")).toBeFocused();
+
   // Escape closes an untouched form, and leaves one you've typed in alone.
+  // Tab stays in it too.
   const newForm = page.getByRole("dialog", { name: "New snippet" });
   await page.getByRole("button", { name: "+ New snippet" }).click();
+  await expectTabToStayIn(page, newForm);
   await page.keyboard.press("Escape");
   await expect(newForm).toBeHidden();
 
