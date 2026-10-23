@@ -11,7 +11,7 @@ vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
 
 // The server render of the dashboard, which the browser then hydrates. It used
 // to be a header and nothing else (docs/adr/0007).
-function serverRender() {
+function serverRender(sidebarCollapsed?: boolean) {
   return renderToString(
     createElement(
       ToastProvider,
@@ -30,6 +30,7 @@ function serverRender() {
         ],
         folders: [],
         user: { email: "me@example.com", image: "", isGuest: false },
+        sidebarCollapsed,
       }),
     ),
   );
@@ -41,6 +42,15 @@ const describedBy = (html: string) =>
 describe("DashboardClient on the server", () => {
   it("renders the snippets, not an empty page", () => {
     expect(serverRender()).toContain("Debounce");
+  });
+
+  // The page reads the sidebar cookie, so the first frame is already right
+  // instead of snapping shut after the JavaScript runs.
+  it("draws the sidebar the way the cookie left it", () => {
+    expect(serverRender()).toContain('aria-label="Collapse sidebar"');
+    const collapsed = serverRender(true);
+    expect(collapsed).toContain('aria-label="Expand sidebar"');
+    expect(collapsed).not.toContain('aria-label="Collapse sidebar"');
   });
 
   it("renders one folder sidebar for both the page and the phone drawer", () => {

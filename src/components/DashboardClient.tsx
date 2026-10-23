@@ -29,15 +29,23 @@ import { callApi } from "@/lib/api-client";
 import { emptyState } from "@/lib/empty-state";
 import { pickByIds, resultsHeading } from "@/lib/ai-results";
 import { latestOnly } from "@/lib/latest-only";
+import { sidebarCookie } from "@/lib/sidebar";
 import type { Snippet, Folder } from "@/lib/library-types";
 
 type Props = {
   snippets: Snippet[];
   folders: Folder[];
   user: { email: string; image: string; isGuest: boolean };
+  /** From the sidebar cookie, read by the page on the server. */
+  sidebarCollapsed?: boolean;
 };
 
-export default function DashboardClient({ snippets, folders, user }: Props) {
+export default function DashboardClient({
+  snippets,
+  folders,
+  user,
+  sidebarCollapsed: initialSidebarCollapsed = false,
+}: Props) {
   const cap = snippetCap(user.isGuest);
   const capStatus = snippetCapStatus(snippets.length, cap);
   const router = useRouter();
@@ -53,7 +61,9 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   // mustn't overwrite a newer one, so only the latest search's reply counts.
   const aiSearches = useRef(latestOnly());
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    initialSidebarCollapsed,
+  );
   // Below md the sidebar is a drawer instead (see the wrapper around it).
   const [foldersOpen, setFoldersOpen] = useState(false);
   const [draggedSnippet, setDraggedSnippet] = useState<Snippet | null>(null);
@@ -68,14 +78,6 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
       activationConstraint: { distance: 8 },
     }),
   );
-
-  useEffect(() => {
-    // localStorage only exists in the browser, so this can't be the initial
-    // state without the server and browser renders disagreeing.
-    const stored = localStorage.getItem("sidebarCollapsed");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (stored === "true") setSidebarCollapsed(true);
-  }, []);
 
   useEffect(() => {
     if (!foldersOpen) return;
@@ -113,7 +115,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
   function toggleSidebar() {
     const newState = !sidebarCollapsed;
     setSidebarCollapsed(newState);
-    localStorage.setItem("sidebarCollapsed", String(newState));
+    document.cookie = sidebarCookie(newState);
   }
 
   const unorganizedCount = snippets.filter((s) => !s.folderId).length;

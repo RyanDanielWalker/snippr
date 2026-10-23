@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { codeToHtml } from "shiki";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { withCardHtml } from "@/lib/highlight";
+import { SIDEBAR_COOKIE, parseSidebarCollapsed } from "@/lib/sidebar";
 import DashboardClient from "@/components/DashboardClient";
 import { ToastProvider } from "@/components/Toaster";
 
@@ -30,6 +32,9 @@ export default async function DashboardPage() {
   // Highlighted here so the cards arrive in color and the browser never
   // loads Shiki for them (docs/adr/0022).
   const cards = await withCardHtml(snippets, codeToHtml);
+  const sidebarCollapsed = parseSidebarCollapsed(
+    (await cookies()).get(SIDEBAR_COOKIE)?.value,
+  );
 
   return (
     <ToastProvider>
@@ -41,6 +46,7 @@ export default async function DashboardPage() {
           image: session.user.image ?? "",
           isGuest: session.user.isGuest,
         }}
+        sidebarCollapsed={sidebarCollapsed}
       />
     </ToastProvider>
   );
