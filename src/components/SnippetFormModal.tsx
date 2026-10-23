@@ -12,6 +12,7 @@ import {
   requestBody,
 } from "@/lib/snippet-form";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
+import { useDialogFocus } from "@/components/useDialogFocus";
 
 /**
  * The form for a new snippet and for editing one. Pass `snippet` to edit it;
@@ -43,6 +44,7 @@ export default function SnippetFormModal({
   const canSave = hasRequired(form) && dirty && !saving && !del.deleting;
   const heading = editing ? "Edit snippet" : "New snippet";
   const id = useId();
+  const titleRef = useDialogFocus<HTMLInputElement>();
 
   // Escape closes it like a click outside does: only until anything changes.
   // After that only Cancel and ✕ do, so a stray key can't lose a pasted
@@ -130,6 +132,7 @@ export default function SnippetFormModal({
         <div>
           <Label htmlFor={`${id}-title`}>Title</Label>
           <input
+            ref={titleRef}
             id={`${id}-title`}
             type="text"
             placeholder="Debounce a function"

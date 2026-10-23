@@ -325,6 +325,7 @@ src/
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails
 │   ├── useCopy.ts              Copy button shared by the card and preview, toast if it fails
 │   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form
+│   ├── useDialogFocus.ts       Focus into the preview and form when they open, back to the opener when they close
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing
@@ -347,6 +348,7 @@ src/
 │   ├── clipboard.ts            copyText: whether a copy actually landed (tested)
 │   ├── demo.ts                 Starting a demo: seed, IP limit, cookie name (tested)
 │   ├── demo-store.ts           Database side of starting a demo
+│   ├── dialog-focus.ts         focusDialog: focus in, and back only to an opener still on the page (tested)
 │   ├── email-case.ts           Lowercases emails in the NextAuth adapter (tested)
 │   ├── email-verification.ts   Provider email verification (tested)
 │   ├── empty-state.ts          What the dashboard says when there are no cards to show (tested)

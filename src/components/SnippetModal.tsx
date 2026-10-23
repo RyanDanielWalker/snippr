@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { codeToHtml } from "shiki";
 import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
+import { useDialogFocus } from "@/components/useDialogFocus";
 import { highlightCode } from "@/lib/highlight";
 import type { Snippet } from "@/lib/library-types";
 
@@ -24,6 +25,8 @@ export default function SnippetModal({
   const html = result?.key === key ? result.html : undefined;
   const { copy, copied } = useCopy(snippet.code);
   const del = useDeleteSnippet(snippet.id, onClose);
+  // The dialog itself, so a screen reader starts by reading its title.
+  const dialogRef = useDialogFocus<HTMLDivElement>();
 
   useEffect(() => {
     // An edit can change the code before the last result arrives; drop that one.
@@ -50,10 +53,12 @@ export default function SnippetModal({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={snippet.title}
-        className="bg-surface rounded-panel w-full max-w-4xl max-h-[85vh] flex flex-col border border-line"
+        tabIndex={-1}
+        className="outline-none bg-surface rounded-panel w-full max-w-4xl max-h-[85vh] flex flex-col border border-line"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 p-4 sm:p-6 border-b border-line">
