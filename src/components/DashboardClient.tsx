@@ -283,7 +283,8 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
             {user.image && (
               <img
                 src={user.image}
-                alt="avatar"
+                // Decorative: the email beside it (from sm up) says who this is.
+                alt=""
                 className="w-8 h-8 rounded-full"
               />
             )}
@@ -416,6 +417,7 @@ export default function DashboardClient({ snippets, folders, user }: Props) {
                 <div className="flex gap-3">
                   <button
                     onClick={handleModeToggle}
+                    aria-pressed={aiMode}
                     className={`flex-1 sm:flex-none px-4 py-2.5 rounded-box font-title case-control text-sm font-medium transition shrink-0 border ${
                       aiMode
                         ? "bg-accent text-accent-fg border-accent"

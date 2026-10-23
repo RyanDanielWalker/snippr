@@ -91,4 +91,20 @@ describe("accessible names", () => {
     );
     expect(unnamedControls(html)).toEqual([]);
   });
+
+  it("says whether AI search is on, and hides the avatar from screen readers", () => {
+    const html = render(
+      createElement(DashboardClient, {
+        snippets: [snippet],
+        folders,
+        user: {
+          email: "me@example.com",
+          image: "https://example.com/me.png",
+          isGuest: false,
+        },
+      }),
+    );
+    expect(html).toMatch(/<button[^>]*aria-pressed="false"[^>]*>✦ AI search/);
+    expect(html).toMatch(/<img[^>]*alt=""/);
+  });
 });

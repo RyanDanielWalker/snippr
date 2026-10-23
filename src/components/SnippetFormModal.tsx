@@ -204,7 +204,7 @@ export default function SnippetFormModal({
               disabled={!form.code || generating}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-accent-text hover:text-fg px-2 py-1 disabled:opacity-40"
             >
-              {generating ? "..." : "✦ Generate"}
+              {generating ? "Writing..." : "✦ Generate"}
             </button>
           </div>
           {describeError && (
