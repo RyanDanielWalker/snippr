@@ -108,6 +108,7 @@ Small items pulled forward while the README waits on screenshots.
 - [x] Hold the folder and token caps under parallel creates, the way [0025](./adr/0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md) holds the snippet cap ([audit](./audits/2026-10-22.md), finding 3). All three now run their count and insert through `withUserLock` in `src/lib/create-lock.ts`, with a key prefix each. `test:db` fires 20 parallel creates at each cap
 - [x] Remember the collapsed sidebar in a cookie instead of `localStorage`, so the server draws it collapsed instead of drawing it open and snapping it shut once the JavaScript runs. A copy of the theme's pattern (`src/lib/sidebar.ts`). A sidebar collapsed under the old `localStorage` key opens once and remembers from the next click
 - [x] Keep Tab inside the preview and the snippet form while they're open. Everything outside the dialog is `inert` until it closes, set by walking up from the dialog rather than moving it to a portal (`inertOutside` in `src/lib/dialog-focus.ts`). Live regions stay live, so a toast shown over a dialog is still announced, and the page comes back before focus returns to the opener, since an inert element can't take focus. `e2e/demo.spec.ts` tabs past the end of both dialogs and fails if focus lands behind them
+- [x] An end-to-end check of the 8-bit theme (`e2e/theme.spec.ts`). At 375px it clicks the toggle, checks the server sends `data-theme="8bit"` so there's no flash, reloads, then starts a demo and checks that neither the landing page, the dashboard, nor the new snippet form scrolls sideways once the pixel fonts have loaded
 
 ## Open decisions
 
@@ -139,7 +140,6 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
 - Drag and drop on touch screens ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). A finger drag is a scroll, so on a phone you move a snippet with the folder field in Edit. A long press with dnd-kit's `TouchSensor` could start a drag, but the folders are in a closed drawer by then, so it needs somewhere to drop first (a "Move to" sheet, say)
 - End-to-end tests beyond the main flow, including real OAuth sign-in. AI search is the first candidate: the features take `askClaude` as an argument ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)), but the production build the e2e test runs still calls the real one, so it needs a way to swap in a fake Claude there
-- An end-to-end check of the 8-bit theme: click the toggle, reload, and confirm `data-theme` survived and nothing overflows at 375px with the pixel type. Unit tests cover the cookie and the contrast, not the page
 
 ### Not planned
 

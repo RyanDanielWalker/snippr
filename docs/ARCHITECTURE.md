@@ -280,7 +280,8 @@ assets/fonts/                   Font files and licenses for the Open Graph image
 docker-compose.yml              Local Postgres for development and tests
 e2e/
 ├── demo.spec.ts                End-to-end test: demo, create, search, drag into a folder, Tab stays in dialogs
-└── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer
+├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer
+└── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
 playwright.config.ts            Runs it against a production build on port 3100
 prisma/
 ├── migrations/                 SQL migrations, starting from the 0_init baseline
