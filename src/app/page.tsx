@@ -41,12 +41,17 @@ export default async function Home({
     <div className="min-h-screen text-fg-muted">
       <header className="max-w-5xl mx-auto px-4 py-6 flex items-center justify-between">
         <Wordmark className="text-fg text-lg" />
-        <Link
-          href="/login"
-          className="text-sm case-control text-fg-subtle hover:text-fg transition"
-        >
-          Sign in
-        </Link>
+        {/* Top right, like the dashboard's, so leaving a demo in the 8-bit
+            theme doesn't send you looking for the way out of it. */}
+        <div className="flex items-center gap-6">
+          <ThemeToggle className="text-sm case-control" />
+          <Link
+            href="/login"
+            className="text-sm case-control text-fg-subtle hover:text-fg transition"
+          >
+            Sign in
+          </Link>
+        </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4">
@@ -133,7 +138,6 @@ export default async function Home({
         >
           Source on GitHub
         </a>
-        <ThemeToggle className="sm:ml-auto" />
       </footer>
     </div>
   );
