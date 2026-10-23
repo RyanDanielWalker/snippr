@@ -25,6 +25,9 @@ export const TOKEN_CAP = 10;
 
 export type TokenSummary = { id: string; name: string; createdAt: Date };
 
+/** What making a token reads and writes, both under one lock. */
+export type TokenCreateStore = Pick<TokenStore, "count" | "create">;
+
 export type TokenStore = {
   /** The user's tokens, oldest first. Never the hash. */
   list(userId: string): Promise<TokenSummary[]>;
@@ -40,6 +43,14 @@ export type TokenStore = {
   findUser(
     tokenHash: string,
   ): Promise<{ id: string; guestExpiresAt: Date | null } | null>;
+  /**
+   * Runs `work` with the user's other token creates held until it
+   * finishes, like SnippetStore's (docs/adr/0025).
+   */
+  withCreateLock<T>(
+    userId: string,
+    work: (store: TokenCreateStore) => Promise<T>,
+  ): Promise<T>;
 };
 
 export function generateToken(): string {
@@ -104,20 +115,24 @@ export async function createToken(
   const body = await parseBody(req, createTokenSchema);
   if (!body.ok) return body.response;
 
-  if ((await store.count(user.id)) >= TOKEN_CAP) {
-    return apiError(
-      409,
-      `You've hit the ${TOKEN_CAP} token limit. Revoke one to make room.`,
-    );
-  }
+  // The count and the insert share one lock, so the count is still true
+  // when the insert lands (docs/adr/0025).
+  return store.withCreateLock(user.id, async (locked) => {
+    if ((await locked.count(user.id)) >= TOKEN_CAP) {
+      return apiError(
+        409,
+        `You've hit the ${TOKEN_CAP} token limit. Revoke one to make room.`,
+      );
+    }
 
-  const token = generateToken();
-  const summary = await store.create({
-    userId: user.id,
-    name: body.data.name,
-    tokenHash: hashToken(token),
+    const token = generateToken();
+    const summary = await locked.create({
+      userId: user.id,
+      name: body.data.name,
+      tokenHash: hashToken(token),
+    });
+    return Response.json({ ...summary, token });
   });
-  return Response.json({ ...summary, token });
 }
 
 export async function deleteToken(

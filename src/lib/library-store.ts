@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { withUserLock } from "@/lib/create-lock";
 import type { CreateStore, SnippetStore } from "@/lib/snippets";
-import type { FolderStore } from "@/lib/folders";
+import type { FolderCreateStore, FolderStore } from "@/lib/folders";
 
 /**
  * The database side of `/api/snippets` and `/api/folders` (see
@@ -54,18 +55,9 @@ export const snippetStore: SnippetStore = {
   findOwner: (id) =>
     prisma.snippet.findUnique({ where: { id }, select: { userId: true } }),
 
-  // One transaction per create, which first takes a lock keyed on the user.
-  // A second create for the same user waits at the lock until the first
-  // commits, then counts the row it added. Other users' creates don't wait.
-  // A transaction lock, not a session one, so it's released on commit or
-  // rollback and never left behind on a pooled connection (docs/adr/0025).
+  // The count, folder check, and insert share one lock (docs/adr/0025).
   withCreateLock: (userId, work) =>
-    prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`
-        SELECT pg_advisory_xact_lock(hashtextextended(${`snippet-create:${userId}`}, 0))
-      `;
-      return work(createStore(tx));
-    }),
+    withUserLock("snippet-create", userId, (tx) => work(createStore(tx))),
 
   update: (id, userId, data) =>
     nullIfMissing(prisma.snippet.update({ where: { id, userId }, data })),
@@ -78,7 +70,16 @@ export const snippetStore: SnippetStore = {
   },
 };
 
+function folderCreateStore(db: Prisma.TransactionClient): FolderCreateStore {
+  return {
+    count: (userId) => db.folder.count({ where: { userId } }),
+    create: (data) => db.folder.create({ data }),
+  };
+}
+
 export const folderStore: FolderStore = {
+  ...folderCreateStore(prisma),
+
   list: (userId) =>
     prisma.folder.findMany({
       where: { userId },
@@ -86,11 +87,7 @@ export const folderStore: FolderStore = {
       include: { _count: { select: { snippets: true } } },
     }),
 
-  count: (userId) => prisma.folder.count({ where: { userId } }),
-
   findOwner: findFolderOwner,
-
-  create: (data) => prisma.folder.create({ data }),
 
   rename: (id, userId, name) =>
     nullIfMissing(
@@ -103,4 +100,7 @@ export const folderStore: FolderStore = {
     });
     return count > 0;
   },
+
+  withCreateLock: (userId, work) =>
+    withUserLock("folder-create", userId, (tx) => work(folderCreateStore(tx))),
 };

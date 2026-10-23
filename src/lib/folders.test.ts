@@ -33,17 +33,24 @@ function fakeStore(extraFolders: Folder[] = []) {
   let nextId = 1;
   const own = (userId: string) =>
     [...folders.values()].filter((f) => f.userId === userId);
+  // Whether the lock was held at each count and create, in order.
+  let held = false;
+  const heldAt: boolean[] = [];
 
   const store = {
     list: vi.fn(async (userId: string) =>
       own(userId).map((f) => ({ ...f, _count: { snippets: 0 } })),
     ),
-    count: vi.fn(async (userId: string) => own(userId).length),
+    count: vi.fn(async (userId: string) => {
+      heldAt.push(held);
+      return own(userId).length;
+    }),
     findOwner: vi.fn(async (id: string) => {
       const found = folders.get(id);
       return found ? { userId: found.userId } : null;
     }),
     create: vi.fn(async (data: { name: string; userId: string }) => {
+      heldAt.push(held);
       const created = {
         ...folder(`folder-new-${nextId++}`, data.userId),
         name: data.name,
@@ -63,9 +70,18 @@ function fakeStore(extraFolders: Folder[] = []) {
       if (folders.get(id)?.userId !== userId) return false;
       return folders.delete(id);
     }),
+    // Nothing here runs at once, so the lock just hands over the store.
+    withCreateLock: vi.fn(async (_userId: string, work) => {
+      held = true;
+      try {
+        return await work(store);
+      } finally {
+        held = false;
+      }
+    }) as FolderStore["withCreateLock"],
   } satisfies FolderStore;
 
-  return { store, folders };
+  return { store, folders, heldAt };
 }
 
 function request(body: unknown) {
@@ -154,6 +170,18 @@ describe("createFolder", () => {
       name: "Work",
       userId: "user-me",
     });
+  });
+
+  // Two parallel creates at 49 would otherwise both count 49 (docs/adr/0025).
+  it("counts and creates while holding the user's lock", async () => {
+    const { store, heldAt } = fakeStore();
+    const res = await createFolder(store, me, request({ name: "Work" }));
+    expect(res.status).toBe(200);
+    expect(store.withCreateLock).toHaveBeenCalledWith(
+      "user-me",
+      expect.any(Function),
+    );
+    expect(heldAt).toEqual([true, true]);
   });
 
   it("refuses with a 409 once a member has 50", async () => {

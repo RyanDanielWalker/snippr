@@ -1,5 +1,7 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { TokenStore } from "@/lib/api-tokens";
+import { withUserLock } from "@/lib/create-lock";
+import type { TokenCreateStore, TokenStore } from "@/lib/api-tokens";
 
 /**
  * The database side of `/api/tokens` and the MCP server's sign-in (see
@@ -10,17 +12,22 @@ import type { TokenStore } from "@/lib/api-tokens";
 // Everything but the hash, which never leaves the server.
 const summary = { id: true, name: true, createdAt: true } as const;
 
+function tokenCreateStore(db: Prisma.TransactionClient): TokenCreateStore {
+  return {
+    count: (userId) => db.apiToken.count({ where: { userId } }),
+    create: (data) => db.apiToken.create({ data, select: summary }),
+  };
+}
+
 export const tokenStore: TokenStore = {
+  ...tokenCreateStore(prisma),
+
   list: (userId) =>
     prisma.apiToken.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
       select: summary,
     }),
-
-  count: (userId) => prisma.apiToken.count({ where: { userId } }),
-
-  create: (data) => prisma.apiToken.create({ data, select: summary }),
 
   async delete(id, userId) {
     const { count } = await prisma.apiToken.deleteMany({
@@ -36,4 +43,7 @@ export const tokenStore: TokenStore = {
     });
     return token?.user ?? null;
   },
+
+  withCreateLock: (userId, work) =>
+    withUserLock("token-create", userId, (tx) => work(tokenCreateStore(tx))),
 };

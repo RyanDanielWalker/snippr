@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { tokenStore } from "@/lib/token-store";
+import { TOKEN_CAP, createToken } from "@/lib/api-tokens";
 
 // The token store against a real Postgres (`npm run test:db`,
 // docs/adr/0020). Two users each get a token; every read and write checks
@@ -92,5 +93,40 @@ describe("tokenStore", () => {
     await expect(
       tokenStore.create({ userId: ben.id, name: "Two", tokenHash: "same" }),
     ).rejects.toThrow();
+  });
+});
+
+// Like snippets.db.test.ts: fire creates at once and check the cap still
+// holds (docs/adr/0025).
+describe("createToken on the Prisma store", () => {
+  it("stops at the cap when 20 creates arrive at once", async () => {
+    await prisma.apiToken.createMany({
+      data: Array.from({ length: TOKEN_CAP - 5 }, (_, i) => ({
+        userId: ana.id,
+        name: `Existing ${i}`,
+        tokenHash: `existing-${i}`,
+      })),
+    });
+    const user = { id: ana.id, isGuest: false };
+
+    const responses = await Promise.all(
+      Array.from({ length: 20 }, (_, i) =>
+        createToken(
+          tokenStore,
+          user,
+          new Request("http://localhost/api/tokens", {
+            method: "POST",
+            body: JSON.stringify({ name: `Parallel ${i}` }),
+          }),
+        ),
+      ),
+    );
+
+    const statuses = responses.map((r) => r.status);
+    expect(statuses.filter((s) => s === 200)).toHaveLength(5);
+    expect(statuses.filter((s) => s === 409)).toHaveLength(15);
+    expect(await prisma.apiToken.count({ where: { userId: ana.id } })).toBe(
+      TOKEN_CAP,
+    );
   });
 });

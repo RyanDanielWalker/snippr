@@ -16,6 +16,9 @@ import {
 
 export type FolderWithCount = Folder & { _count: { snippets: number } };
 
+/** What creating a folder reads and writes, both under one lock. */
+export type FolderCreateStore = Pick<FolderStore, "count" | "create">;
+
 export type FolderStore = {
   /** The user's folders, oldest first, each with its snippet count. */
   list(userId: string): Promise<FolderWithCount[]>;
@@ -28,6 +31,14 @@ export type FolderStore = {
   rename(id: string, userId: string, name: string): Promise<Folder | null>;
   /** Its snippets move to Unorganized (`onDelete: SetNull`). */
   delete(id: string, userId: string): Promise<boolean>;
+  /**
+   * Runs `work` with the user's other folder creates held until it
+   * finishes, like SnippetStore's (docs/adr/0025).
+   */
+  withCreateLock<T>(
+    userId: string,
+    work: (store: FolderCreateStore) => Promise<T>,
+  ): Promise<T>;
 };
 
 // Missing and someone else's get the same response, so it can't be used to
@@ -59,15 +70,19 @@ export async function createFolder(
   const body = await parseBody(req, createFolderSchema);
   if (!body.ok) return body.response;
 
-  // 409 like the snippet cap: the request is fine, the account is full.
-  const cap = folderCap(user.isGuest);
-  if ((await store.count(user.id)) >= cap) {
-    return apiError(409, folderCapMessage(cap, user.isGuest));
-  }
+  // The count and the insert share one lock, so the count is still true
+  // when the insert lands (docs/adr/0025).
+  return store.withCreateLock(user.id, async (locked) => {
+    // 409 like the snippet cap: the request is fine, the account is full.
+    const cap = folderCap(user.isGuest);
+    if ((await locked.count(user.id)) >= cap) {
+      return apiError(409, folderCapMessage(cap, user.isGuest));
+    }
 
-  return Response.json(
-    await store.create({ name: body.data.name, userId: user.id }),
-  );
+    return Response.json(
+      await locked.create({ name: body.data.name, userId: user.id }),
+    );
+  });
 }
 
 export async function renameFolder(

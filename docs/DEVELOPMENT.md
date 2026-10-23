@@ -75,7 +75,7 @@ On a failure, `npx playwright show-trace test-results/<test>/trace.zip` replays 
 
 ## Store tests
 
-`npm test` never touches a database. The Prisma stores in `src/lib/library-store.ts` and `src/lib/token-store.ts` get their own tests, in `*.db.test.ts` files, that run against Postgres, because a fake store can't tell when a real query forgets its `userId` ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). The AI rate limit's SQL counter (`src/lib/ai-usage.ts`) is tested there too, as is the snippet cap under parallel creates (`src/lib/snippets.db.test.ts`, [0025](./adr/0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md)), and so is the migrated schema itself: every foreign key needs an index (`src/lib/foreign-key-indexes.db.test.ts`), so a new relation in `schema.prisma` needs an `@@index` on its column.
+`npm test` never touches a database. The Prisma stores in `src/lib/library-store.ts` and `src/lib/token-store.ts` get their own tests, in `*.db.test.ts` files, that run against Postgres, because a fake store can't tell when a real query forgets its `userId` ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). The AI rate limit's SQL counter (`src/lib/ai-usage.ts`) is tested there too, as are the snippet, folder, and token caps under parallel creates (`src/lib/snippets.db.test.ts`, `src/lib/folders.db.test.ts`, `src/lib/token-store.db.test.ts`, [0025](./adr/0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md)), and so is the migrated schema itself: every foreign key needs an index (`src/lib/foreign-key-indexes.db.test.ts`), so a new relation in `schema.prisma` needs an `@@index` on its column.
 
 ```bash
 npm run db:up

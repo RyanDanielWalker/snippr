@@ -9,6 +9,7 @@ import {
   hashToken,
   listTokens,
   userForToken,
+  type TokenStore,
   type TokenSummary,
 } from "./api-tokens";
 
@@ -60,13 +61,21 @@ function fakeStore(extra: StoredToken[] = []) {
     name,
     createdAt,
   });
+  // Whether the lock was held at each count and create, in order.
+  let held = false;
+  const heldAt: boolean[] = [];
 
-  return {
+  const store = {
     tokens,
+    heldAt,
     list: vi.fn(async (userId: string) => own(userId).map(toSummary)),
-    count: vi.fn(async (userId: string) => own(userId).length),
+    count: vi.fn(async (userId: string) => {
+      heldAt.push(held);
+      return own(userId).length;
+    }),
     create: vi.fn(
       async (data: { userId: string; name: string; tokenHash: string }) => {
+        heldAt.push(held);
         const created = { id: `token-new-${nextId++}`, createdAt: at, ...data };
         tokens.set(created.id, created);
         return toSummary(created);
@@ -81,7 +90,17 @@ function fakeStore(extra: StoredToken[] = []) {
       const token = [...tokens.values()].find((t) => t.tokenHash === tokenHash);
       return token ? (users.get(token.userId) ?? null) : null;
     }),
-  };
+    // Nothing here runs at once, so the lock just hands over the store.
+    withCreateLock: vi.fn(async (_userId: string, work) => {
+      held = true;
+      try {
+        return await work(store);
+      } finally {
+        held = false;
+      }
+    }) as TokenStore["withCreateLock"],
+  } satisfies TokenStore & { tokens: unknown; heldAt: boolean[] };
+  return store;
 }
 
 function request(body: unknown, headers: HeadersInit = {}) {
@@ -186,6 +205,18 @@ describe("createToken", () => {
     const res = await createToken(store, guest, request({ name: "x" }));
     expect(res.status).toBe(403);
     expect(store.create).not.toHaveBeenCalled();
+  });
+
+  // Two parallel creates at 9 would otherwise both count 9 (docs/adr/0025).
+  it("counts and creates while holding the user's lock", async () => {
+    const store = fakeStore();
+    const res = await createToken(store, me, request({ name: "Laptop" }));
+    expect(res.status).toBe(200);
+    expect(store.withCreateLock).toHaveBeenCalledWith(
+      "user-me",
+      expect.any(Function),
+    );
+    expect(store.heldAt).toEqual([true, true]);
   });
 
   it("is 400 without a name", async () => {
