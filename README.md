@@ -133,4 +133,4 @@ The [development guide](docs/DEVELOPMENT.md) explains each environment variable,
 
 ## License
 
-MIT
+[MIT](LICENSE). The fonts in `assets/fonts` keep their own licenses, the SIL Open Font License, in the files beside them.
