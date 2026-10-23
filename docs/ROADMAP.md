@@ -123,7 +123,7 @@ Not deleted, just not part of 1.0.
 
 ### Worth doing after 1.0
 
-Real improvements that a visitor won't notice and that aren't urgent at today's traffic.
+Real improvements that 1.0 can ship without. A few are things a visitor would see, like new themes or the demo checklist; most are behind the scenes and not urgent at today's traffic.
 
 - OAuth for MCP clients, so claude.ai's web connectors can use Snippr without copying a token ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). Tokens cover Claude Code and Cursor today. Means an authorization server: discovery metadata, client registration, PKCE, refresh tokens. Sits on top of the token table, not in place of it
 - Clear the last line of the full `npm audit`: `braces`, under `eslint-config-next`, has no fixed release yet ([0026](./adr/0026-audit-production-dependencies-in-ci.md)). Lint-time only, so it waits for upstream
