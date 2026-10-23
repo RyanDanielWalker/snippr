@@ -35,7 +35,7 @@ Built as a portfolio project to demonstrate full-stack development with modern t
 - **Auth:** NextAuth.js with GitHub + Google OAuth
 - **Database:** PostgreSQL via Supabase
 - **ORM:** Prisma
-- **AI:** Anthropic Claude API (Claude Sonnet)
+- **AI:** Anthropic Claude API (Claude Haiku 5.5)
 - **Syntax highlighting:** Shiki
 - **Drag-and-drop:** dnd-kit
 - **Validation:** zod
