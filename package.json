@@ -18,7 +18,8 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:migrate": "node scripts/check-db.mjs && prisma migrate dev",
-    "db:studio": "node scripts/check-db.mjs && prisma studio"
+    "db:studio": "node scripts/check-db.mjs && prisma studio",
+    "readme-images": "playwright test --config playwright.images.config.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.137.0",

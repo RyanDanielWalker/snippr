@@ -278,11 +278,14 @@ The 8-bit theme is a `[data-theme="8bit"]` block in `globals.css` that overrides
 assets/fonts/                   Font files and licenses for the Open Graph image, which can't use next/font
 .prettierignore                 What Prettier leaves alone: Markdown, the lockfile
 docker-compose.yml              Local Postgres for development and tests
+docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 e2e/
 ├── demo.spec.ts                End-to-end test: demo, create, search, drag into a folder, Tab stays in dialogs
 ├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer
+├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
 playwright.config.ts            Runs it against a production build on port 3100
+playwright.images.config.ts     The same build and database, for readme-images.ts only
 prisma/
 ├── migrations/                 SQL migrations, starting from the 0_init baseline
 └── schema.prisma               Data model (source of truth)

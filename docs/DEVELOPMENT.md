@@ -58,6 +58,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run test:db` | The store, snippet cap race, AI usage counter, and foreign key index tests, against a real Postgres. Resets the `snippr_test` database first |
 | `npm run test:e2e` | The end-to-end test in a real browser. Resets the e2e database, builds, and serves on port 3100 first, so it takes a minute or two |
 | `npm run e2e:db` | Wipe the e2e database and apply every migration. `test:e2e` runs it for you |
+| `npm run readme-images` | Retake the README's screenshots and GIF in `docs/images/`. Builds and serves like `test:e2e` |
 
 ## End-to-end tests
 
@@ -72,6 +73,18 @@ npm run test:e2e
 It runs against `snippr_e2e`, a second database in the same Docker Postgres, and wipes it before every run. Your dev data isn't touched. Set `E2E_DATABASE_URL` to use another database; it has to be local and its name has to end in `_e2e`. It reads `NEXTAUTH_SECRET` from `.env`. AI search isn't covered yet, so no Claude calls and no API key needed.
 
 On a failure, `npx playwright show-trace test-results/<test>/trace.zip` replays it step by step.
+
+## README images
+
+The screenshots and GIF in `docs/images/` come from `e2e/readme-images.ts`, which drives the app on the e2e build and database ([0032](./adr/0032-generate-readme-images-from-the-app-with-playwright.md)). Re-run it when the dashboard, the themes, or the Connect page change:
+
+```bash
+brew install ffmpeg   # once, for the GIF
+npm run db:up
+npm run readme-images
+```
+
+Unlike the end-to-end tests, it calls the real Claude for the AI search shots, so `.env` needs `ANTHROPIC_API_KEY`. It only checks that each screen loaded, so look at the images before committing them.
 
 ## Store tests
 
