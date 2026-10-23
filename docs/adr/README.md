@@ -62,5 +62,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0028](./0028-cut-and-keep-as-the-default-identity.md) | Use "cut and keep" as Snippr's default identity | Accepted |
 | [0029](./0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md) | Remember the theme in a cookie, and highlight code in both themes at once | Accepted; palette and type superseded by [0030](./0030-commit-the-8-bit-theme-to-sweetie-16-and-pixel-ui-text.md) |
 | [0030](./0030-commit-the-8-bit-theme-to-sweetie-16-and-pixel-ui-text.md) | Commit the 8-bit theme to Sweetie 16, pixel UI text, and a pixel mark | Accepted |
+| [0031](./0031-send-security-headers-without-a-full-csp.md) | Send security headers from next.config.ts, without a full Content Security Policy | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
