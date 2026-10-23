@@ -2,7 +2,7 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-10-22 (after ADR 0029)*
+*Last reviewed: 2026-10-23 (after ADR 0032)*
 
 ## The short version
 
@@ -61,7 +61,7 @@ flowchart LR
 4. It passes that data as props to `DashboardClient`, a **Client Component** that runs in the browser and owns all the interactive state: search text, AI mode, selected folder, sidebar collapse, the phone folder drawer, the new-snippet modal, and drag state. Each `SnippetCard` owns its own preview and edit modals.
 5. `DashboardClient` is rendered to HTML on the server too, so the snippets arrive with the page, and then **hydrates** in the browser: React attaches its event handlers to that HTML instead of drawing it again. That only works if both renders produce the same markup, which is why `DndContext` has a fixed `id` ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). So a remembered choice the first frame depends on lives in a cookie the server can read, not in `localStorage`: the theme ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)) and the collapsed sidebar (`src/lib/sidebar.ts`, read by the dashboard page).
 
-Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded, and keyword search stays inside the open folder. Only AI search makes a network call, and it always searches the whole library: you reach for it when you don't remember where something is, and the MCP server's search will work the same way. While its results are up the heading reads "Whole library" instead of the folder's name, and picking a folder clears them. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
+Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded, and keyword search stays inside the open folder. Only AI search makes a network call, and it always searches the whole library: you reach for it when you don't remember where something is, and the MCP server's search works the same way. While its results are up the heading reads "Whole library" instead of the folder's name, and picking a folder clears them. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
 
 ### Changing data (write path)
 
@@ -114,7 +114,7 @@ Every error is `{ error: string }` with a status code: the status is for program
 | `500` | Something broke on our side |
 | `502` | Claude didn't answer |
 
-Pages follow the same idea. A page or Server Action that throws shows `src/app/error.tsx`: Snippr's words, a **Try again** that re-fetches the page from the server, a link home, and the error's `digest`. In production Next hides a server error's message from the browser and sends that hash instead; it matches the error's line in Vercel's logs. The page never shows the message, since a client-side error's message can hold anything. The root layout sits above `error.tsx`, so an error there falls through to Next's built-in `global-error`; the layout only loads fonts and metadata, so that's an accepted gap.
+Pages follow the same idea. A page or Server Action that throws shows `src/app/error.tsx`: Snippr's words, a **Try again** that re-fetches the page from the server, a link home, and the error's `digest`. In production Next hides a server error's message from the browser and sends that hash instead; it matches the error's line in Vercel's logs. The page never shows the message, since a client-side error's message can hold anything. The root layout sits above `error.tsx`, so an error there falls through to Next's built-in `global-error`; the layout only loads fonts and metadata and reads the theme cookie, which falls back to the default theme on any value it doesn't know, so that's an accepted gap.
 
 In the browser, components call the API through `callApi` (`src/lib/api-client.ts`), which returns the data or a message to show. Errors you can fix show next to whatever was being done. Things that happen out of sight, like a drag to a folder or a finished delete, show a toast instead ([0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)).
 
@@ -273,7 +273,7 @@ The 8-bit theme is a `[data-theme="8bit"]` block in `globals.css` that overrides
 ## Code map
 
 ```
-.github/workflows/ci.yml        CI: formatting, lint, types, unit tests, migrations, store tests, e2e
+.github/workflows/ci.yml        CI: formatting, lint, types, unit tests, migrations, store tests, e2e, dependency audit
 .git-blame-ignore-revs          Formatting-only commits for git blame to skip
 assets/fonts/                   Font files and licenses for the Open Graph image, which can't use next/font
 .prettierignore                 What Prettier leaves alone: Markdown, the lockfile
@@ -281,7 +281,7 @@ docker-compose.yml              Local Postgres for development and tests
 docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 e2e/
 ├── demo.spec.ts                End-to-end test: demo, create, search, drag into a folder, Tab stays in dialogs
-├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer
+├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, delete from preview and form
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
 playwright.config.ts            Runs it against a production build on port 3100
@@ -410,4 +410,4 @@ Production's `DATABASE_URL` lives only in Vercel. Production builds use it to ap
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important one: AI search has no end-to-end coverage. Its handler is tested against a fake Claude, but no test drives it through the browser. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
+The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important one: AI search has no end-to-end coverage. Its handler is tested against a fake Claude, but no test drives it through the browser. `npm run readme-images` does, against the real Claude, to take the README's screenshot, but it runs by hand and not in CI. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
