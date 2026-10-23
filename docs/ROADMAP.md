@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-10-22*
+*Last updated: 2026-10-23*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -28,6 +28,7 @@ The identity comes first, so the screenshots and the README show the finished lo
 - [x] Labels and accessible names: a `<label>` on every form input, names on the icon-only buttons (✕, ⋯, the sidebar chevrons), and Escape closing the edit form like it closes the preview ([audit](./audits/2026-10-20.md), finding 5). Under 1.0 because it's most of what a Lighthouse run flags, and a reviewer can run one in a minute. Before the screenshots, so they show the finished forms. Keyboard drag and drop and card roles stay Parked. Done: the snippet form has visible labels, the search box and folder name inputs have `aria-label`s, and ✕, ⋯, and the expand chevron are named. A test renders the forms, preview, and dashboard on the server and fails on any field or button without a name (`src/lib/accessible-names.ts`), and the end-to-end test fills the form by label. Escape closes the form only while nothing has changed, like a click outside
 - [x] Fix the README's model name: it says Claude Sonnet, and the code and [0023](./adr/0023-one-ai-module-on-claude-haiku.md) say Haiku 5.5 ([audit](./audits/2026-10-22.md), finding 1). Under 1.0 and on its own line because it's one word a visitor reads before anything else, and the rebuild below may take a while. Done: the Tech Stack line names Haiku 5.5, matching `AI_MODEL` in `src/lib/ai.ts`
 - [ ] README rebuilt around screenshots, a short demo GIF, and the architecture. It also has to say what Phase 4 and 5 built: the MCP server and the Connect page, and the two themes ([audit](./audits/2026-10-22.md), finding 2)
+- [ ] Bring `ARCHITECTURE.md`'s review date up to date: it says 2026-10-22, after ADR 0029, and already describes 0030 and 0031 ([audit](./audits/2026-10-23.md), finding 4). Under 1.0 because it's the second doc a visitor opens, and a stale date there makes the rest look unchecked
 - [ ] A case study: what was built, what broke, what was decided, and why
 - [ ] Tag `v1.0`, then rewrite this roadmap around whatever comes next, if anything does
 
@@ -137,9 +138,11 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - A synthwave theme and a light minimalist theme ([0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md)). Each should be one block of token values, a Shiki palette, and an entry in `THEMES` ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)). The first one also turns the 8-bit toggle into a picker. The light one is also the answer to "no light mode"
 - A Format button in the snippet form, like the broom in an online editor. Prettier, loaded on first click, for TypeScript, JavaScript, CSS, HTML, and JSON only; Python, Rust, and Go have no good formatter that runs in a browser, so the button is disabled for them and says why. Snippets are often fragments Prettier can't parse, so a failure says where inline instead of looking broken, and Undo brings back the original, since setting the textarea from code wipes the browser's own undo. Gets an ADR for where it stops
 - Give the dashboard's controls accessible names and roles (the cards are `div`s with dnd-kit's `role="button"`, and the sidebar's `⋯` menu button has no label). The end-to-end test finds cards by `aria-roledescription` and folders by text for now; it can switch to roles once they exist ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)). The inputs' labels and the icon buttons' names landed in Phase 5 ([audit](./audits/2026-10-20.md), finding 5); the cards' roles and the rest stay here
+- Make the phone folder drawer a dialog like the preview and the form: `role="dialog"`, focus in and back with `useDialogFocus`, and the page behind it `inert` ([audit](./audits/2026-10-23.md), finding 2). Today a VoiceOver user can swipe past the last folder into the cards behind the backdrop, and Escape while renaming a folder in the drawer also closes the drawer. Parked because it only reaches screen reader and keyboard users at phone width, and 1.0 waits on the README
 - Keyboard drag and drop ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md))
 - Drag and drop on touch screens ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). A finger drag is a scroll, so on a phone you move a snippet with the folder field in Edit. A long press with dnd-kit's `TouchSensor` could start a drag, but the folders are in a closed drawer by then, so it needs somewhere to drop first (a "Move to" sheet, say)
 - End-to-end tests beyond the main flow, including real OAuth sign-in. AI search is the first candidate: the features take `askClaude` as an argument ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)), but the production build the e2e test runs still calls the real one, so it needs a way to swap in a fake Claude there
+- Room for retries under the demo limit in end-to-end runs ([audit](./audits/2026-10-23.md), finding 3). CI retries a failed test once, four tests each start a demo, and the limit is 5 an hour per IP, so if two tests flake in one run the second retry is refused for a reason unrelated to the flake. A sentence in `DEVELOPMENT.md` at least, or a higher limit for the e2e build. Parked because it only bites when something else already failed
 
 ### Not planned
 
