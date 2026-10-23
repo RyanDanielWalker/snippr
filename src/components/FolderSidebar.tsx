@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useDroppable } from "@dnd-kit/core";
 import { FOLDER_NAME_MAX } from "@/lib/field-limits";
 import { callApi, type ApiResult } from "@/lib/api-client";
+import { folderDeleteText } from "@/lib/folder-delete";
 import { folderNameAction } from "@/lib/folder-name-input";
 import { useToast } from "@/components/Toaster";
 import type { Folder } from "@/lib/library-types";
@@ -68,6 +69,9 @@ export default function FolderSidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  // The first Delete in a folder's menu arms it; the second deletes. Closing
+  // the menu disarms it.
+  const [deleteArmed, setDeleteArmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [failedName, setFailedName] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -81,6 +85,7 @@ export default function FolderSidebar({
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpenId(null);
+        setDeleteArmed(false);
       }
     }
     if (menuOpenId) {
@@ -157,12 +162,17 @@ export default function FolderSidebar({
     );
   }
 
+  function openMenu(id: string | null) {
+    setMenuOpenId(id);
+    setDeleteArmed(false);
+  }
+
   function handleDelete(id: string) {
-    if (
-      !confirm("Delete this folder? Snippets inside will become unorganized.")
-    )
+    if (!deleteArmed) {
+      setDeleteArmed(true);
       return;
-    setMenuOpenId(null);
+    }
+    openMenu(null);
     setError(null);
     setDeletingId(id);
     startDeleting(async () => {
@@ -172,16 +182,13 @@ export default function FolderSidebar({
         setError(result.error);
         return;
       }
-      const hadSnippets =
-        (folders.find((f) => f.id === id)?._count.snippets ?? 0) > 0;
+      const { toast: message } = folderDeleteText(
+        folders.find((f) => f.id === id)?._count.snippets ?? 0,
+      );
       startDeleting(() => {
         setDeletingId(null);
         if (selectedFolderId === id) onSelectFolder(null);
-        toast(
-          hadSnippets
-            ? "Folder deleted. Its snippets are in Unorganized now."
-            : "Folder deleted.",
-        );
+        toast(message);
         router.refresh();
       });
     });
@@ -190,7 +197,7 @@ export default function FolderSidebar({
   function startEdit(folder: Folder) {
     setEditingId(folder.id);
     setEditingName(folder.name);
-    setMenuOpenId(null);
+    openMenu(null);
     setError(null);
     setFailedName(null);
   }
@@ -319,7 +326,7 @@ export default function FolderSidebar({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setMenuOpenId(menuOpenId === folder.id ? null : folder.id);
+                openMenu(menuOpenId === folder.id ? null : folder.id);
               }}
               aria-label={`Rename or delete ${folder.name}`}
               aria-expanded={menuOpenId === folder.id}
@@ -340,11 +347,16 @@ export default function FolderSidebar({
               >
                 Rename
               </button>
+              {deleteArmed && folder._count.snippets > 0 && (
+                <p className="px-4 pt-2 text-xs text-fg-subtle max-w-48">
+                  {folderDeleteText(folder._count.snippets).note}
+                </p>
+              )}
               <button
                 onClick={() => handleDelete(folder.id)}
                 className="block w-full text-left px-4 py-2 text-sm text-danger-text hover:bg-surface-hover"
               >
-                Delete
+                {deleteArmed ? "Confirm delete" : "Delete"}
               </button>
             </div>
           )}

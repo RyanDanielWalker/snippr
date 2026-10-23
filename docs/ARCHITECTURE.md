@@ -354,6 +354,7 @@ src/
 │   ├── empty-state.ts          What the dashboard says when there are no cards to show (tested)
 │   ├── field-limits.ts         Field limits and the language list, shared with the UI
 │   ├── folder-cap.ts           Folder cap: 50 per member, 10 per guest (tested)
+│   ├── folder-delete.ts        What the folder menu says before and after a delete (tested)
 │   ├── folder-name-input.ts    What Enter and blur do in the folder name input (tested)
 │   ├── folders.ts              /api/folders: ownership, cap, validation, in order (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)

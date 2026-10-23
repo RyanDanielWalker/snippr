@@ -104,6 +104,7 @@ Small items pulled forward while the README waits on screenshots.
 
 - [x] Smaller screen reader gaps the Phase 5 pass left. The AI search toggle says whether it's on (`aria-pressed`), Generate reads "Writing..." while Claude writes instead of "...", and the avatar is decorative (`alt=""`) instead of announcing "avatar" next to the email it repeats
 - [x] Move focus into the preview and the snippet form when they open, and back to what opened them when they close ([audit](./audits/2026-10-22.md), finding 4). The preview focuses the dialog, so a screen reader reads its title first; the form focuses Title. Focus goes back only if the opener is still on the page, so a deleted card doesn't take it with it (`src/lib/dialog-focus.ts`)
+- [x] Replace the folder delete `confirm()` with a confirmation in the page. The first Delete in the folder menu turns into Confirm delete, with a line saying how many snippets move to Unorganized, and closing the menu disarms it (`src/lib/folder-delete.ts`)
 
 ## Open decisions
 
@@ -139,7 +140,6 @@ Real improvements that a visitor won't notice and that aren't urgent at today's 
 - Drag and drop on touch screens ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). A finger drag is a scroll, so on a phone you move a snippet with the folder field in Edit. A long press with dnd-kit's `TouchSensor` could start a drag, but the folders are in a closed drawer by then, so it needs somewhere to drop first (a "Move to" sheet, say)
 - End-to-end tests beyond the main flow, including real OAuth sign-in. AI search is the first candidate: the features take `askClaude` as an argument ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)), but the production build the e2e test runs still calls the real one, so it needs a way to swap in a fake Claude there
 - An end-to-end check of the 8-bit theme: click the toggle, reload, and confirm `data-theme` survived and nothing overflows at 375px with the pixel type. Unit tests cover the cookie and the contrast, not the page
-- Replace the folder delete `confirm()` with a confirmation in the page, like the snippet card's "Click again to confirm". The browser dialog works; it just doesn't look like Snippr
 
 ### Not planned
 
