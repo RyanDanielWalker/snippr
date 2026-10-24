@@ -366,7 +366,7 @@ src/
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
 │   ├── highlight.ts            Shiki passed in: card previews, both themes' colors, null instead of a throw (tested)
-│   ├── landing-samples.ts      Sample snippets for the landing page (tested)
+│   ├── landing-samples.ts      Sample snippets, and the AI search and MCP examples, for the landing page (tested)
 │   ├── latest-only.ts          Keeps only the latest request's answer, for AI search (tested)
 │   ├── library-types.ts        The Snippet and Folder types the components share
 │   ├── library-store.ts        Database side of snippets.ts and folders.ts (tested against Postgres)
