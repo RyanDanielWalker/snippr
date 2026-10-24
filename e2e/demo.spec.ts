@@ -44,15 +44,40 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(card("Debounce")).toBeVisible();
   await expect(card("Retry with backoff")).toBeVisible();
 
-  // Tab stays in the preview while it's open, and closing it puts focus back
-  // on the card, which only works once the page behind is live again.
-  await card("Debounce").getByRole("heading").click();
+  // A card opens from the keyboard, and says so instead of dnd-kit's
+  // "press the space bar" to pick it up. phone.spec.ts opens one by tapping.
+  await expect(card("Debounce")).toHaveAccessibleDescription(
+    /Press Enter to open/,
+  );
+  await card("Debounce").focus();
+  await page.keyboard.press("Enter");
   const preview = page.getByRole("dialog", { name: "Debounce" });
   await expect(preview).toBeFocused();
+
+  // Tab stays in the preview while it's open, and closing it puts focus back
+  // on the card, which only works once the page behind is live again.
   await expectTabToStayIn(page, preview);
   await page.keyboard.press("Escape");
   await expect(preview).toBeHidden();
   await expect(card("Debounce")).toBeFocused();
+
+  // Space too, like any button.
+  await page.keyboard.press(" ");
+  await expect(preview).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(preview).toBeHidden();
+
+  // Enter on Edit inside the card bubbles up to the card, and opens the
+  // form without the preview.
+  await card("Debounce")
+    .getByRole("button", { name: "Edit", exact: true })
+    .focus();
+  await page.keyboard.press("Enter");
+  const editForm = page.getByRole("dialog", { name: "Edit snippet" });
+  await expect(editForm).toBeVisible();
+  await expect(preview).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(editForm).toBeHidden();
 
   // Escape closes an untouched form, and leaves one you've typed in alone.
   // Tab stays in it too.

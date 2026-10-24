@@ -8,6 +8,7 @@ import SnippetModal from "@/components/SnippetModal";
 import SnippetCardView from "@/components/SnippetCardView";
 import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
+import { opensPreview } from "@/lib/card-keys";
 import type { Snippet, Folder } from "@/lib/library-types";
 
 export default function SnippetCard({
@@ -78,6 +79,14 @@ export default function SnippetCard({
         {...attributes}
         {...listeners}
         onClick={() => !isDragging && setShowPreview(true)}
+        // After {...listeners}, so it would replace a KeyboardSensor's own
+        // onKeyDown. There isn't one yet (docs/adr/0007).
+        onKeyDown={(e) => {
+          if (!opensPreview(e.key, e.target === e.currentTarget)) return;
+          // Space would scroll the page too.
+          e.preventDefault();
+          setShowPreview(true);
+        }}
         snippet={snippet}
         folderName={folderName}
         aria-busy={moving || del.deleting}

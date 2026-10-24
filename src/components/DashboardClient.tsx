@@ -26,6 +26,7 @@ import {
 } from "@/lib/snippet-cap";
 import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
+import { CARD_INSTRUCTIONS } from "@/lib/card-keys";
 import { emptyState } from "@/lib/empty-state";
 import { pickByIds, resultsHeading } from "@/lib/ai-results";
 import { latestOnly } from "@/lib/latest-only";
@@ -332,6 +333,9 @@ export default function DashboardClient({
         <DndContext
           id="dashboard-dnd"
           sensors={sensors}
+          accessibility={{
+            screenReaderInstructions: { draggable: CARD_INSTRUCTIONS },
+          }}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
