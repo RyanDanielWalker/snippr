@@ -45,7 +45,7 @@ async function shoot(page: Page, name: string, fullPage = false) {
   });
 }
 
-test("desktop: dashboard, preview, AI search, 8-bit", async ({ browser }) => {
+test("desktop: dashboard, AI search, 8-bit", async ({ browser }) => {
   const context = await browser.newContext({
     viewport: DESKTOP,
     deviceScaleFactor: 2,
@@ -53,13 +53,6 @@ test("desktop: dashboard, preview, AI search, 8-bit", async ({ browser }) => {
   const page = await context.newPage();
   await startDemo(page);
   await shoot(page, "dashboard.png");
-
-  await card(page, "Debounce").getByRole("heading").click();
-  const preview = page.getByRole("dialog", { name: "Debounce" });
-  await expect(preview.locator(".shiki")).toBeVisible();
-  await shoot(page, "preview.png");
-  await page.keyboard.press("Escape");
-  await expect(preview).toBeHidden();
 
   await page.getByRole("button", { name: "✦ AI search" }).click();
   await page
