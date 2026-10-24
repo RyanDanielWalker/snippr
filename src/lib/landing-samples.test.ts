@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { landingSamples, searchExample } from "./landing-samples";
+import { landingSamples, mcpExample, searchExample } from "./landing-samples";
 
 const words = (text: string) => text.toLowerCase().match(/[a-z]{4,}/g) ?? [];
 
@@ -11,6 +11,10 @@ describe("landing page samples", () => {
 
   it("points the search example at a sample that exists", () => {
     expect(landingSamples.map((s) => s.id)).toContain(searchExample.resultId);
+  });
+
+  it("points the MCP example at a sample that exists", () => {
+    expect(landingSamples.map((s) => s.id)).toContain(mcpExample.resultId);
   });
 
   // The example exists to show AI search finding something keyword search

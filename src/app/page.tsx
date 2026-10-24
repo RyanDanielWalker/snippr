@@ -7,7 +7,11 @@ import SnippetCardView from "@/components/SnippetCardView";
 import DemoButton from "@/components/DemoButton";
 import { Wordmark } from "@/components/LogoMark";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { landingSamples, searchExample } from "@/lib/landing-samples";
+import {
+  landingSamples,
+  mcpExample,
+  searchExample,
+} from "@/lib/landing-samples";
 import { withCardHtml } from "@/lib/highlight";
 
 const features = [
@@ -36,6 +40,7 @@ export default async function Home({
   // Set by startDemoAction when one network starts too many demos in an hour.
   const demoBusy = (await searchParams).demo === "busy";
   const samples = await withCardHtml(landingSamples, codeToHtml);
+  const mcpResult = landingSamples.find((s) => s.id === mcpExample.resultId);
 
   return (
     <div className="min-h-screen text-fg-muted">
@@ -117,6 +122,46 @@ export default async function Home({
           <p className="mt-4 text-sm text-fg-subtle">
             Keyword search finds nothing for that. AI search matched what it
             meant.
+          </p>
+        </section>
+
+        <section aria-labelledby="mcp-heading" className="pb-16">
+          <h2 id="mcp-heading" className="sr-only">
+            Example of Claude Code using Snippr
+          </h2>
+          <div className="rounded-panel border border-line bg-surface/40 p-4 md:p-6">
+            <div className="bg-code border border-line rounded-box px-4 py-4 font-mono text-sm break-words space-y-4">
+              <span className="inline-block font-sans text-xs text-fg-muted bg-surface-raised px-2 py-1 rounded-chip">
+                Claude Code
+              </span>
+              <p className="text-fg">
+                <span aria-hidden className="text-fg-subtle">
+                  &gt;{" "}
+                </span>
+                {mcpExample.prompt}
+              </p>
+              <div>
+                <p className="text-accent-text">
+                  <span aria-hidden>● </span>snippr · search_snippets
+                </p>
+                <p className="pl-4 text-fg-subtle">
+                  query: &quot;{mcpExample.query}&quot;
+                </p>
+                {mcpResult && (
+                  <p className="pl-4 text-fg-muted">
+                    <span aria-hidden className="text-fg-subtle">
+                      └{" "}
+                    </span>
+                    {mcpResult.title} · {mcpResult.language} ·{" "}
+                    {mcpResult.folderName}
+                  </p>
+                )}
+              </div>
+              <p className="text-fg-muted">{mcpExample.reply}</p>
+            </div>
+          </div>
+          <p className="mt-4 text-sm text-fg-subtle">
+            The same AI search, asked from inside another project.
           </p>
         </section>
 

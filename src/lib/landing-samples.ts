@@ -60,3 +60,13 @@ export const searchExample = {
   query: "wait for the user to stop typing before firing a request",
   resultId: "debounce",
 };
+
+// What asking Claude Code for a snippet looks like, through the MCP server.
+// `query` is what Claude would pass to search_snippets (src/lib/mcp.ts).
+export const mcpExample = {
+  prompt: "Use my debounce snippet on the search input.",
+  query: "debounce a function",
+  resultId: "debounce",
+  reply:
+    "Found Debounce in your Snippr library. Wrapping the search input's onChange with it, at the default 300ms.",
+};
