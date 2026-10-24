@@ -62,7 +62,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 
 ## End-to-end tests
 
-`e2e/demo.spec.ts` drives Chromium through a demo: start one, open a card's preview from the keyboard, add a snippet, search for it, drag it into a folder, and check on the way that Tab can't leave the preview or the form ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)). `e2e/phone.spec.ts` opens a demo at 375px wide and checks that nothing scrolls sideways and the folder drawer opens and closes. `e2e/theme.spec.ts` does the same in the 8-bit theme, after checking the choice survives a reload. Every test that starts a demo counts against the limit of 5 an hour per IP, and a run starts 4, so a new one that needs a demo should share an existing test's instead of starting its own.
+`e2e/demo.spec.ts` drives Chromium through a demo: start one, open a card's preview from the keyboard, Tab to a folder's `⋯` and see it, add a snippet, search for it, drag it into a folder, and check on the way that Tab can't leave the preview or the form ([0019](./adr/0019-end-to-end-tests-with-playwright-on-their-own-database.md)). `e2e/phone.spec.ts` opens a demo at 375px wide and checks that nothing scrolls sideways and the folder drawer opens and closes. `e2e/theme.spec.ts` does the same in the 8-bit theme, after checking the choice survives a reload. Every test that starts a demo counts against the limit of 5 an hour per IP, and a run starts 4, so a new one that needs a demo should share an existing test's instead of starting its own.
 
 ```bash
 npx playwright install chromium   # once
