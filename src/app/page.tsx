@@ -20,8 +20,8 @@ const features = [
     body: "Describe the snippet in a sentence. Claude reads your titles, tags, and descriptions and picks the ones you meant.",
   },
   {
-    title: "Folders, if you want them",
-    body: "Drag a card onto a folder to file it. Or don't. Anything unfiled waits in Unorganized.",
+    title: "Your snippets, in your editor",
+    body: "Make a token on the Connect page and paste one line into Claude Code or Cursor. Then ask it for your debounce snippet from any project, or tell it to save the one it just wrote.",
   },
 ];
 
@@ -62,7 +62,7 @@ export default async function Home({
           <p className="mt-6 text-lg text-fg-subtle">
             Save snippets, file them in folders, and find them again by
             describing what they do. Claude writes the descriptions, so you
-            don&apos;t have to.
+            don&apos;t have to. Claude Code and Cursor can search them too.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
