@@ -280,7 +280,7 @@ assets/fonts/                   Font files and licenses for the Open Graph image
 docker-compose.yml              Local Postgres for development and tests
 docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 e2e/
-├── demo.spec.ts                End-to-end test: demo, create, search, drag into a folder, Tab stays in dialogs
+├── demo.spec.ts                End-to-end test: demo, open a card from the keyboard, create, search, drag into a folder, Tab stays in dialogs
 ├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, delete from preview and form
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
@@ -324,7 +324,7 @@ src/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders match)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
 │   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets
-│   ├── SnippetCard.tsx         Draggable card with edit, delete, copy
+│   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; Enter or Space opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails
 │   ├── useCopy.ts              Copy button shared by the card and preview, toast if it fails
@@ -348,6 +348,7 @@ src/
 │   ├── api-tokens.ts           MCP tokens: make, hash, revoke, sign in by Bearer header (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
 │   ├── auth.ts                 NextAuth config, verified-email check, currentUser()
+│   ├── card-keys.ts            Which keys open a card, and what screen readers hear on one (tested)
 │   ├── create-lock.ts          withUserLock: the per-user advisory lock every capped create runs under (docs/adr/0025)
 │   ├── contrast.ts             WCAG contrast ratio between two colors (tested)
 │   ├── clipboard.ts            copyText: whether a copy actually landed (tested)
