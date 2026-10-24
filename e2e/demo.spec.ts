@@ -79,6 +79,17 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(editForm).toBeHidden();
 
+  // A folder's ⋯ is hidden until hover, and keyboard focus counts as hover,
+  // so Tab from a folder lands on a button you can see.
+  const sidebar = page.locator("aside");
+  await sidebar.getByRole("button", { name: /^Frontend/ }).focus();
+  await page.keyboard.press("Tab");
+  const folderMenu = sidebar.getByRole("button", {
+    name: "Rename or delete Frontend",
+  });
+  await expect(folderMenu).toBeFocused();
+  await expect(folderMenu).toHaveCSS("opacity", "1");
+
   // Escape closes an untouched form, and leaves one you've typed in alone.
   // Tab stays in it too.
   const newForm = page.getByRole("dialog", { name: "New snippet" });

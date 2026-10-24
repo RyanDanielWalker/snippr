@@ -314,14 +314,16 @@ export default function FolderSidebar({
               onClick={() => onSelectFolder(folder.id)}
             >
               <span className="truncate pr-6">{folder.name}</span>
-              <span className="text-xs text-fg-subtle group-hover:opacity-0 pointer-coarse:mr-6 transition">
+              <span className="text-xs text-fg-subtle group-hover:opacity-0 group-has-focus-visible:opacity-0 pointer-coarse:mr-6 transition">
                 {folder._count.snippets}
               </span>
             </DroppableFolder>
           )}
 
-          {/* Hover reveals it with a mouse. A touch screen can't hover, so
-              there it's always shown, with the count moved aside for it. */}
+          {/* Hover reveals it with a mouse, and keyboard focus anywhere in the
+              row does the same, so Tab never lands on an invisible button. A
+              touch screen can't hover, so there it's always shown, with the
+              count moved aside for it. */}
           {editingId !== folder.id && (
             <button
               onClick={(e) => {
@@ -330,7 +332,7 @@ export default function FolderSidebar({
               }}
               aria-label={`Rename or delete ${folder.name}`}
               aria-expanded={menuOpenId === folder.id}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 pointer-coarse:px-2 transition px-1"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 group-has-focus-visible:opacity-100 pointer-coarse:opacity-100 pointer-coarse:px-2 transition px-1"
             >
               ⋯
             </button>
