@@ -280,7 +280,7 @@ assets/fonts/                   Font files and licenses for the Open Graph image
 docker-compose.yml              Local Postgres for development and tests
 docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 e2e/
-├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder, Tab stays in dialogs
+├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, Tab stays in dialogs
 ├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, delete from preview and form
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
@@ -323,7 +323,7 @@ src/
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders match)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
-│   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets
+│   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets (tested: when Unorganized shows)
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; Enter or Space opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails

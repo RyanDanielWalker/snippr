@@ -155,4 +155,54 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(card("Slugify")).toBeVisible();
   await expect(card("Debounce")).toBeVisible();
   await expect(cards).toHaveCount(2);
+
+  // Picks a card up and carries it far enough for dnd-kit to count it as a drag.
+  async function pickUp(title: string) {
+    // A drop animates for a moment, and while that overlay covers the card
+    // hover() scrolls the page looking for a way to reach it.
+    await expect(page.locator(".shadow-lifted")).toHaveCount(0);
+    await card(title).getByRole("heading").hover();
+    await page.mouse.down();
+    const box = await card(title).boundingBox();
+    if (!box) throw new Error(`The ${title} card isn't on screen`);
+    await page.mouse.move(box.x - 20, box.y, { steps: 5 });
+  }
+  async function dropOn(target: Locator) {
+    const box = await target.boundingBox();
+    if (!box) throw new Error("The drop target isn't on screen");
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, {
+      steps: 20,
+    });
+    await page.mouse.up();
+  }
+
+  // Filing the last unfiled snippet from inside Unorganized hides the row and
+  // falls back to All snippets, since the view's row is gone.
+  const unorganized = sidebar.getByRole("button", { name: /^Unorganized/ });
+  await unorganized.click();
+  await expect(
+    page.getByRole("heading", { name: "Unorganized", level: 2 }),
+  ).toBeVisible();
+  await pickUp("Retry with backoff");
+  await dropOn(frontend);
+  await expect(unorganized).toBeHidden();
+  await expect(page.getByRole("heading", { level: 2 })).toBeHidden();
+  await expect(cards).toHaveCount(5);
+
+  // The row comes back for a drag, because it's the only way out of a folder,
+  // and a cancelled drag has to put it away again.
+  await pickUp("Slugify");
+  await expect(unorganized).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(unorganized).toBeHidden();
+  await page.mouse.up();
+
+  // Dropping on the row moves the card out, and the row stays with it in.
+  await pickUp("Slugify");
+  await dropOn(unorganized);
+  await expect(page.getByText("Moved to Unorganized.")).toBeVisible();
+  await expect(unorganized).toContainText("1");
+  await expect(
+    card("Slugify").getByText("Frontend", { exact: true }),
+  ).toBeHidden();
 });
