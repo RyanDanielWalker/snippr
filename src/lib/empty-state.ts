@@ -77,9 +77,6 @@ export function emptyState({
     return empty("No snippets match your search.", hint);
   }
 
-  if (view === "unorganized")
-    return empty("Nothing unorganized.", "Every snippet has a folder.");
-
   if (view === "folder") {
     return canCreate
       ? empty(

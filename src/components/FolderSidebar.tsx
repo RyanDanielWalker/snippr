@@ -44,6 +44,8 @@ type Props = {
   folders: Folder[];
   totalSnippets: number;
   unorganizedCount: number;
+  /** A snippet is being dragged or moved, so Unorganized must be droppable. */
+  moving?: boolean;
   selectedFolderId: string | null;
   onSelectFolder: (id: string | null) => void;
   collapsed: boolean;
@@ -56,6 +58,7 @@ export default function FolderSidebar({
   folders,
   totalSnippets,
   unorganizedCount,
+  moving = false,
   selectedFolderId,
   onSelectFolder,
   collapsed,
@@ -269,14 +272,18 @@ export default function FolderSidebar({
         <span className="text-xs text-fg-subtle">{totalSnippets}</span>
       </button>
 
-      <DroppableFolder
-        id="unorganized"
-        selected={selectedFolderId === "unorganized"}
-        onClick={() => onSelectFolder("unorganized")}
-      >
-        <span>Unorganized</span>
-        <span className="text-xs text-fg-subtle">{unorganizedCount}</span>
-      </DroppableFolder>
+      {/* Hidden while empty, except mid-drag: it's the only way to drag a
+          snippet back out of its folder. */}
+      {(unorganizedCount > 0 || moving) && (
+        <DroppableFolder
+          id="unorganized"
+          selected={selectedFolderId === "unorganized"}
+          onClick={() => onSelectFolder("unorganized")}
+        >
+          <span>Unorganized</span>
+          <span className="text-xs text-fg-subtle">{unorganizedCount}</span>
+        </DroppableFolder>
+      )}
 
       <div className="pt-4 pb-2 px-3 font-title text-xs text-fg-subtle uppercase tracking-wider">
         Folders

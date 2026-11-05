@@ -74,12 +74,6 @@ describe("emptyState", () => {
     );
   });
 
-  it("says when every snippet has a folder", () => {
-    expect(emptyState(input({ view: "unorganized" })).title).toBe(
-      "Nothing unorganized.",
-    );
-  });
-
   it("offers a snippet in an empty folder, unless the library is full", () => {
     expect(emptyState(input({ view: "folder" })).offerNewSnippet).toBe(true);
     const full = emptyState(input({ view: "folder", canCreate: false }));

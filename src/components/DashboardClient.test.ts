@@ -11,7 +11,10 @@ vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
 
 // The server render of the dashboard, which the browser then hydrates. It used
 // to be a header and nothing else (docs/adr/0007).
-function serverRender(sidebarCollapsed?: boolean) {
+function serverRender(
+  sidebarCollapsed?: boolean,
+  folderId: string | null = null,
+) {
   return renderToString(
     createElement(
       ToastProvider,
@@ -24,7 +27,7 @@ function serverRender(sidebarCollapsed?: boolean) {
             code: "const x = 1;",
             language: "typescript",
             tags: [],
-            folderId: null,
+            folderId,
             createdAt: "2026-10-19T00:00:00.000Z",
           },
         ],
@@ -51,6 +54,11 @@ describe("DashboardClient on the server", () => {
     const collapsed = serverRender(true);
     expect(collapsed).toContain('aria-label="Expand sidebar"');
     expect(collapsed).not.toContain('aria-label="Collapse sidebar"');
+  });
+
+  it("shows Unorganized only while something is in it", () => {
+    expect(serverRender()).toContain("Unorganized");
+    expect(serverRender(false, "f1")).not.toContain("Unorganized");
   });
 
   it("renders one folder sidebar for both the page and the phone drawer", () => {

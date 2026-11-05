@@ -121,6 +121,12 @@ export default function DashboardClient({
 
   const unorganizedCount = snippets.filter((s) => !s.folderId).length;
 
+  // Its row is gone at zero, so the view can't stay on it. Changing the state
+  // rather than deriving it, so a later unfiled snippet doesn't jump back here.
+  if (selectedFolderId === "unorganized" && unorganizedCount === 0) {
+    setSelectedFolderId(null);
+  }
+
   const folderFiltered =
     selectedFolderId === null
       ? snippets
@@ -338,6 +344,7 @@ export default function DashboardClient({
           }}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
+          onDragCancel={() => setDraggedSnippet(null)}
         >
           <div className="flex gap-8">
             {foldersOpen && (
@@ -359,6 +366,7 @@ export default function DashboardClient({
                 folders={folders}
                 totalSnippets={snippets.length}
                 unorganizedCount={unorganizedCount}
+                moving={draggedSnippet !== null || movingIds.size > 0}
                 selectedFolderId={selectedFolderId}
                 onSelectFolder={selectFolder}
                 collapsed={sidebarCollapsed && !foldersOpen}
