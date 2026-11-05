@@ -28,6 +28,7 @@ import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
 import { CARD_INSTRUCTIONS } from "@/lib/card-keys";
 import { emptyState } from "@/lib/empty-state";
+import { matchesKeyword } from "@/lib/keyword-search";
 import { pickByIds, resultsHeading } from "@/lib/ai-results";
 import { latestOnly } from "@/lib/latest-only";
 import { sidebarCookie } from "@/lib/sidebar";
@@ -134,12 +135,7 @@ export default function DashboardClient({
         ? snippets.filter((s) => !s.folderId)
         : snippets.filter((s) => s.folderId === selectedFolderId);
 
-  const filtered = folderFiltered.filter(
-    (s) =>
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.tags.some((t) => t.toLowerCase().includes(search.toLowerCase())) ||
-      s.language.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = folderFiltered.filter((s) => matchesKeyword(s, search));
 
   async function handleAiSearch() {
     if (aiLoading || !search.trim()) return;

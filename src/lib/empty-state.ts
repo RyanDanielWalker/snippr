@@ -87,6 +87,7 @@ export function emptyState({
       : empty("This folder is empty.", "Drag a snippet here.");
   }
 
-  // "All" with snippets in the library always has something to show.
+  // With snippets in the library, "all" always has something to show, and the
+  // dashboard leaves "unorganized" as soon as it's empty.
   return empty("No snippets here yet.");
 }
