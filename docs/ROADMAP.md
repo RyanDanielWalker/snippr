@@ -13,7 +13,7 @@ Snippr is a portfolio piece, and a portfolio piece needs a finish line. 1.0 is t
 - Claude, Cursor, or any MCP client can search and save to your snippet library
 - Every push runs lint, typecheck, and tests, and schema changes can't deploy out of order
 - Local development no longer touches the production database
-- The README and a case study explain what was built and why
+- The README explains what was built, why, and how it was built
 
 Everything else is in [Parked](#parked). Parked is a backlog, not a holding pen: anything there can be picked up whenever it's worth doing.
 
@@ -34,7 +34,7 @@ The identity comes first, so the screenshots and the README show the finished lo
 - [x] Use or drop `preview.png` ([audit](./audits/2026-10-23-2.md), finding 3). `npm run readme-images` takes it and the README never shows it, so each regeneration commits 214 KB for nothing. Under 1.0 because it's one line in the script or the README. Done: dropped. The dashboard shot already shows highlighted code on the cards, and `e2e/demo.spec.ts` already checks that the preview opens, so the shot proved nothing the README needed
 - [x] Correct the Parked line on accessible names: it says the `⋯` button has no label, and it has had one since Phase 5 ([audit](./audits/2026-10-23-2.md), finding 4). Under 1.0 because the roadmap is linked from the README. Done: the line now covers only what's left, the cards' role. It also said the end-to-end test finds folders by text; it finds them by role and name (`e2e/demo.spec.ts`), so that went too
 - [x] Show the MCP server on the landing page. The page was written on 2026-10-18, before Phase 4, and still described only AI descriptions, AI search, and folders, while the README led with Claude Code and Cursor. Under 1.0 because it's the first thing a visitor sees, and one who isn't signed in has no other way to find `/connect`: guests can't make tokens, and the only link is in the dashboard. Done: the subtitle says Claude Code and Cursor can search your snippets, an MCP card replaces the Folders one (the subtitle and the demo already cover folders), and a hand-written Claude Code exchange under the AI search example shows `search_snippets` finding Debounce. Its data sits in `src/lib/landing-samples.ts`, and a test checks it points at a sample that exists
-- [ ] A case study: what was built, what broke, what was decided, and why
+- [x] Say in the README how Snippr was built: who wrote what, the rules Claude Code worked under, and what Ryan did by hand. Under 1.0 because the commit history shows Claude on almost every commit since 2026-10-17, and a visitor should hear it from the README first. Done: a "How this was built" section, between the stack and the setup steps. This line replaced a planned case study on 2026-11-06. The README is what visitors read, so the disclosure belongs there, and Ryan's own write-up of the project for himself lives outside the repo
 - [ ] Tag `v1.0`, then rewrite this roadmap around whatever comes next, if anything does
 
 ## Done

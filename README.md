@@ -107,6 +107,12 @@ The screenshots above are taken by a script against the real app, so they can be
 - **Tests:** Vitest for units and the database, Playwright end to end
 - **Shipping:** GitHub Actions, then Vercel
 
+## How this was built
+
+Ryan wrote the first version in April 2026: 31 commits over ten days, from `create-next-app` to drag and drop, none with a co-author line. In October he came back to make it hold up to review, and from then on Claude Code wrote most of the code. Those commits say so in a `Co-Authored-By: Claude` line.
+
+The rules it worked under are in [CLAUDE.md](CLAUDE.md). Claude commits but never pushes, so Ryan reads every change before it deploys. Every significant decision gets a [decision record](docs/adr/README.md), which Claude drafted as the work happened. At each real fork Claude laid out the options and Ryan made the call. Everything that touched production, from dashboard settings to one-off SQL, Ryan did by hand. The [audits](docs/audits/) are reviews Claude ran in fresh sessions, not outside reviews.
+
 ## Run it locally
 
 You need Node.js 20.12 or newer, Docker Desktop, a GitHub OAuth app, and an Anthropic API key. Google sign-in is optional.
