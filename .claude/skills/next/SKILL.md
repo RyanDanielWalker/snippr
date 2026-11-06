@@ -47,7 +47,7 @@ Read the ADRs the item links to, the code it touches, and any tests nearby. For 
 
 - Pull logic worth testing into small functions in `src/lib/`, with database and network calls passed in, so tests run against fakes.
 - Write tests for the logic. After they pass, break the code on purpose once and confirm a test fails. Put it back.
-- **Never touch the database.** `.env` points at production. No `prisma db push`, no `npm run dev`, no scripts that connect. If verifying needs the database, say so and let Ryan decide.
+- **Never touch production's database.** Locally, `.env` points at the Docker Postgres (`npm run db:up`), and `scripts/check-db.mjs` refuses any `DATABASE_URL` that isn't local ([0015](../../../docs/adr/0015-local-postgres-in-docker-for-development.md)). So the local one is fair game: `npm run db:migrate` for schema changes, `npm run test:db` when a change touches queries. Never get around the check with `ALLOW_REMOTE_DB` or a bare `npx prisma`. If verifying needs production data, say so and let Ryan decide.
 - No new dependencies without asking.
 - Product copy: direct, a little dry, human. No em dashes.
 
