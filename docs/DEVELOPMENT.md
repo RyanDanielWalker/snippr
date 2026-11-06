@@ -55,7 +55,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run typecheck` | TypeScript type check, no output files |
 | `npm test` | Run the test suite once (Vitest) |
 | `npm run test:watch` | Re-run tests as files change |
-| `npm run test:db` | The store, snippet cap race, AI usage counter, foreign key index, and row-level security tests, against a real Postgres. Resets the `snippr_test` database first |
+| `npm run test:db` | The store, snippet cap race, AI usage counter, foreign key index, row-level security, and provider token tests, against a real Postgres. Resets the `snippr_test` database first |
 | `npm run test:e2e` | The end-to-end test in a real browser. Resets the e2e database, builds, and serves on port 3100 first, so it takes a minute or two |
 | `npm run e2e:db` | Wipe the e2e database and apply every migration. `test:e2e` runs it for you |
 | `npm run readme-images` | Retake the README's screenshots and GIF in `docs/images/`. Builds and serves like `test:e2e` |
@@ -111,7 +111,7 @@ A token only works on the database it was made in, so a local token does nothing
 
 `.github/workflows/ci.yml` runs on every push. One job checks formatting, then runs lint, typecheck, and `npm test`. The other starts Postgres, applies the migrations to an empty database with `prisma migrate deploy`, then runs `test:db` and `test:e2e`. A third runs `npm audit --omit=dev` ([0026](./adr/0026-audit-production-dependencies-in-ci.md)). Plain `npm audit` still reports `braces`, which comes in under `eslint-config-next`, only runs at lint time, and has no fixed release; the ADR says why that's accepted. If the end-to-end test fails, the run's **Artifacts** section has a `playwright-trace` to download and open with `npx playwright show-trace`.
 
-Vercel's Deployment Checks hold a production deploy until the first two jobs pass, so a red run there means the previous version stays live. Fix it and push again, or, if it's urgent and the failure is the test's fault, promote the build by hand in Vercel.
+Vercel's Deployment Checks hold a production deploy until the first two jobs pass, so a red run there means the previous code stays live. That doesn't cover a migration, which has already run by then, so those go to a branch first (see "Changing the schema"). Fix it and push again, or, if it's urgent and the failure is the test's fault, promote the build by hand in Vercel.
 
 The audit isn't one of the checks. When it goes red, an advisory was published against a production dependency since the last push. Production still deploys, and the fix is an upgrade.
 
@@ -179,6 +179,17 @@ Schema changes are migrations: SQL files in `prisma/migrations/`, committed with
 **A new table also needs row-level security.** Prisma won't write this line, so add it to the migration yourself: `ALTER TABLE "Thing" ENABLE ROW LEVEL SECURITY;`. It makes Postgres refuse every role except the table's owner, which is how the app connects, so Supabase's public Data API can't reach the table even if it's turned on. `npm run test:db` fails until the line is there ([0037](./adr/0037-turn-on-row-level-security-with-no-policies.md)).
 
 When the push deploys, the production build runs `prisma migrate deploy` before `next build`. If the migration fails, the build fails and the previous version stays live. Preview builds never migrate.
+
+**Push a migration to a branch first.** The build, and so the migration, runs before CI finishes. Deployment Checks can hold the new code, but not a database change that has already happened ([0038](./adr/0038-push-commits-with-a-migration-to-a-branch-first.md)). So CI gets to see it where it can't touch production:
+
+```
+git push origin HEAD:refs/heads/migration-check
+gh run list --branch migration-check --limit 1
+git push origin main
+git push origin --delete migration-check
+```
+
+Run the second line until it shows `success`, and only then the third. Commits with no migration go straight to `main`. Nothing enforces this, so it's on whoever pushes.
 
 **Migrations must work with the code that's already live.** The migration runs first, and the old version keeps serving until the new build is ready. Add first, remove later: new columns are nullable or have a default, and a column or table is dropped only in a later push, after the code stopped using it. Renames are an add and a drop, in that order.
 

@@ -62,7 +62,7 @@ Read the ADRs the item links to, the code it touches, and any tests nearby. For 
 
 - Small commits, one idea each, Conventional Commits. Subject says what, body says why.
 - Before every commit: `npm run typecheck`, `npm test`, `npm run lint`. Before the last one, `npm run build` too.
-- **Never push.**
+- **Never push.** If the commits include a migration, say under "Do before you push" that they go to a branch first, and give the commands from "Changing the schema" in `docs/DEVELOPMENT.md` ([0038](../../../docs/adr/0038-push-commits-with-a-migration-to-a-branch-first.md)). A migration can't be undone by holding the deploy.
 
 ## 7. Review your own work cold
 

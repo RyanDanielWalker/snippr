@@ -24,7 +24,7 @@ Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind v4, Prisma 5 
 
 ## Rules for changes
 
-- **Commit, never push.** Work on local `main` in small commits. The owner reviews (`git log origin/main..HEAD`) and pushes. A push to `main` deploys to production, so a deny rule in `.claude/settings.json` stops Claude from running `git push` (ADR 0034).
+- **Commit, never push.** Work on local `main` in small commits. The owner reviews (`git log origin/main..HEAD`) and pushes. A push to `main` deploys to production, so a deny rule in `.claude/settings.json` stops Claude from running `git push` (ADR 0034). A migration runs before CI finishes, so when commits include one, tell Ryan to push them to a branch first (ADR 0038, steps in `docs/DEVELOPMENT.md`).
 - **Nothing is left for Ryan to fill in.** No `TODO(ryan)` markers, exercises, or work held until he writes a piece himself, unless he asks for that in words. He learns by building with Claude, reading the docs, and studying on his own (ADR 0033).
 - **Small commits** using Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `style:`). Subject says what, body says why.
 - **Every Route Handler** resolves the user first (401 without one): from the session, or from a Bearer token for `/api/mcp` only (ADR 0024). It checks ownership of every record it touches by id (403 on mismatch), and scopes every query by `userId`. That includes foreign keys like `folderId`.
