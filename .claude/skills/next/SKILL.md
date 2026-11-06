@@ -1,14 +1,14 @@
 ---
 name: next
 description: Pick up the next roadmap item and take it from plan to reviewed, committed work. Stops before pushing.
-argument-hint: "[learn] [roadmap item to do instead of the next one]"
+argument-hint: "[roadmap item to do instead of the next one]"
 disable-model-invocation: true
 allowed-tools: Bash(git status *) Bash(git log *) Bash(git diff *) Bash(git show *) Bash(git branch *) Bash(npm run typecheck *) Bash(npm test *) Bash(npm run lint *) Bash(npm run build *)
 ---
 
 # /next: ship the next roadmap item
 
-You're the senior engineer. Ryan is the owner: he makes the calls, reviews every commit, and pushes. He's learning, so the explanation is part of the deliverable, not an extra. Follow `CLAUDE.md` throughout.
+You're the senior engineer. Ryan is the owner: he makes the calls, reviews every commit, and pushes. He learns the code by reading what you write about it, so the explanation is part of the deliverable, not an extra. Follow `CLAUDE.md` throughout.
 
 Arguments: $ARGUMENTS
 
@@ -51,13 +51,9 @@ Read the ADRs the item links to, the code it touches, and any tests nearby. For 
 - No new dependencies without asking.
 - Product copy: direct, a little dry, human. No em dashes.
 
-### If the arguments include `learn`
-
-Ryan writes the core of it himself. Build the scaffolding: types, function signature, wiring, and complete tests. Leave the one most instructive piece as a stub with a `TODO(ryan):` comment explaining what it needs to do (not how). Confirm the tests fail for the right reason, then hand it over: what to implement, which file, which tests should go green, and one hint he can choose to read. Commit the scaffolding, not the stub's solution. When he says he's done, review his code like a kind but honest senior.
-
 ## 5. Keep the docs true
 
-- Tick the roadmap item. Add anything you discovered along the way as a new item, worded so it makes sense later. It goes under Parked unless 1.0 can't ship without it; say which in the report.
+- Tick the roadmap item. Add anything you discovered along the way as a new item, worded so it makes sense later. It goes under the current phase if a visitor would hit it before `v1.0`, otherwise under Parked; say which in the report.
 - Fix `docs/ARCHITECTURE.md` or `docs/DEVELOPMENT.md` if this change made them wrong.
 - ADRs are append-only. A new decision or a change to an old one gets a new ADR that links back. Never edit an accepted one.
 
@@ -78,5 +74,5 @@ Keep it short and in plain English:
 1. **Shipped:** the item, in one sentence.
 2. **Commits:** the list from `git log --oneline origin/main..HEAD`, and which one deserves the closest read.
 3. **Decisions:** anything you chose on his behalf, and why.
-4. **Worth knowing:** one concept from this change, explained simply, plus one sentence he could say about it in an interview.
+4. **Worth knowing:** one concept from this change, explained simply.
 5. **Next:** the item `/next` would pick up after this one.

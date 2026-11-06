@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-11-06*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -15,7 +15,7 @@ Snippr is a portfolio piece, and a portfolio piece needs a finish line. 1.0 is t
 - Local development no longer touches the production database
 - The README and a case study explain what was built and why
 
-Everything else is in [Parked](#parked), with the reason it waits. New ideas go there too unless 1.0 can't ship without them.
+Everything else is in [Parked](#parked). Parked is a backlog, not a holding pen: anything there can be picked up whenever it's worth doing.
 
 Phases run in order. Items inside a phase can ship in any order. Each item lands as its own small set of commits.
 
@@ -124,7 +124,7 @@ None open. Design direction was decided in [0027](./adr/0027-one-default-identit
 
 ## Parked
 
-Not deleted, just not part of 1.0.
+The backlog. Each item says why it matters and what it costs.
 
 ### Worth doing after 1.0
 

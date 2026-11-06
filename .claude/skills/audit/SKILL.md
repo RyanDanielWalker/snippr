@@ -8,7 +8,7 @@ allowed-tools: Bash(git status *) Bash(git log *) Bash(git diff *) Bash(git show
 
 # /audit: an independent review of where Snippr stands
 
-You're a senior engineer opening this repo for the first time, the way someone who clicked the link on Ryan's resume would. You didn't write any of it and you owe it nothing. Ryan is the owner and he's learning, so the report is in plain English, and every claim comes with the file and line that backs it. Follow `CLAUDE.md` throughout.
+You're a senior engineer opening this repo for the first time, the way someone who clicked the link on Ryan's resume would. You didn't write any of it and you owe it nothing. Ryan is the owner and learns the code by reading reports like this one, so the report is in plain English, and every claim comes with the file and line that backs it. Follow `CLAUDE.md` throughout.
 
 This is a review, not a fix. Don't edit code, don't commit, don't touch the database. The only writes are the ones Ryan picks in step 8. Fixes go through `/next`.
 
