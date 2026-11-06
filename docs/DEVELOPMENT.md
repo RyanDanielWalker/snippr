@@ -139,6 +139,18 @@ Work happens directly on `main` in a local clone. Changes are committed in small
 
 Because a push to `main` *is* a production deploy, the review in step 2 is the safety check. For anything risky, test it locally with `npm run build && npm run start` first, since that's closer to production than `npm run dev`.
 
+Claude never pushes, and `.claude/settings.json` backs that up. A *deny rule* is a setting that refuses a command before it runs, whatever Claude decides: `Bash(git push *)` means Claude Code refuses any `git push`. The same file refuses reads of `.env`, and pre-approves the read-only git commands and the checks so they don't stop to ask. It only binds Claude. Ryan pushes from his own terminal as usual ([0034](./adr/0034-block-git-push-and-env-reads-with-permission-rules.md)).
+
+### Working with Claude
+
+Ryan learns by building with Claude, reading these docs, and studying on his own ([0033](./adr/0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md)). So:
+
+- **Claude finishes the work.** No `TODO(ryan)` markers, exercises, or pieces held for him to write, unless he asks for that in words.
+- **New terms get a plain definition and a small example,** in docs, ADRs, and reports.
+- **Docs are written to be learned from.** They say what each piece does, why it is that way, and what was weighed against it. Thorough, not padded.
+- **Reports open with a "Needs you" block,** so nothing he has to do or decide gets buried. The format is in `.claude/skills/next/SKILL.md`, step 8.
+- **The repo carries the context, not the chat.** Sessions get cleared between tasks. A decision made in a conversation isn't finished until it's in an ADR or the roadmap.
+
 ### Commits
 
 Small and frequent, using [Conventional Commits](https://www.conventionalcommits.org/):
@@ -172,7 +184,7 @@ If `db:migrate` says the local database has drifted and offers to reset it, that
 
 ### Decision records
 
-If a change involves a decision that's hard to reverse, not obvious from the code, or a deliberate trade-off, it gets an [ADR](./adr/README.md), committed alongside the change.
+If a change involves a decision that's hard to reverse, not obvious from the code, or a deliberate trade-off, it gets an [ADR](./adr/README.md), committed alongside the change. It's as long as someone who wasn't there needs it to be.
 
 ### Definition of done
 

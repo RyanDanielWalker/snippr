@@ -8,7 +8,7 @@ allowed-tools: Bash(git status *) Bash(git log *) Bash(git diff *) Bash(git show
 
 # /next: ship the next roadmap item
 
-You're the senior engineer. Ryan is the owner: he makes the calls, reviews every commit, and pushes. He learns the code by reading what you write about it, so the explanation is part of the deliverable, not an extra. Follow `CLAUDE.md` throughout.
+You're the senior engineer. Ryan is the owner: he makes the calls, reviews every commit, and pushes. He learns the code by reading what you write about it, so the explanation is part of the deliverable, not an extra. Finish the item: no `TODO(ryan)`, no exercise, no piece held for him to write, unless he asks for that in words ([0033](../../../docs/adr/0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md)). Follow `CLAUDE.md` throughout.
 
 Arguments: $ARGUMENTS
 
@@ -54,8 +54,9 @@ Read the ADRs the item links to, the code it touches, and any tests nearby. For 
 ## 5. Keep the docs true
 
 - Tick the roadmap item. Add anything you discovered along the way as a new item, worded so it makes sense later. It goes under the current phase if a visitor would hit it before `v1.0`, otherwise under Parked; say which in the report.
-- Fix `docs/ARCHITECTURE.md` or `docs/DEVELOPMENT.md` if this change made them wrong.
-- ADRs are append-only. A new decision or a change to an old one gets a new ADR that links back. Never edit an accepted one.
+- Fix `docs/ARCHITECTURE.md` or `docs/DEVELOPMENT.md` if this change made them wrong. Ryan learns what was built by reading these later, so write them to be learned from: what each piece does, why it is that way, and what was weighed against it. Every new term gets a plain definition and a small example.
+- ADRs are append-only. A new decision or a change to an old one gets a new ADR that links back. Never edit an accepted one. An ADR is as long as someone who wasn't there needs it to be: what forced the decision, each option with its real cost, what was picked, and what follows.
+- Anything you found and aren't fixing now goes on the roadmap, not into a mental note.
 
 ## 6. Commit
 
@@ -69,10 +70,33 @@ Read `git diff origin/main..HEAD` as a skeptical reviewer who didn't write it: o
 
 ## 8. Report to Ryan
 
-Keep it short and in plain English:
+Keep it short and in plain English. A term he may not know gets a plain definition and a small example, not a compressed one-liner. The docs carry the full story; the report points to them.
+
+**Start with the "Needs you" block, before anything else.** Anything that needs him goes here, first, every time, so it can't get buried in the body. Use only the groups that have something in them:
+
+```
+## Needs you
+
+🛑 **Do before you push**
+- ...
+
+❓ **Waiting on your answer** (I won't move on until you reply)
+- ...
+
+👀 **Not fixed. Say so now or it stays this way**
+- <what>, and where it's recorded (roadmap, an ADR's consequences)
+```
+
+- 🛑 is anything he must do himself: run a command, change a dashboard setting, or review something because a step was skipped or couldn't be verified.
+- ❓ is any open question. Ask it here, not mid-paragraph. If it has options, give them with a recommendation.
+- 👀 is everything found and not fixed, every trade-off accepted, and every judgment call he might object to. One line each, saying what he'd notice.
+- If no group has anything, write the line `**Needs you:** nothing.` so its absence is never ambiguous.
+- Never put any of these only in the body below. The body can repeat them with more detail.
+
+Then the rest:
 
 1. **Shipped:** the item, in one sentence.
 2. **Commits:** the list from `git log --oneline origin/main..HEAD`, and which one deserves the closest read.
 3. **Decisions:** anything you chose on his behalf, and why.
-4. **Worth knowing:** one concept from this change, explained simply.
+4. **Worth knowing:** one concept from this change, explained simply, with a small example.
 5. **Next:** the item `/next` would pick up after this one.

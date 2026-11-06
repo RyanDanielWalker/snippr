@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-An ADR is a short document that captures one significant technical decision: what we chose, what we didn't, and what it costs us. The goal is that anyone reading the code (including future me) can find out *why* it looks the way it does without having to guess.
+An ADR is a document that captures one significant technical decision: what we chose, what we didn't, and what it costs us. The goal is that anyone reading the code (including future me) can find out *why* it looks the way it does without having to guess.
 
 ## When to write one
 
@@ -15,7 +15,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 ## How
 
 1. Copy [`0000-template.md`](./0000-template.md) to the next number: `NNNN-short-kebab-title.md`.
-2. Fill it in. Keep it under a page. Link to code, commits, and issues.
+2. Fill it in. Make it thorough, not padded: long enough that someone who wasn't there understands what forced the decision, each option with its real cost, what was picked, and what follows. A new term gets a plain definition and a small example. Link to code, commits, and issues rather than copying them ([0033](./0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md)).
 3. Commit it alongside the change it describes.
 4. ADRs are append-only. If a decision changes, write a new ADR and mark the old one `Superseded by NNNN`. Don't rewrite history.
 
@@ -64,5 +64,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0030](./0030-commit-the-8-bit-theme-to-sweetie-16-and-pixel-ui-text.md) | Commit the 8-bit theme to Sweetie 16, pixel UI text, and a pixel mark | Accepted |
 | [0031](./0031-send-security-headers-without-a-full-csp.md) | Send security headers from next.config.ts, without a full Content Security Policy | Accepted |
 | [0032](./0032-generate-readme-images-from-the-app-with-playwright.md) | Generate the README's images from the running app with Playwright | Accepted |
+| [0033](./0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md) | Write docs to be learned from, and leave nothing for Ryan to fill in | Accepted |
+| [0034](./0034-block-git-push-and-env-reads-with-permission-rules.md) | Stop Claude from pushing or reading `.env` with permission rules | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

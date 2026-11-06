@@ -8,7 +8,7 @@ allowed-tools: Bash(git status *) Bash(git log *) Bash(git diff *) Bash(git show
 
 # /audit: a fresh-session review of where Snippr stands
 
-You're a senior engineer opening this repo for the first time, the way someone who clicked the link on Ryan's resume would. You didn't write any of it and you owe it nothing. Ryan is the owner and learns the code by reading reports like this one, so the report is in plain English, and every claim comes with the file and line that backs it. Follow `CLAUDE.md` throughout.
+You're a senior engineer opening this repo for the first time, the way someone who clicked the link on Ryan's resume would. You didn't write any of it and you owe it nothing. Ryan is the owner and learns the code by reading reports like this one, so the report is in plain English, a term he might not know gets a plain definition and a small example, and every claim comes with the file and line that backs it. Follow `CLAUDE.md` throughout.
 
 This is a review, not a fix. Don't edit code, don't commit, don't touch the database. The only writes are the ones Ryan picks in step 8. Fixes go through `/next`.
 
@@ -72,7 +72,7 @@ Then read every file under `src/`, `scripts/`, and `prisma/`. Look for:
 
 - From `git log` since the last audit (or the whole history the first time): what changed, and how much of it was co-authored with Claude.
 - Write the 5 to 7 questions an engineer would most likely ask after reading this code. For each, give where the answer lives (`file:line` or ADR) and the answer in two sentences he could say out loud.
-- Flag anything clever enough to need explaining that has no comment or ADR.
+- Flag anything clever enough to need explaining that has no comment or ADR, and any ADR or doc too thin for Ryan to learn the decision from ([0033](../../../docs/adr/0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md)).
 
 ### If the arguments include `quiz`
 
