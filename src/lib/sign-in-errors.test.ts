@@ -17,6 +17,16 @@ describe("signInErrorMessage", () => {
     );
   });
 
+  it("falls back for codes that name something every object inherits", () => {
+    // A crafted link like /login?error=__proto__ must not hand React something
+    // that isn't a string, which would break the page instead of the sign-in.
+    for (const code of ["constructor", "toString", "__proto__", "valueOf"]) {
+      expect(signInErrorMessage(code)).toBe(
+        "Sign-in didn't go through. Give it another shot.",
+      );
+    }
+  });
+
   it("uses the first value when the code appears more than once", () => {
     expect(signInErrorMessage(["AccessDenied", "OAuthCallback"])).toMatch(
       /verified/,

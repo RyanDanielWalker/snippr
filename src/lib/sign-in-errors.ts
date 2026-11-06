@@ -21,5 +21,7 @@ export function signInErrorMessage(
 ): string | null {
   const value = Array.isArray(code) ? code[0] : code;
   if (!value) return null;
-  return MESSAGES[value] ?? FALLBACK;
+  // `value` comes from the URL, and a plain lookup would also find what every
+  // object inherits: `constructor`, `__proto__`, and so on.
+  return Object.hasOwn(MESSAGES, value) ? MESSAGES[value] : FALLBACK;
 }
