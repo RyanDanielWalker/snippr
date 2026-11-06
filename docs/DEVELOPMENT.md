@@ -55,7 +55,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run typecheck` | TypeScript type check, no output files |
 | `npm test` | Run the test suite once (Vitest) |
 | `npm run test:watch` | Re-run tests as files change |
-| `npm run test:db` | The store, snippet cap race, AI usage counter, and foreign key index tests, against a real Postgres. Resets the `snippr_test` database first |
+| `npm run test:db` | The store, snippet cap race, AI usage counter, foreign key index, and row-level security tests, against a real Postgres. Resets the `snippr_test` database first |
 | `npm run test:e2e` | The end-to-end test in a real browser. Resets the e2e database, builds, and serves on port 3100 first, so it takes a minute or two |
 | `npm run e2e:db` | Wipe the e2e database and apply every migration. `test:e2e` runs it for you |
 | `npm run readme-images` | Retake the README's screenshots and GIF in `docs/images/`. Builds and serves like `test:e2e` |
@@ -175,6 +175,8 @@ Schema changes are migrations: SQL files in `prisma/migrations/`, committed with
 2. `npm run db:migrate`. Prisma asks for a name, writes `prisma/migrations/<timestamp>_<name>/migration.sql`, and applies it to the local database.
 3. Read the SQL. It's what production will run.
 4. Commit the schema and the migration together.
+
+**A new table also needs row-level security.** Prisma won't write this line, so add it to the migration yourself: `ALTER TABLE "Thing" ENABLE ROW LEVEL SECURITY;`. It makes Postgres refuse every role except the table's owner, which is how the app connects, so Supabase's public Data API can't reach the table even if it's turned on. `npm run test:db` fails until the line is there ([0037](./adr/0037-turn-on-row-level-security-with-no-policies.md)).
 
 When the push deploys, the production build runs `prisma migrate deploy` before `next build`. If the migration fails, the build fails and the previous version stays live. Preview builds never migrate.
 

@@ -190,6 +190,7 @@ erDiagram
 - `DemoStart` counts demos started per IP and hour. It isn't linked to any user ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)).
 - `Account`, `Session`, and `VerificationToken` are the standard NextAuth adapter tables. `VerificationToken` is unused because there's no email sign-in.
 - Every foreign key column has an index, since Postgres doesn't add one for the referencing side. A `test:db` test (`src/lib/foreign-key-indexes.db.test.ts`) fails if a new relation arrives without its `@@index`.
+- Every table has row-level security on, with no policies. Postgres then refuses every role except the table's owner, and the app connects as the owner, so Supabase's Data API couldn't reach the tables even if it were turned on. A `test:db` test (`src/lib/row-level-security.db.test.ts`) fails if a new table forgets it ([0037](./adr/0037-turn-on-row-level-security-with-no-policies.md)).
 - Schema changes are SQL migrations in `prisma/migrations/`, starting from a baseline of the schema as it stood in October 2026. Production builds apply new ones before building the app ([0016](./adr/0016-apply-migrations-in-the-production-build.md)).
 
 ## Authentication

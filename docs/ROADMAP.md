@@ -35,15 +35,15 @@ The identity comes first, so the screenshots and the README show the finished lo
 - [x] Correct the Parked line on accessible names: it says the `⋯` button has no label, and it has had one since Phase 5 ([audit](./audits/2026-10-23-2.md), finding 4). Under 1.0 because the roadmap is linked from the README. Done: the line now covers only what's left, the cards' role. It also said the end-to-end test finds folders by text; it finds them by role and name (`e2e/demo.spec.ts`), so that went too
 - [x] Show the MCP server on the landing page. The page was written on 2026-10-18, before Phase 4, and still described only AI descriptions, AI search, and folders, while the README led with Claude Code and Cursor. Under 1.0 because it's the first thing a visitor sees, and one who isn't signed in has no other way to find `/connect`: guests can't make tokens, and the only link is in the dashboard. Done: the subtitle says Claude Code and Cursor can search your snippets, an MCP card replaces the Folders one (the subtitle and the demo already cover folders), and a hand-written Claude Code exchange under the AI search example shows `search_snippets` finding Debounce. Its data sits in `src/lib/landing-samples.ts`, and a test checks it points at a sample that exists
 - [x] Decide the case study's place. Done: it's off 1.0 and isn't maintained. Claude generates one only when Ryan asks ([0036](./adr/0036-generate-the-case-study-on-request-and-keep-it-off-1-0.md))
-- [x] Tag `v1.0`. Done: on `279d53c`, on 2026-11-06, after CI passed on that commit
-- [ ] Rewrite this roadmap around whatever comes next, if anything does
+- [x] A security pass before the tag. Row-level security on every table ([0037](./adr/0037-turn-on-row-level-security-with-no-policies.md)). On GitHub: secret scanning, push protection (it refuses a push containing a key), Dependabot alerts, and a "Protect main" ruleset that blocks force pushes to `main` and deleting it. Those live in the repo's settings, so this line is their record. A monthly spend limit on the Anthropic key, as a backstop while the shared ceiling on demo AI calls stays Parked. `package.json` moved to `1.0.0` to match what the MCP server reports ([audit](./audits/2026-10-23.md), finding 5)
+- [ ] Tag `v1.0`, then rewrite this roadmap around whatever comes next, if anything does
 
 ## Done
 
 ### Phase 0: Foundation and security
 
 - [x] Engineering docs: architecture overview, decision records, development guide
-- [x] Disable the Supabase Data API, or enable RLS on every table ([0003](./adr/0003-supabase-postgres-with-prisma-5.md)). Done by turning the Data API off in the Supabase dashboard; RLS is still off, so turning the API back on reopens the gap
+- [x] Disable the Supabase Data API, or enable RLS on every table ([0003](./adr/0003-supabase-postgres-with-prisma-5.md)). Done by turning the Data API off in the Supabase dashboard. RLS followed on 2026-11-06 ([0037](./adr/0037-turn-on-row-level-security-with-no-policies.md)), so the API being on no longer exposes the tables
 - [x] Check folder ownership when creating or updating a snippet ([0006](./adr/0006-folders-as-optional-one-to-many.md))
 - [x] Make snippet PATCH a true partial update: it writes `folderId ?? null`, so a request that leaves out `folderId` quietly moves the snippet to Unorganized. Today's callers always send it, so nothing breaks yet
 - [x] Require a verified email when a sign-in account is first attached ([0009](./adr/0009-require-verified-email-for-new-accounts.md))
