@@ -35,7 +35,8 @@ The identity comes first, so the screenshots and the README show the finished lo
 - [x] Correct the Parked line on accessible names: it says the `⋯` button has no label, and it has had one since Phase 5 ([audit](./audits/2026-10-23-2.md), finding 4). Under 1.0 because the roadmap is linked from the README. Done: the line now covers only what's left, the cards' role. It also said the end-to-end test finds folders by text; it finds them by role and name (`e2e/demo.spec.ts`), so that went too
 - [x] Show the MCP server on the landing page. The page was written on 2026-10-18, before Phase 4, and still described only AI descriptions, AI search, and folders, while the README led with Claude Code and Cursor. Under 1.0 because it's the first thing a visitor sees, and one who isn't signed in has no other way to find `/connect`: guests can't make tokens, and the only link is in the dashboard. Done: the subtitle says Claude Code and Cursor can search your snippets, an MCP card replaces the Folders one (the subtitle and the demo already cover folders), and a hand-written Claude Code exchange under the AI search example shows `search_snippets` finding Debounce. Its data sits in `src/lib/landing-samples.ts`, and a test checks it points at a sample that exists
 - [x] Decide the case study's place. Done: it's off 1.0 and isn't maintained. Claude generates one only when Ryan asks ([0036](./adr/0036-generate-the-case-study-on-request-and-keep-it-off-1-0.md))
-- [ ] Tag `v1.0`, then rewrite this roadmap around whatever comes next, if anything does
+- [x] Tag `v1.0`. Done: on `279d53c`, on 2026-11-06, after CI passed on that commit
+- [ ] Rewrite this roadmap around whatever comes next, if anything does
 
 ## Done
 
