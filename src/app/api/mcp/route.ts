@@ -14,6 +14,7 @@ export const POST = withErrors(async (req: Request) =>
     {
       snippets: snippetStore,
       search: {
+        countSnippets: snippetStore.count,
         listSnippets: snippetStore.list,
         increment: incrementAiUsage,
         ask: askClaude,

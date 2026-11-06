@@ -10,6 +10,7 @@ import { searchSnippets } from "@/lib/ai-search";
 export const POST = withErrors(async (req: Request) =>
   searchSnippets(
     {
+      countSnippets: snippetStore.count,
       listSnippets: snippetStore.list,
       increment: incrementAiUsage,
       ask: askClaude,

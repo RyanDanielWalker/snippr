@@ -47,6 +47,10 @@ function post(body: unknown) {
 function setup({ used = 0, reply = "[1, 0]" } = {}) {
   let count = used;
   const deps = {
+    countSnippets: vi.fn(
+      async (userId: string) =>
+        library.filter((s) => s.userId === userId).length,
+    ),
     listSnippets: vi.fn(async (userId: string) =>
       library.filter((s) => s.userId === userId),
     ),
@@ -104,6 +108,7 @@ describe("searchSnippets", () => {
       post({ query: "retry" }),
     );
     expect(await res.json()).toEqual([]);
+    expect(deps.listSnippets).not.toHaveBeenCalled();
     expect(deps.increment).not.toHaveBeenCalled();
     expect(deps.ask).not.toHaveBeenCalled();
   });
@@ -114,6 +119,14 @@ describe("searchSnippets", () => {
     expect(res.status).toBe(429);
     expect(Number(res.headers.get("Retry-After"))).toBeGreaterThan(0);
     expect(deps.ask).not.toHaveBeenCalled();
+  });
+
+  it("doesn't read the library for a request past the limit", async () => {
+    // Otherwise someone past the limit can keep making the database read every
+    // snippet's code, without ever reaching Claude.
+    const deps = setup({ used: AI_RATE_LIMITS.search.limit });
+    await searchSnippets(deps, me, post({ query: "retry" }));
+    expect(deps.listSnippets).not.toHaveBeenCalled();
   });
 
   it("holds guests to the guest limit", async () => {

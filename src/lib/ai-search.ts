@@ -18,6 +18,8 @@ import { searchSchema } from "@/lib/schemas";
  */
 
 export type AiSearchDeps = {
+  /** How many snippets the user has. */
+  countSnippets(userId: string): Promise<number>;
   /** The user's snippets. */
   listSnippets(userId: string): Promise<Snippet[]>;
   increment: IncrementUsage;
@@ -109,8 +111,7 @@ export async function searchSnippets(
   // Nothing to ask about, or nothing to search: answer without Claude, and
   // without counting it against the limit.
   if (!query.trim()) return Response.json([]);
-  const snippets = await deps.listSnippets(user.id);
-  if (snippets.length === 0) return Response.json([]);
+  if ((await deps.countSnippets(user.id)) === 0) return Response.json([]);
 
   const limit = await checkRateLimit(
     user.id,
@@ -121,6 +122,9 @@ export async function searchSnippets(
   );
   if (!limit.allowed) return tooManyRequests(limit.retryAfterSeconds);
 
+  // Read every snippet only now, so a request past the limit costs one count
+  // and not the whole library.
+  const snippets = await deps.listSnippets(user.id);
   return Response.json(
     await pickWithClaude(query, snippets, deps.ask, deps.log),
   );

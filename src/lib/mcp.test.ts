@@ -77,6 +77,7 @@ function fakeDeps(extra: Snippet[] = []) {
   const deps = {
     snippets: store,
     search: {
+      countSnippets: store.count,
       listSnippets: store.list,
       increment: vi.fn<IncrementUsage>(async () => 1),
       // Claude picks the first snippet in the list it's given.
