@@ -219,7 +219,7 @@ sequenceDiagram
     S-->>B: set session cookie, redirect to /dashboard
 ```
 
-The cookie only holds a random session token. All user data stays in the database. Accounts with the same email are linked into one user ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md)), with emails stored and matched in lowercase so casing differences between providers don't split an account ([0010](./adr/0010-store-emails-lowercased.md)). To make that safe, a provider account being attached for the first time must come with an email the provider has verified ([0009](./adr/0009-require-verified-email-for-new-accounts.md)). Failed sign-ins return to `/login` with an error code that the page turns into a readable message.
+The cookie only holds a random session token. All user data stays in the database. Accounts with the same email are linked into one user ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md)), with emails stored and matched in lowercase so casing differences between providers don't split an account ([0010](./adr/0010-store-emails-lowercased.md)). To make that safe, a provider account being attached for the first time must come with an email the provider has verified ([0009](./adr/0009-require-verified-email-for-new-accounts.md)). GitHub's and Google's tokens are used during the sign-in and never stored ([0039](./adr/0039-stop-storing-provider-tokens.md)). Failed sign-ins return to `/login` with an error code that the page turns into a readable message.
 
 ### Demo guests
 
@@ -374,6 +374,7 @@ src/
 │   ├── library-store.ts        Database side of snippets.ts and folders.ts (tested against Postgres)
 │   ├── mcp.ts                  The MCP server: token sign-in, three tools on the API's functions (tested)
 │   ├── mcp-config.ts           What to paste into each MCP client (tested)
+│   ├── provider-tokens.ts      Keeps GitHub's and Google's tokens out of the database (tested)
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits (tested)
 │   ├── request-body.ts         Reads a JSON body and checks it against a schema, or returns a 400 (tested)
 │   ├── security-headers.ts     Headers on every response, applied in next.config.ts (tested)
@@ -407,7 +408,7 @@ Secrets live in Vercel environment variables, marked Sensitive, and in a local `
 
 Every response carries the headers in `src/lib/security-headers.ts`: no site may frame Snippr, no content sniffing, a referrer policy, and a permissions policy. Vercel adds `Strict-Transport-Security`. There's no full Content Security Policy, only `frame-ancestors`; [0031](./adr/0031-send-security-headers-without-a-full-csp.md) explains why.
 
-Every push runs `.github/workflows/ci.yml`. Vercel builds at the same time, and its Deployment Checks hold a production build until the test jobs pass ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). That's a Vercel dashboard setting, so the repo can't show it's on. A third job audits the production dependencies and doesn't hold anything up ([0026](./adr/0026-audit-production-dependencies-in-ci.md)). If a push never starts a run, `gh workflow run ci.yml` starts one by hand.
+Every push runs `.github/workflows/ci.yml`. Vercel builds at the same time, and its Deployment Checks hold a production build until the test jobs pass ([0020](./adr/0020-ci-on-github-actions-gating-production-deploys.md)). That's a Vercel dashboard setting, so the repo can't show it's on. It holds the code, not a migration, which runs during the build, so commits with a migration go to a branch first ([0038](./adr/0038-push-commits-with-a-migration-to-a-branch-first.md)). A third job audits the production dependencies and doesn't hold anything up ([0026](./adr/0026-audit-production-dependencies-in-ci.md)). If a push never starts a run, `gh workflow run ci.yml` starts one by hand.
 
 Production's `DATABASE_URL` lives only in Vercel. Production builds use it to apply pending migrations before `next build`; preview and local builds skip that step ([0016](./adr/0016-apply-migrations-in-the-production-build.md)). The npm scripts that connect (`dev`, `start`, `db:migrate`, `db:studio`) run `scripts/check-db.mjs` first, which refuses any database that isn't on this machine unless `ALLOW_REMOTE_DB=1` is set in the shell ([0015](./adr/0015-local-postgres-in-docker-for-development.md)).
 

@@ -69,5 +69,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0035](./0035-correct-the-record-on-the-2026-11-06-app-sessions.md) | Correct the record on the 2026-11-06 app sessions | Accepted |
 | [0036](./0036-generate-the-case-study-on-request-and-keep-it-off-1-0.md) | Generate the case study on request, and keep it off 1.0 | Accepted |
 | [0037](./0037-turn-on-row-level-security-with-no-policies.md) | Turn on row-level security, with no policies | Accepted |
+| [0038](./0038-push-commits-with-a-migration-to-a-branch-first.md) | Push commits with a migration to a branch first | Accepted |
+| [0039](./0039-stop-storing-provider-tokens.md) | Stop storing GitHub and Google tokens | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
