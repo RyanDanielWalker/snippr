@@ -66,5 +66,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0032](./0032-generate-readme-images-from-the-app-with-playwright.md) | Generate the README's images from the running app with Playwright | Accepted |
 | [0033](./0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md) | Write docs to be learned from, and leave nothing for Ryan to fill in | Accepted |
 | [0034](./0034-block-git-push-and-env-reads-with-permission-rules.md) | Stop Claude from pushing or reading `.env` with permission rules | Accepted |
+| [0035](./0035-correct-the-record-on-the-2026-11-06-app-sessions.md) | Correct the record on the 2026-11-06 app sessions | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
