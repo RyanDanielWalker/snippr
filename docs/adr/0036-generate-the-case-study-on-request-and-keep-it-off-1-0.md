@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-06
+- **Edited:** 2026-11-06, to remove personal details. The decision didn't change.
 - **Related:** `docs/ROADMAP.md`, `ab57f8b`, [0035](./0035-correct-the-record-on-the-2026-11-06-app-sessions.md)
 
 ## In plain English
@@ -12,7 +13,7 @@ Snippr's 1.0 no longer needs a case study. Ryan is its only expected reader, and
 
 The roadmap listed a case study as part of finishing 1.0. A Claude app session dropped it on 2026-11-06 (`ab57f8b`). Ryan couldn't confirm that decision when he reviewed the session, so ADR 0035 put the item back until he decided.
 
-He has now decided, in his own terms. He doesn't need to write it, and no one but him is going to read it. Its job is to keep him current on the decisions and technologies, and to keep him ready for interviews. It shouldn't stop him from shipping, and it shouldn't be a living document.
+He has now decided, in his own terms. He doesn't need to write it, and no one but him is going to read it. Its job is to keep him current on the decisions and technologies. It shouldn't stop him from shipping, and it shouldn't be a living document.
 
 A *living document* is one that gets updated whenever the thing it describes changes. `docs/ARCHITECTURE.md` is one: when the code changes, that doc changes in the same set of commits. A case study written that way would add a chore to every change.
 

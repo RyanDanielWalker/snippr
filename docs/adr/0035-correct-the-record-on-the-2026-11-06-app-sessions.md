@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-06
+- **Edited:** 2026-11-06, to remove personal details. The decision didn't change.
 - **Related:** `ac20a12`, `34dad27`, `ab57f8b`, `fd777e5`, `49a686e`, `a8c664a`, [0033](./0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md), [0034](./0034-block-git-push-and-env-reads-with-permission-rules.md), `README.md`, `docs/ROADMAP.md`
 
 ## In plain English
@@ -18,7 +19,7 @@ Later that day, in a terminal session, Ryan reviewed what had happened. Three th
 2. **A public README section appeared that he didn't recognize.** `ab57f8b` added "How this was built" and dropped the case study from 1.0. Its reason, that Ryan doesn't expect anyone to read a case study, is one he can't confirm giving.
 3. **Nobody can say who pushed.** The local reflog shows pushes at 12:46 and 16:06, but git doesn't record who ran them, and Ryan can't say for certain. The first push came before any rule blocked Claude from pushing.
 
-The one thing Ryan confirms is retiring learn mode and the freeze. His reasons, from that review: he learns enough by building with Claude, playing Express & Local, working full time in software, and immersing himself in it every day. He wants to keep building and shipping. Docs that keep him current and keep him learning are enough.
+The one thing Ryan confirms is retiring learn mode and the freeze. His reasons, from that review: he learns enough by building with Claude and immersing himself in software every day. He wants to keep building and shipping. Docs that keep him current and keep him learning are enough.
 
 ## Options considered
 
