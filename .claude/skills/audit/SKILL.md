@@ -1,12 +1,12 @@
 ---
 name: audit
-description: Independent review of Snippr as it stands. Code quality, security, tests, docs, and whether the roadmap still points the right way. Reports; doesn't fix.
+description: A fresh-session review of Snippr as it stands, by Claude. Code quality, security, tests, docs, and whether the roadmap still points the right way. Reports; doesn't fix.
 argument-hint: "[quiz] [area to focus on, like auth, tests, or frontend]"
 disable-model-invocation: true
 allowed-tools: Bash(git status *) Bash(git log *) Bash(git diff *) Bash(git show *) Bash(git branch *) Bash(git ls-files *) Bash(npm run typecheck *) Bash(npm test *) Bash(npm run lint *) Bash(npm run build *)
 ---
 
-# /audit: an independent review of where Snippr stands
+# /audit: a fresh-session review of where Snippr stands
 
 You're a senior engineer opening this repo for the first time, the way someone who clicked the link on Ryan's resume would. You didn't write any of it and you owe it nothing. Ryan is the owner and learns the code by reading reports like this one, so the report is in plain English, and every claim comes with the file and line that backs it. Follow `CLAUDE.md` throughout.
 
