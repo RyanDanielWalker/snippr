@@ -2,11 +2,11 @@
 
 This document describes how Snippr is put together **today**. For *why* it's built this way, follow the links to the [decision records](./adr/README.md). For what's changing next, see the [roadmap](./ROADMAP.md).
 
-*Last reviewed: 2026-11-08 (after ADR 0040)*
+*Last reviewed: 2026-11-08 (after ADR 0041)*
 
 ## The short version
 
-Snippr is a single Next.js 16 application deployed on Vercel. Pages render on the server and read from a Supabase Postgres database through Prisma. The browser changes data by calling a small set of JSON endpoints in the same app. Two of those endpoints call the Anthropic API for AI search and AI-written descriptions. Users sign in with GitHub or Google through NextAuth, or start a 24-hour demo as a guest without signing in. MCP clients like Claude Code and Cursor reach the same library through an MCP server in the same app, signed in with a token the user makes. Every database query is scoped to the signed-in user.
+Snippr is a single Next.js 16 application deployed on Vercel. Pages render on the server and read from a Supabase Postgres database through Prisma. The browser changes data by calling a small set of JSON endpoints in the same app. Two of those endpoints call the Anthropic API for AI search and AI-written descriptions. Users sign in with GitHub or Google through NextAuth, or start a 24-hour demo as a guest without signing in. MCP clients like Claude Code and Cursor reach the same library through an MCP server in the same app, signed in with a token the user makes. Every query that returns or changes a user's data is scoped to that user.
 
 ## System overview
 
@@ -93,16 +93,18 @@ Every Route Handler follows the same pattern. For snippets and folders it lives 
 
 1. **Who are you?** Resolve the session from its cookie, or, for the MCP server only, the user from its token ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). No user id means `401`.
 2. **Is it the right shape?** Check the body against its zod schema (`src/lib/schemas.ts`). Wrong types, missing fields, oversized fields, or malformed JSON mean `400` with an `error` message. Fields the schema doesn't list are dropped, so a body can't set `userId` ([0014](./adr/0014-validate-request-bodies-with-zod.md)).
-3. **Is it yours?** For any record addressed by id, load it and compare its `userId` to the session's. Mismatch or missing means `403`.
+3. **Is it yours?** For a record addressed by id, load it and compare its `userId` to the session's, or look it up by id and `userId` together, as revoking a token and `get_snippet` do. Mismatch or missing means `403`.
 4. **Do the work,** scoped by `userId`. Updates and deletes match on both the id and the `userId` (`where: { id, userId }`), so the database refuses someone else's row even if step 3 was skipped or the row changed hands in between. A write that matches nothing is the same `403`.
 
-Lists are always filtered with `where: { userId }`, so one user can never see another's data. Foreign keys in a request body get the same rule: when a snippet is created or updated, its `folderId` must be null or a folder you own, or the request gets a `403` (`src/lib/folder-ownership.ts`; history in [0006](./adr/0006-folders-as-optional-one-to-many.md)).
+One exception to that order: making a token refuses a demo guest with `403` before it reads the body, since no body could make that request acceptable.
+
+Lists are always filtered with `where: { userId }`, so one user can never see another's data. Foreign keys in a request body get the same rule: when a snippet is created or updated, its `folderId` must be null, left out, or a folder you own, or the request gets a `403` (`src/lib/folder-ownership.ts`; history in [0006](./adr/0006-folders-as-optional-one-to-many.md)). On create the cap comes first, so a full library answers `409` before the folder is checked.
 
 Creating a snippet when the library is full returns `409`: 50 snippets for members, 10 for demo guests ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)). The count and the insert run in one transaction behind a per-user advisory lock, so parallel creates (from an MCP client, say) can't slip past it ([0025](./adr/0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md)). Folders work the same way, with the same numbers ([0014](./adr/0014-validate-request-bodies-with-zod.md)), and MCP tokens stop at 10. Both take the same kind of lock, each with its own key prefix (`src/lib/create-lock.ts`), so a user's folder creates never wait on their snippet ones. Field limits (200-character titles, 20,000 characters of code, and so on) are listed in 0014 and kept in `src/lib/field-limits.ts`, which the UI imports too.
 
 ### Errors
 
-Every error is `{ error: string }` with a status code: the status is for programs, the message is for people and is shown as is ([0017](./adr/0017-one-error-shape-shown-inline.md)). Each handler is wrapped in `withErrors` (`src/lib/api-errors.ts`), so anything that throws is logged on the server and answered with `500`, or `502` when the Claude call failed, instead of Next's empty `500`.
+Every error from Snippr's own handlers is `{ error: string }` with a status code: the status is for programs, the message is for people and is shown as is ([0017](./adr/0017-one-error-shape-shown-inline.md)). Each handler except NextAuth's is wrapped in `withErrors` (`src/lib/api-errors.ts`), so anything that throws is logged on the server and answered with `500`, or `502` when the Claude call failed, instead of Next's empty `500`. The exception to the shape is a malformed MCP request: the MCP SDK answers it in JSON-RPC's own error shape (`{ jsonrpc, error: { code, message }, id }`) before any tool runs.
 
 | Status | Meaning |
 | --- | --- |
@@ -190,7 +192,7 @@ erDiagram
 - `DemoStart` counts demos started per IP and hour. It isn't linked to any user ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)).
 - `Account`, `Session`, and `VerificationToken` are the standard NextAuth adapter tables. `VerificationToken` is unused because there's no email sign-in.
 - Every foreign key column has an index, since Postgres doesn't add one for the referencing side. A `test:db` test (`src/lib/foreign-key-indexes.db.test.ts`) fails if a new relation arrives without its `@@index`.
-- Every table has row-level security on, with no policies. Postgres then refuses every role except the table's owner, and the app connects as the owner, so Supabase's Data API couldn't reach the tables even if it were turned on. A `test:db` test (`src/lib/row-level-security.db.test.ts`) fails if a new table forgets it ([0037](./adr/0037-turn-on-row-level-security-with-no-policies.md)).
+- Every table has row-level security on, with no policies. Postgres then refuses every ordinary role except the table's owner, and the app connects as the owner. Superusers and Supabase's `service_role` key still bypass it, so what this closes off is the Data API's public key, even if the API were turned on. A `test:db` test (`src/lib/row-level-security.db.test.ts`) fails if a new table forgets it ([0037](./adr/0037-turn-on-row-level-security-with-no-policies.md)).
 - Schema changes are SQL migrations in `prisma/migrations/`, starting from a baseline of the schema as it stood in October 2026. Production builds apply new ones before building the app ([0016](./adr/0016-apply-migrations-in-the-production-build.md)).
 
 ## Authentication
@@ -236,7 +238,7 @@ An adapter wrapper (`src/lib/guest.ts`) enforces the rest. Once `guestExpiresAt`
 
 Both features call Claude synchronously from a Route Handler. The API key never reaches the browser.
 
-All Claude calls go through `src/lib/ai.ts` ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)): one client, Claude Haiku 5.5 for both features, thinking off, a 15-second timeout and one retry. A timeout or any other failed call is a `502`. The features take its `askClaude` function as an argument, so their tests use a fake Claude.
+All Claude calls go through `src/lib/ai.ts` ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)): one client, Claude Haiku 5.5 for both features, thinking off, a 15-second timeout and one retry. A timeout or any error from the Anthropic API is a `502`. A missing `ANTHROPIC_API_KEY` is a `500`, since that's Snippr's setup and not Claude failing. The features take its `askClaude` function as an argument, so their tests use a fake Claude.
 
 - **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets. A reply that isn't one is logged and shown as no matches. The dashboard runs one search at a time and ignores a reply that arrives after a newer search or after AI mode is switched off (`src/lib/latest-only.ts`).
 - **AI descriptions** (`POST /api/snippets/describe`): sends the code and language and asks for one sentence under 15 words.
@@ -257,7 +259,7 @@ Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-feat
 
 1. The client sends `Authorization: Bearer snippr_...`. `userForToken` (`src/lib/api-tokens.ts`) hashes it and looks up the hash. No token, an unknown one, or a guest's means `401` with `WWW-Authenticate: Bearer`, before any MCP code runs.
 2. `handleMcpRequest` (`src/lib/mcp.ts`) builds a fresh server for that user and answers the JSON-RPC request as plain JSON. Nothing is kept between requests, so it works on Vercel's functions. `GET` and `DELETE` get Next's `405`.
-3. Each tool builds a `Request` for the same function the Route Handler calls and turns the `Response` back into a tool result. An error's `{ error }` message becomes the tool's error text, and a tool that throws gets the usual "Something broke" message, never the exception's.
+3. `search_snippets` and `save_snippet` each build a `Request` for the same function the Route Handler calls. `get_snippet` calls `getSnippet` directly; it has no Route Handler, since the interface already has every snippet. Each tool turns the `Response` back into a tool result. An error's `{ error }` message becomes the tool's error text, and a tool that throws gets the same message the API would send ("Something broke" or "Claude didn't answer"), never the exception's.
 
 Tokens are made and revoked on `/connect`, through `/api/tokens`, which only accepts a browser session. A token is `snippr_` and 32 random bytes, shown once; up to 10 per user; demo guests can't make any. The Connect page also shows what to paste into Claude Code and Cursor (`src/lib/mcp-config.ts`).
 
@@ -267,9 +269,9 @@ Components are styled with Tailwind, but never with its palette ([0027](./adr/00
 
 The default identity is "cut and keep" ([0028](./adr/0028-cut-and-keep-as-the-default-identity.md)): blue-black ink surfaces, warm off-white text, one tangerine accent, Space Grotesk for the wordmark and page headings (`font-display`), Geist for everything else, and Shiki's `ayu-dark` for code. The logo is `src/components/LogoMark.tsx`, which takes its colors as props so the headers, the favicon (`icon.tsx`), the Apple touch icon (`apple-icon.tsx`), and the Open Graph image all draw the same shape.
 
-Those images are drawn by `next/og` at build time and can't read CSS, so `src/lib/theme-tokens.ts` holds a copy of the default theme's colors, and a test keeps it equal to `globals.css`. The same test checks every text and background pairing the components use against WCAG AA (`src/lib/contrast.ts`). `next/og` can't use `next/font` either, so the Open Graph image loads its fonts from `assets/fonts`.
+Those images are drawn by `next/og` at build time and can't read CSS, so `src/lib/theme-tokens.ts` holds a copy of the default theme's colors, and a test keeps it equal to `globals.css`. The same test checks the main text and background pairings against WCAG AA (`src/lib/contrast.ts`). `next/og` can't use `next/font` either, so the Open Graph image loads its fonts from `assets/fonts`.
 
-The 8-bit theme is a `[data-theme="8bit"]` block in `globals.css` that overrides every color token, plus the shape and type ones ([0030](./adr/0030-commit-the-8-bit-theme-to-sweetie-16-and-pixel-ui-text.md)): the Sweetie 16 palette on a dot grid, square corners, three-pixel borders, hard shadows, buttons with a lip, Press Start 2P for headings and titles, and VT323 for interface text. Code stays in Geist Mono. The Wordmark draws pixel scissors instead of the bracket in this theme. The contrast test runs every pairing against it too, reading its values straight from the CSS ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)). The toggle (`ThemeToggle`, on the dashboard and the landing page) writes a `snippr-theme` cookie and the attribute in the browser, with no request. The root layout reads the cookie, so the server draws the page in the chosen theme from the first frame; that's also why every route is dynamic. Code is highlighted with both palettes in one pass: Shiki writes `ayu-dark` inline and the 8-bit color as `--shiki-8bit`, and one rule in `globals.css` switches to it.
+The 8-bit theme is a `[data-theme="8bit"]` block in `globals.css` that overrides every color token, plus the shape and type ones ([0030](./adr/0030-commit-the-8-bit-theme-to-sweetie-16-and-pixel-ui-text.md)): the Sweetie 16 palette on a dot grid, square corners, three-pixel borders, hard shadows, buttons with a lip, Press Start 2P for headings and titles, and VT323 for interface text. Code stays in Geist Mono. The Wordmark draws pixel scissors instead of the bracket in this theme. The contrast test runs every pairing against it too, reading its values straight from the CSS ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)). The toggle (`ThemeToggle`, on the dashboard and the landing page) writes a `snippr-theme` cookie and the attribute in the browser, with no request. The root layout reads the cookie, so the server draws the page in the chosen theme from the first frame; that's also why every page is dynamic, though the generated images are still made at build time. Code is highlighted with both palettes in one pass: Shiki writes `ayu-dark` inline and the 8-bit color as `--shiki-8bit`, and one rule in `globals.css` switches to it.
 
 ## Code map
 
@@ -322,19 +324,19 @@ src/
 │           ├── search/         AI search (logic in lib/ai-search.ts)
 │           └── describe/       AI descriptions (logic in lib/ai-describe.ts)
 ├── components/
-│   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders match)
+│   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders give the cards the same ids)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
 │   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets (tested: when Unorganized shows)
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; Enter or Space opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails
-│   ├── useCopy.ts              Copy button shared by the card and preview, toast if it fails
+│   ├── useCopy.ts              Copy button shared by the card, the preview, and the Connect page, toast if it fails
 │   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form
 │   ├── useDialogFocus.ts       Focus into the preview and form, the page behind inert while open, focus back on close
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing
-│   ├── accessible-names.test.ts  Every field and button on the forms, preview, and dashboard has a name
+│   ├── accessible-names.test.ts  Fields and buttons on the snippet forms, preview, and dashboard have names, except the folder name inputs, which only appear after a click
 │   ├── LogoMark.tsx            The logo, colors passed in, and the Wordmark for page headers
 │   ├── ThemeToggle.tsx         ThemeProvider and the 8-bit toggle: cookie and data-theme, in the browser
 │   └── LoginButton.tsx         OAuth buttons
@@ -363,7 +365,7 @@ src/
 │   ├── folder-cap.ts           Folder cap: 50 per member, 10 per guest (tested)
 │   ├── folder-delete.ts        What the folder menu says before and after a delete (tested)
 │   ├── folder-name-input.ts    What Enter and blur do in the folder name input (tested)
-│   ├── folders.ts              /api/folders: ownership, cap, validation, in order (tested)
+│   ├── folders.ts              /api/folders: sign-in, validation, then the cap or ownership (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
 │   ├── highlight.ts            Shiki passed in: card previews, both themes' colors, null instead of a throw (tested)
@@ -382,7 +384,7 @@ src/
 │   ├── site.ts                 Site URL, name, and description for metadata (tested)
 │   ├── snippet-form.ts         The snippet form's starting fields, change check, and request body (tested)
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
-│   ├── snippets.ts             /api/snippets: ownership, cap, validation, in order (tested)
+│   ├── snippets.ts             /api/snippets: sign-in, validation, then the cap or ownership (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
 │   ├── shiki-8bit.ts           The 8-bit theme's syntax colors (tested: AA on the code background)
 │   ├── theme.ts                The theme list and its cookie (tested)
@@ -391,7 +393,7 @@ src/
 │   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
 │   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
 │   └── prisma.ts               Prisma client singleton
-└── types/next-auth.d.ts        Adds user.id to the Session type
+└── types/next-auth.d.ts        Adds user.id and user.isGuest to the Session type, and guestExpiresAt to the adapter's user
 vitest.config.mts               npm test: the *.test.ts files next to the code
 vitest.db.config.mts            npm run test:db: *.db.test.ts against a local snippr_test
 ```
@@ -414,4 +416,4 @@ Production's `DATABASE_URL` lives only in Vercel. Production builds use it to ap
 
 ## Known limitations
 
-The October 2026 audit findings live in the [roadmap](./ROADMAP.md), each linked to the decision record that explains it. The most important one: AI search has no end-to-end coverage. Its handler is tested against a fake Claude, but no test drives it through the browser. `npm run readme-images` does, against the real Claude, to take the README's screenshot, but it runs by hand and not in CI. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
+The October 2026 audit findings are in `docs/audits/` and tracked in the [roadmap](./ROADMAP.md), each linked to its audit and, where there is one, its decision record. The most important one: AI search has no end-to-end coverage. Its handler is tested against a fake Claude, but no test drives it through the browser. `npm run readme-images` does, against the real Claude, to take the README's screenshot, but it runs by hand and not in CI. Demo guests also write anonymously to the production database, bounded by the per-IP limit, the snippet and folder caps, and the field limits.
