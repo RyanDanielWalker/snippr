@@ -6,7 +6,7 @@ This roadmap came out of an October 2026 audit of the code and the live site. Th
 
 ## 1.1
 
-1.0 shipped on 2026-11-06, tagged `v1.0` on `2bc7043`. 1.1 is two items from Parked ([0040](./adr/0040-close-1-0-and-scope-1-1-to-two-demo-items.md)), and it's done when both are ticked.
+1.0 shipped on 2026-11-06, tagged `v1.0` on `2bc7043`. 1.1 is two items from Parked ([0040](./adr/0040-close-1-0-and-scope-1-1-to-two-demo-items.md)), then a version bump and a tag ([0041](./adr/0041-give-1-1-a-version-bump-and-a-tag.md)). It's done when all three are ticked.
 
 Everything else is in [Parked](#parked). Parked is a backlog, not a holding pen: anything there can be picked up whenever it's worth doing.
 
@@ -16,6 +16,7 @@ Phases run in order. Items inside a phase can ship in any order. Each item lands
 
 - [ ] A daily ceiling on AI calls across all demo guests ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)). The per-guest and per-IP limits bound each guest, but guests last a day, so they stack from one address, and many addresses multiply that. Today the monthly spend limit on the Anthropic key is the only hard stop, and it stops AI for every user at once. First on this list because the checklist below sends more guests to the AI features. Two things to settle before building it are under [Open decisions](#open-decisions)
 - [ ] A "Things to try" checklist in demo mode, so a visitor who glances for a minute still finds the parts that aren't visible on the page: dragging a snippet into a folder (nothing on a card says it moves), turning on ✦ AI search and pressing Enter (typing alone only filters), letting Claude write a description, and `/connect` for the MCP server. Each line ticks itself off when the visitor does it, and a closed checklist stays closed, remembered in a cookie like the theme and sidebar. A checklist, not a step-by-step tour: tours get clicked through without being read, they put another focus layer on top of the dialogs' `inert` handling, and tooltips pinned to elements break at 375px and in the 8-bit theme's sizes. On a phone the drag line points at the folder field in Edit, since touch drag isn't supported.
+- [ ] Move the version to `1.1.0` and tag it `v1.1` ([0041](./adr/0041-give-1-1-a-version-bump-and-a-tag.md)). One commit changes `package.json`, the lockfile, and what the MCP server reports (`src/lib/mcp.ts`). Once that commit has passed CI and deployed, it gets the tag, and Ryan pushes the tag. Last on this list because it marks the other two as shipped
 
 ## Done
 

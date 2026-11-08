@@ -72,5 +72,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0038](./0038-push-commits-with-a-migration-to-a-branch-first.md) | Push commits with a migration to a branch first | Accepted |
 | [0039](./0039-stop-storing-provider-tokens.md) | Stop storing GitHub and Google tokens | Accepted |
 | [0040](./0040-close-1-0-and-scope-1-1-to-two-demo-items.md) | Close 1.0, and scope 1.1 to two demo items | Accepted |
+| [0041](./0041-give-1-1-a-version-bump-and-a-tag.md) | Give 1.1 a version bump and a tag | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
