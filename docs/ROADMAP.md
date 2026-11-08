@@ -130,10 +130,11 @@ Small items pulled forward while the README waits on screenshots.
 
 ### After 1.0
 
-The last two findings from the security pass, settled right after the tag.
+Settled after the tag, starting with the last two findings from the security pass.
 
 - [x] Production migrations ran before CI had passed. Decided: commits with a migration go to a branch first, a habit rather than code ([0038](./adr/0038-push-commits-with-a-migration-to-a-branch-first.md))
 - [x] GitHub and Google tokens were stored and never used. Done: new sign-ins don't store them, and a migration cleared the existing ones ([0039](./adr/0039-stop-storing-provider-tokens.md)). Session tokens are still stored raw (Parked)
+- [x] Try again on the error page did nothing. `src/app/error.tsx` called `unstable_retry`, a prop Next 16.4.2 doesn't pass, so a click threw in the browser and the visitor stayed on the error page. It calls `retry` now, and a test presses the button. Found while re-reviewing `ARCHITECTURE.md`, and confirmed by clicking it on a production build before and after the fix
 
 ## Open decisions
 

@@ -15,10 +15,10 @@ import { useEffect } from "react";
  */
 export default function ErrorPage({
   error,
-  unstable_retry,
+  retry,
 }: {
   error: Error & { digest?: string };
-  unstable_retry: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     console.error(error);
@@ -36,7 +36,7 @@ export default function ErrorPage({
         <div className="flex flex-wrap items-center justify-center gap-4">
           <button
             type="button"
-            onClick={() => unstable_retry()}
+            onClick={() => retry()}
             className="bg-inverse text-inverse-fg shadow-press case-control font-medium rounded-box px-4 py-2 hover:bg-inverse-hover transition"
           >
             Try again

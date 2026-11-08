@@ -1,15 +1,49 @@
-import { createElement } from "react";
+import {
+  Children,
+  createElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import ErrorPage from "@/app/error";
 
+// Lets a test call ErrorPage as a plain function and read its button.
+vi.mock("react", async (original) => ({
+  ...(await original<typeof import("react")>()),
+  useEffect: () => {},
+}));
+
 function render(error: Error & { digest?: string }) {
-  return renderToString(
-    createElement(ErrorPage, { error, unstable_retry: () => {} }),
-  );
+  return renderToString(createElement(ErrorPage, { error, retry: () => {} }));
+}
+
+type Button = ReactElement<{ onClick(): void }>;
+
+function findButton(node: ReactNode): Button | null {
+  if (!isValidElement(node)) return null;
+  if (node.type === "button") return node as Button;
+  const { children } = node.props as { children?: ReactNode };
+  for (const child of Children.toArray(children)) {
+    const found = findButton(child);
+    if (found) return found;
+  }
+  return null;
 }
 
 describe("the error page", () => {
+  it("calls Next's retry prop when Try again is clicked", () => {
+    // Next passes only `error`, `reset`, and `retry`. Calling any other name
+    // throws in the browser and leaves the visitor on this page.
+    const retry = vi.fn();
+    const button = findButton(ErrorPage({ error: new Error("boom"), retry }));
+
+    expect(button).not.toBeNull();
+    button?.props.onClick();
+    expect(retry).toHaveBeenCalledOnce();
+  });
+
   it("offers a retry and a way back home", () => {
     const html = render(new Error("boom"));
 
