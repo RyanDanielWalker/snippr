@@ -326,7 +326,7 @@ src/
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders give the cards the same ids)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
-│   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets (tested: when Unorganized shows)
+│   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets (tested: when Unorganized shows, the count's color under a drag)
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; Enter or Space opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails

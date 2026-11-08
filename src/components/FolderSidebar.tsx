@@ -14,11 +14,16 @@ function DroppableFolder({
   id,
   selected,
   onClick,
+  count,
+  countClassName = "",
   children,
 }: {
   id: string;
   selected: boolean;
   onClick: () => void;
+  /** Drawn here because its color depends on whether something is over it. */
+  count: number;
+  countClassName?: string;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -36,6 +41,11 @@ function DroppableFolder({
       }`}
     >
       {children}
+      <span
+        className={`text-xs ${isOver ? "text-accent-fg" : "text-fg-subtle"} ${countClassName}`}
+      >
+        {count}
+      </span>
     </button>
   );
 }
@@ -279,9 +289,9 @@ export default function FolderSidebar({
           id="unorganized"
           selected={selectedFolderId === "unorganized"}
           onClick={() => onSelectFolder("unorganized")}
+          count={unorganizedCount}
         >
           <span>Unorganized</span>
-          <span className="text-xs text-fg-subtle">{unorganizedCount}</span>
         </DroppableFolder>
       )}
 
@@ -319,11 +329,10 @@ export default function FolderSidebar({
               id={folder.id}
               selected={selectedFolderId === folder.id}
               onClick={() => onSelectFolder(folder.id)}
+              count={folder._count.snippets}
+              countClassName="group-hover:opacity-0 group-has-focus-visible:opacity-0 pointer-coarse:mr-6 transition"
             >
               <span className="truncate pr-6">{folder.name}</span>
-              <span className="text-xs text-fg-subtle group-hover:opacity-0 group-has-focus-visible:opacity-0 pointer-coarse:mr-6 transition">
-                {folder._count.snippets}
-              </span>
             </DroppableFolder>
           )}
 
