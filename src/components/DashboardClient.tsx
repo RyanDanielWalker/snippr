@@ -42,6 +42,12 @@ type Props = {
   sidebarCollapsed?: boolean;
 };
 
+// The chip still glides home, but dnd-kit's default also hides the card by
+// writing to its inline opacity, then puts back the value it saved 250ms
+// earlier. A move that finished by then gets its full opacity overwritten with
+// the dimmed one, and React never corrects it because its own value is unchanged.
+const DROP_ANIMATION = { sideEffects: null };
+
 export default function DashboardClient({
   snippets,
   folders,
@@ -496,7 +502,7 @@ export default function DashboardClient({
             </div>
           </div>
 
-          <DragOverlay>
+          <DragOverlay dropAnimation={DROP_ANIMATION}>
             {draggedSnippet ? (
               <div className="bg-surface rounded-panel p-5 border border-accent shadow-lifted opacity-90 cursor-grabbing">
                 <div className="flex items-start justify-between gap-4">

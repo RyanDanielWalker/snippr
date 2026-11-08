@@ -129,6 +129,18 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   const frontend = page
     .locator("aside")
     .getByRole("button", { name: /^Frontend/ });
+  // The next animation is the drop's. Stretching it from 250ms makes sure the
+  // move lands first, which is the order that used to leave the card dimmed.
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (keyframes, options) {
+      Element.prototype.animate = animate;
+      return animate.call(this, keyframes, {
+        ...(options as KeyframeAnimationOptions),
+        duration: 2000,
+      });
+    };
+  });
   await card("Slugify").getByRole("heading").hover();
   await page.mouse.down();
   const target = await frontend.boundingBox();
@@ -148,6 +160,9 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(
     card("Slugify").getByText("Frontend", { exact: true }),
   ).toBeVisible();
+  // Once the drop has finished animating, the card is back to full strength.
+  await expect(page.locator(".shadow-lifted")).toHaveCount(0);
+  await expect(card("Slugify")).toHaveCSS("opacity", "1");
   await frontend.click();
   await expect(
     page.getByRole("heading", { name: "Frontend", level: 2 }),
