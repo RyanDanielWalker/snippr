@@ -286,6 +286,9 @@ export default function DashboardClient({
               {user.isGuest ? "Demo" : user.email}
             </span>
             {user.image && (
+              // A 32px avatar is never the page's largest paint, so next/image's
+              // resizing isn't worth keeping a list of each provider's image hosts.
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={user.image}
                 // Decorative: the email beside it (from sm up) says who this is.
