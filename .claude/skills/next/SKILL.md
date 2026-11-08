@@ -31,8 +31,8 @@ Committed but not pushed:
 ## 2. Pick the item
 
 - If the arguments name an item, do that one.
-- Otherwise read `docs/ROADMAP.md` and take the first unchecked item in the earliest phase of the 1.0 milestone. Parked items are never picked automatically.
-- If every 1.0 item is ticked, stop and say so. Don't start on Parked work without being asked.
+- Otherwise read `docs/ROADMAP.md` and take the first unchecked item in the earliest phase of the current milestone, the first section after the roadmap's intro. Parked items are never picked automatically.
+- If every item in the current milestone is ticked, stop and say so. Don't start on Parked work without being asked.
 - Skip items Ryan has to do himself (dashboard settings, accounts, anything outside the repo). List them in one line so they don't get forgotten.
 - Say which item you picked and why, in one sentence.
 
@@ -53,7 +53,7 @@ Read the ADRs the item links to, the code it touches, and any tests nearby. For 
 
 ## 5. Keep the docs true
 
-- Tick the roadmap item. Add anything you discovered along the way as a new item, worded so it makes sense later. It goes under the current phase if a visitor would hit it before `v1.0`, otherwise under Parked; say which in the report.
+- Tick the roadmap item. Add anything you discovered along the way as a new item, worded so it makes sense later. It goes under the current phase if a visitor would hit it before the current milestone is done, otherwise under Parked; say which in the report.
 - Fix `docs/ARCHITECTURE.md` or `docs/DEVELOPMENT.md` if this change made them wrong. Ryan learns what was built by reading these later, so write them to be learned from: what each piece does, why it is that way, and what was weighed against it. Every new term gets a plain definition and a small example.
 - ADRs are append-only. A new decision or a change to an old one gets a new ADR that links back. Never edit an accepted one. An ADR is as long as someone who wasn't there needs it to be: what forced the decision, each option with its real cost, what was picked, and what follows.
 - Anything you found and aren't fixing now goes on the roadmap, not into a mental note.

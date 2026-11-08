@@ -65,7 +65,7 @@ Then read every file under `src/`, `scripts/`, and `prisma/`. Look for:
 ## 5. Judge the direction
 
 - Is the item `/next` would pick up next the most valuable thing right now? If not, say what is and why.
-- Is anything missing from 1.0 that an engineer would expect? Is anything in 1.0 that could wait?
+- Is anything missing from the current milestone that an engineer would expect? Is anything in it that could wait?
 - Is the work going where the goal is? Weigh what a visitor sees first (the live site, the README, a green check on the repo) against what only the author sees.
 
 ## 6. Can Ryan answer for it?
@@ -95,6 +95,6 @@ Short and in plain English. No em dashes.
 Ask Ryan, in one question, which of these he wants:
 
 - Save the report as `docs/audits/YYYY-MM-DD.md`, so the next audit can compare against it
-- Add the new findings to `docs/ROADMAP.md`, each under 1.0 or Parked, saying which and why
+- Add the new findings to `docs/ROADMAP.md`, each under the current milestone or Parked, saying which and why
 
 Do only what he picks, as `docs:` commits. **Never push.**
