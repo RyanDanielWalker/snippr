@@ -1,6 +1,6 @@
 # 0042. Leave the minimatch alert open until the lint tools can take the fix
 
-- **Status:** Accepted
+- **Status:** Superseded by [0043](./0043-dismiss-the-minimatch-alert-as-vulnerable-code-not-used.md)
 - **Date:** 2026-11-08
 - **Related:** `.github/workflows/ci.yml`, `eslint.config.mjs`, [0026](./0026-audit-production-dependencies-in-ci.md)
 

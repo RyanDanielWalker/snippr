@@ -73,6 +73,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0039](./0039-stop-storing-provider-tokens.md) | Stop storing GitHub and Google tokens | Accepted |
 | [0040](./0040-close-1-0-and-scope-1-1-to-two-demo-items.md) | Close 1.0, and scope 1.1 to two demo items | Accepted |
 | [0041](./0041-give-1-1-a-version-bump-and-a-tag.md) | Give 1.1 a version bump and a tag | Accepted |
-| [0042](./0042-leave-the-minimatch-alert-open-until-lint-tools-can-take-the-fix.md) | Leave the minimatch alert open until the lint tools can take the fix | Accepted |
+| [0042](./0042-leave-the-minimatch-alert-open-until-lint-tools-can-take-the-fix.md) | Leave the minimatch alert open until the lint tools can take the fix | Superseded by 0043 |
+| [0043](./0043-dismiss-the-minimatch-alert-as-vulnerable-code-not-used.md) | Dismiss the minimatch alert as "vulnerable code not used" | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
