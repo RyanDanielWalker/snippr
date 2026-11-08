@@ -60,8 +60,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       # Reads package-lock.json, so nothing needs installing. Dev tools are
-      # left out: they only run on our own files, and one of them (braces,
-      # under eslint-config-next) has no fixed release to move to.
+      # left out: they only run on our own files, and one of them (minimatch,
+      # under eslint-config-next) can't move to its fix yet (docs/adr/0042).
       - run: npm audit --omit=dev
 
   database:
