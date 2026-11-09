@@ -4,8 +4,10 @@ import Anthropic from "@anthropic-ai/sdk";
  * The one place Snippr talks to Claude (see docs/adr/0023).
  *
  * Search and describe both send one prompt and read back text, so that's
- * all this exposes. The features take an `AskClaude` as an argument, which
- * lets their tests hand in a fake and never reach the network.
+ * nearly all this exposes. The other piece is an optional system prompt, for
+ * a caller whose rules have to outrank the text it sends (see docs/adr/0045).
+ * The features take an `AskClaude` as an argument, which lets their tests
+ * hand in a fake and never reach the network.
  */
 
 /**
@@ -35,6 +37,7 @@ export type ClaudeReply = {
 export type AskClaude = (
   prompt: string,
   maxTokens: number,
+  system?: string,
 ) => Promise<ClaudeReply>;
 
 let client: Anthropic | undefined;
@@ -55,10 +58,11 @@ function getClient(): Anthropic {
   return client;
 }
 
-export const askClaude: AskClaude = async (prompt, maxTokens) => {
+export const askClaude: AskClaude = async (prompt, maxTokens, system) => {
   const message = await getClient().messages.create({
     model: AI_MODEL,
     max_tokens: maxTokens,
+    ...(system ? { system } : {}),
     // Haiku 5.5 thinks by default, and thinking counts against `max_tokens`.
     // Describe allows 100, which reasoning alone could use up.
     thinking: { type: "disabled" },
