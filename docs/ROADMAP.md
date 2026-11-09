@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-11-08*
+*Last updated: 2026-11-09*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -137,6 +137,7 @@ Settled after the tag, starting with the last two findings from the security pas
 - [x] Try again on the error page did nothing. `src/app/error.tsx` called `unstable_retry`, a prop Next 16.4.2 doesn't pass, so a click threw in the browser and the visitor stayed on the error page. It calls `retry` now, and a test presses the button. Found while re-reviewing `ARCHITECTURE.md`, and confirmed by clicking it on a production build before and after the fix
 - [x] A folder's snippet count nearly disappeared while a snippet was dragged over it. The count stayed `fg-subtle` while the row turned `accent`, which is 1.01:1 in the default theme and 1.28:1 in 8-bit, where WCAG AA asks for 4.5:1. Now the droppable row draws its own count and switches it to `accent-fg` while something is over it, on folders and Unorganized alike (`DroppableFolder` in `src/components/FolderSidebar.tsx`). That pairing was already in the contrast test, and a new test checks the count's color during a drag
 - [x] A card stayed dimmed after a drag to a folder, until the page reloaded or the card left the screen. When you let go, a drop animation runs: for 250ms the small chip under your cursor glides back to the card. By default dnd-kit also hides the card for those 250ms by setting its inline opacity to 0, then restores the opacity it saved at the start. If the move finished inside those 250ms, React had already set the card to full opacity, so dnd-kit overwrote that with the dimmed 0.5. React only writes a style when its own value changes, so nothing ever fixed it. The chip still glides, but dnd-kit no longer touches the card (`DROP_ANIMATION` in `src/components/DashboardClient.tsx`). The end-to-end test stretches the animation so the move always lands first, then checks the card is back at full opacity
+- [x] A `prompt` language, because prompts turned out to be a real use and were being filed under `other` ([0044](./adr/0044-add-a-prompt-language-that-wraps-and-is-described-as-a-prompt.md)). A prompt shows as plain text, wraps its long lines on cards and in the preview, and is described by Claude without being followed. The MCP tools mention prompts too
 
 ## Open decisions
 
@@ -155,6 +156,7 @@ The backlog. Each item says why it matters and what it costs.
 Real improvements that aren't part of 1.1. A few are things a visitor would see, like new themes; most are behind the scenes and not urgent at today's traffic.
 
 - OAuth for MCP clients, so claude.ai's web connectors can use Snippr without copying a token ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). Tokens cover Claude Code and Cursor today. Means an authorization server: discovery metadata, client registration, PKCE, refresh tokens. Sits on top of the token table, not in place of it
+- Say "prompt" instead of "code" when a snippet is a prompt ([0044](./adr/0044-add-a-prompt-language-that-wraps-and-is-described-as-a-prompt.md)). The form's Code label and "Paste your code here..." placeholder, and the preview's "Copy code" button, read oddly for one. Small, and only wording
 - Clear the last advisory in the full `npm audit`: `minimatch` 10.2.5, under `eslint-config-next` ([0042](./adr/0042-leave-the-minimatch-alert-open-until-lint-tools-can-take-the-fix.md)). Lint-time only, so it waits for `@typescript-eslint/typescript-estree` to accept `minimatch` 11.0.1 or later. The Dependabot alert for it is dismissed ([0043](./adr/0043-dismiss-the-minimatch-alert-as-vulnerable-code-not-used.md)) and nothing moves the lockfile automatically, so this line is the reminder to check for that and run the upgrade
 - A "last used" date on MCP tokens, and maybe an expiry, so a forgotten token is easy to spot and revoke ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). Costs a write on every MCP request
 - Embedding-based semantic search with pgvector, replacing whole-library prompts ([0005](./adr/0005-ai-features-as-synchronous-claude-calls.md)). Was Phase 4. The MCP server works with today's search, and the 50-snippet cap keeps prompts small. Pulls in the embedding provider decision (Voyage AI, OpenAI, or an open model), and removes the cost reason for the cap, so revisit [0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md) then

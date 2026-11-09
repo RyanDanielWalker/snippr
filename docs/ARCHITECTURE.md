@@ -241,7 +241,7 @@ Both features call Claude synchronously from a Route Handler. The API key never 
 All Claude calls go through `src/lib/ai.ts` ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)): one client, Claude Haiku 5.5 for both features, thinking off, a 15-second timeout and one retry. A timeout or any error from the Anthropic API is a `502`. A missing `ANTHROPIC_API_KEY` is a `500`, since that's Snippr's setup and not Claude failing. The features take its `askClaude` function as an argument, so their tests use a fake Claude.
 
 - **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets. A reply that isn't one is logged and shown as no matches. The dashboard runs one search at a time and ignores a reply that arrives after a newer search or after AI mode is switched off (`src/lib/latest-only.ts`).
-- **AI descriptions** (`POST /api/snippets/describe`): sends the code and language and asks for one sentence under 15 words.
+- **AI descriptions** (`POST /api/snippets/describe`): sends the code and language and asks for one sentence under 15 words. A snippet whose language is `prompt` gets its own wording. A saved prompt is written to be obeyed, so the request says to describe it and not follow it, marks where it starts and ends with `<saved_prompt>` tags, and repeats the request after it ([0044](./adr/0044-add-a-prompt-language-that-wraps-and-is-described-as-a-prompt.md)).
 
 Each user gets 30 calls an hour per feature, or 10 for demo guests. An empty query or empty code is answered without Claude and isn't counted. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. AI search only reads the library after that check, so a request past the limit costs one count instead of a read of every snippet. Oversized input gets a `400` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md), [0014](./adr/0014-validate-request-bodies-with-zod.md)). Describe also only accepts a language from the dropdown's list, since it goes into the prompt.
 
@@ -283,7 +283,7 @@ assets/fonts/                   Font files and licenses for the Open Graph image
 docker-compose.yml              Local Postgres for development and tests
 docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 e2e/
-├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, Tab stays in dialogs
+├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, Tab stays in dialogs, prompts wrap and code doesn't
 ├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, delete from preview and form
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
@@ -368,7 +368,7 @@ src/
 │   ├── folders.ts              /api/folders: sign-in, validation, then the cap or ownership (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
-│   ├── highlight.ts            Shiki passed in: card previews, both themes' colors, null instead of a throw (tested)
+│   ├── highlight.ts            Shiki passed in: card previews, both themes' colors, null instead of a throw, which languages wrap (tested)
 │   ├── keyword-search.ts       The dashboard's plain search box, spaces around the query ignored (tested)
 │   ├── landing-samples.ts      Sample snippets, and the AI search and MCP examples, for the landing page (tested)
 │   ├── latest-only.ts          Keeps only the latest request's answer, for AI search (tested)

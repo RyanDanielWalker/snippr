@@ -75,5 +75,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0041](./0041-give-1-1-a-version-bump-and-a-tag.md) | Give 1.1 a version bump and a tag | Accepted |
 | [0042](./0042-leave-the-minimatch-alert-open-until-lint-tools-can-take-the-fix.md) | Leave the minimatch alert open until the lint tools can take the fix | Superseded by 0043 |
 | [0043](./0043-dismiss-the-minimatch-alert-as-vulnerable-code-not-used.md) | Dismiss the minimatch alert as "vulnerable code not used" | Accepted |
+| [0044](./0044-add-a-prompt-language-that-wraps-and-is-described-as-a-prompt.md) | Add a prompt language that wraps and is described as a prompt | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
