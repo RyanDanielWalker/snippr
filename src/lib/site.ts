@@ -15,4 +15,4 @@ export const siteHeadline = "A place for the code you keep rewriting.";
 
 // Search results cut descriptions off around 155 characters; keep it under.
 export const siteDescription =
-  "Save code snippets, file them in folders, and find them again by describing what they do. Claude writes the descriptions.";
+  "Save code snippets and AI prompts, file them in folders, and find them again by describing what they do. Claude writes the descriptions.";

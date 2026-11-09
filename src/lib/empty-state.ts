@@ -62,7 +62,7 @@ export function emptyState({
   if (aiMode && aiSearched) {
     return empty(
       "Nothing in your library matches that.",
-      "Try describing what the code does, not what it's called.",
+      "Try describing what it does, not what it's called.",
     );
   }
 

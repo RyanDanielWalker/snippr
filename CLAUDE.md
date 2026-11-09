@@ -2,7 +2,7 @@
 
 # Snippr
 
-A personal code snippet manager with AI search and AI-written descriptions. Live at https://snippr.dev. This is a portfolio project: the code, the docs, and the reasoning are all part of what's being shown, so treat quality and explainability as requirements, not extras.
+A personal manager for code snippets and AI prompts, with AI search and AI-written descriptions. Live at https://snippr.dev. This is a portfolio project: the code, the docs, and the reasoning are all part of what's being shown, so treat quality and explainability as requirements, not extras.
 
 ## Read first
 

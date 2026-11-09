@@ -65,9 +65,10 @@ export default async function Home({
             A place for the code you keep rewriting.
           </h1>
           <p className="mt-6 text-lg text-fg-subtle">
-            Save snippets, file them in folders, and find them again by
-            describing what they do. Claude writes the descriptions, so you
-            don&apos;t have to. Claude Code and Cursor can search them too.
+            Save code snippets and AI prompts, file them in folders, and find
+            them again by describing what they do. Claude writes the
+            descriptions, so you don&apos;t have to. Claude Code and Cursor can
+            search them too.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link

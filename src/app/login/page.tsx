@@ -27,7 +27,9 @@ export default async function LoginPage({
             <Wordmark />
           </Link>
         </h1>
-        <p className="text-fg-subtle">Your personal code snippet manager</p>
+        <p className="text-fg-subtle">
+          Your personal manager for code snippets and AI prompts
+        </p>
         {errorMessage && (
           <p
             role="alert"
