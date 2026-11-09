@@ -35,7 +35,7 @@ export function searchPrompt(query: string, snippets: Snippet[]): string {
     )
     .join("\n");
 
-  return `You are a code snippet search engine. Given a user's search query and a list of snippets, return the indices of the most relevant snippets.
+  return `You search a personal library of code snippets and AI prompts. Given a user's search query and a list of snippets, return the indices of the most relevant snippets.
 
 User query: "${query}"
 
