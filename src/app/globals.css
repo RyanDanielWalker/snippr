@@ -279,3 +279,12 @@ code,
 .snippet-code code {
   font-family: var(--font-mono), monospace;
 }
+
+/* Prompts are paragraphs, so they wrap instead of scrolling sideways (ADR
+   0044). Line breaks the author typed stay. The class is on Shiki's wrapper
+   or on the plain <pre> shown without it, so both are covered. */
+.wrap-lines,
+.wrap-lines pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

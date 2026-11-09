@@ -5,7 +5,7 @@ import { codeToHtml } from "shiki";
 import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
-import { highlightCode } from "@/lib/highlight";
+import { highlightCode, lineWrapClass } from "@/lib/highlight";
 import type { Snippet } from "@/lib/library-types";
 
 export default function SnippetModal({
@@ -100,11 +100,13 @@ export default function SnippetModal({
           {html ? (
             // Shiki escapes the code, so this is its markup and nothing else.
             <div
-              className="shiki-wrapper rounded-box overflow-hidden text-sm"
+              className={`shiki-wrapper rounded-box overflow-hidden text-sm ${lineWrapClass(snippet.language)}`}
               dangerouslySetInnerHTML={{ __html: html }}
             />
           ) : (
-            <pre className="bg-code rounded-box p-4 text-sm text-fg-muted font-mono overflow-x-auto">
+            <pre
+              className={`bg-code rounded-box p-4 text-sm text-fg-muted font-mono overflow-x-auto ${lineWrapClass(snippet.language)}`}
+            >
               <code>{snippet.code}</code>
             </pre>
           )}

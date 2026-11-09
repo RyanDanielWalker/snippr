@@ -37,9 +37,21 @@ export type CodeToHtml = (
   },
 ) => Promise<string>;
 
-/** Shiki has no "other"; plain text is its name for no highlighting. */
+/**
+ * Shiki has no "other" or "prompt"; plain text is its name for no
+ * highlighting. A prompt stays plain so it looks the way it was written.
+ */
 export function shikiLanguage(language: string): string {
-  return language === "other" ? "text" : language;
+  return language === "other" || language === "prompt" ? "text" : language;
+}
+
+/**
+ * The class that wraps long lines, for the element around a snippet's text.
+ * Only prompts: they are paragraphs, where code's line breaks mean something
+ * and a sideways scroll is the better deal (ADR 0044).
+ */
+export function lineWrapClass(language: string): string {
+  return language === "prompt" ? "wrap-lines" : "";
 }
 
 /** The start of the code, as much as a card has room for. */

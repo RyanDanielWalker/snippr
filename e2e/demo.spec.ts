@@ -220,4 +220,36 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(
     card("Slugify").getByText("Frontend", { exact: true }),
   ).toBeHidden();
+
+  // A prompt wraps its long lines and code doesn't (ADR 0044). The class is a
+  // unit test's job; whether a browser really lays it out that way needs a
+  // browser. The code half shows the measurement can tell the two apart.
+  const longLine = "Summarize the notes below in plain English. ".repeat(12);
+  const scrollsSideways = (pre: Locator) =>
+    pre.evaluate((el) => el.scrollWidth > el.clientWidth);
+  for (const [title, language, sideways] of [
+    ["Long prompt", "prompt", false],
+    ["Long code", "typescript", true],
+  ] as const) {
+    await page.getByRole("button", { name: "+ New snippet" }).click();
+    await newForm.getByLabel("Title", { exact: true }).fill(title);
+    await newForm
+      .getByLabel("Language", { exact: true })
+      .selectOption(language);
+    await newForm.getByLabel("Code", { exact: true }).fill(longLine);
+    await page.getByRole("button", { name: "Save snippet" }).click();
+    await expect(newForm).toBeHidden();
+
+    expect(await scrollsSideways(card(title).locator("pre"))).toBe(sideways);
+
+    // The preview highlights in the browser, so wait for Shiki's <pre>.
+    await card(title).focus();
+    await page.keyboard.press("Enter");
+    const longPreview = page.getByRole("dialog", { name: title });
+    const pre = longPreview.locator(".shiki-wrapper pre");
+    await expect(pre).toBeVisible();
+    expect(await scrollsSideways(pre)).toBe(sideways);
+    await page.keyboard.press("Escape");
+    await expect(longPreview).toBeHidden();
+  }
 });

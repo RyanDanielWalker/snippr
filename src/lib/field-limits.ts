@@ -17,6 +17,7 @@ export const LANGUAGES = [
   "sql",
   "bash",
   "json",
+  "prompt",
   "other",
 ] as const;
 

@@ -6,6 +6,7 @@ import {
   SHIKI_THEMES,
   cardPreviewCode,
   highlightCode,
+  lineWrapClass,
   shikiLanguage,
   withCardHtml,
   type CodeToHtml,
@@ -39,9 +40,18 @@ describe("cardPreviewCode", () => {
 });
 
 describe("shikiLanguage", () => {
-  it("maps other to plain text and leaves the rest", () => {
+  it("maps other and prompt to plain text and leaves the rest", () => {
     expect(shikiLanguage("other")).toBe("text");
+    expect(shikiLanguage("prompt")).toBe("text");
     expect(shikiLanguage("python")).toBe("python");
+  });
+});
+
+describe("lineWrapClass", () => {
+  it("wraps prompts and leaves code and other alone", () => {
+    expect(lineWrapClass("prompt")).toBe("wrap-lines");
+    expect(lineWrapClass("python")).toBe("");
+    expect(lineWrapClass("other")).toBe("");
   });
 });
 

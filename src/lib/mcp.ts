@@ -29,9 +29,9 @@ export type McpDeps = {
 
 type SignedIn = NonNullable<ApiUser>;
 
-const INSTRUCTIONS = `Snippr is the user's own library of code snippets.
-Search it when the user asks for code they may have saved before, and save
-to it when they ask to keep something. Every snippet belongs to the user.`;
+const INSTRUCTIONS = `Snippr is the user's own library of code snippets and AI prompts.
+Search it when the user asks for code or a prompt they may have saved before,
+and save to it when they ask to keep something. Every snippet belongs to the user.`;
 
 export async function handleMcpRequest(
   deps: McpDeps,
@@ -143,8 +143,14 @@ export function mcpServer(deps: McpDeps, user: SignedIn): McpServer {
       // the same limits and messages as the interface.
       inputSchema: {
         title: z.string().describe("A short name for the snippet."),
-        code: z.string().describe("The code, exactly as it should be kept."),
-        language: z.enum(LANGUAGES).describe('Use "other" if none fit.'),
+        code: z
+          .string()
+          .describe("The code or prompt, exactly as it should be kept."),
+        language: z
+          .enum(LANGUAGES)
+          .describe(
+            'Use "prompt" for a prompt written for an AI, "other" if none fit.',
+          ),
         description: z
           .string()
           .optional()

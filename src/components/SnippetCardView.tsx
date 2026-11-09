@@ -1,4 +1,5 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
+import { lineWrapClass } from "@/lib/highlight";
 
 export type SnippetCardData = {
   title: string;
@@ -57,11 +58,13 @@ export default function SnippetCardView({
       {snippet.codeHtml ? (
         // Shiki escapes the code, so this is its markup and nothing else.
         <div
-          className="snippet-code bg-code rounded-box text-sm overflow-hidden"
+          className={`snippet-code bg-code rounded-box text-sm overflow-hidden ${lineWrapClass(snippet.language)}`}
           dangerouslySetInnerHTML={{ __html: snippet.codeHtml }}
         />
       ) : (
-        <pre className="bg-code rounded-box p-4 text-sm text-fg-muted font-mono overflow-x-auto max-h-40">
+        <pre
+          className={`bg-code rounded-box p-4 text-sm text-fg-muted font-mono overflow-x-auto max-h-40 ${lineWrapClass(snippet.language)}`}
+        >
           <code>{snippet.code}</code>
         </pre>
       )}

@@ -105,6 +105,10 @@ describe("createSnippetSchema", () => {
     expect(
       errorFor(createSnippetSchema, { ...validSnippet, language: "cobol" }),
     ).toBe("Pick a language from the list.");
+    expect(
+      createSnippetSchema.safeParse({ ...validSnippet, language: "prompt" })
+        .success,
+    ).toBe(true);
   });
 
   it("rejects the wrong types with a readable message", () => {
