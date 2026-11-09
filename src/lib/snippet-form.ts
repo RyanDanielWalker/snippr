@@ -59,6 +59,24 @@ export function hasRequired(fields: SnippetFormFields): boolean {
   return fields.title !== "" && fields.code !== "";
 }
 
+/**
+ * What the interface calls a snippet's text, so a prompt isn't asked to be
+ * code. Only the words people read: the field is `code` for every snippet.
+ */
+export function bodyWording(language: string) {
+  return language === "prompt"
+    ? {
+        label: "Prompt",
+        placeholder: "Paste your prompt here...",
+        copy: "Copy prompt",
+      }
+    : {
+        label: "Code",
+        placeholder: "Paste your code here...",
+        copy: "Copy code",
+      };
+}
+
 /** The body for `POST` and `PATCH /api/snippets`, minus the id. */
 export function requestBody(fields: SnippetFormFields) {
   return {

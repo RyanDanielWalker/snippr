@@ -7,6 +7,7 @@ import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
 import { highlightCode, lineWrapClass } from "@/lib/highlight";
 import type { Snippet } from "@/lib/library-types";
+import { bodyWording } from "@/lib/snippet-form";
 
 export default function SnippetModal({
   snippet,
@@ -112,7 +113,7 @@ export default function SnippetModal({
           )}
           {html === null && (
             <p className="mt-2 text-xs text-fg-subtle">
-              Highlighting didn&apos;t load, so this is the plain code.
+              Highlighting didn&apos;t load, so this is plain text.
             </p>
           )}
         </div>
@@ -147,7 +148,7 @@ export default function SnippetModal({
               onClick={copy}
               className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition shrink-0"
             >
-              {copied ? "✓ Copied" : "Copy code"}
+              {copied ? "✓ Copied" : bodyWording(snippet.language).copy}
             </button>
           </div>
         </div>

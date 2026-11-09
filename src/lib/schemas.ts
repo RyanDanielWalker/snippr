@@ -48,8 +48,8 @@ const snippetFields = {
   ),
   // Not trimmed: leading whitespace is indentation.
   code: z
-    .string({ error: "Code is required." })
-    .min(1, { error: "Code is required." })
+    .string({ error: "A snippet can't be empty." })
+    .min(1, { error: "A snippet can't be empty." })
     .max(SNIPPET_LIMITS.code, {
       error: `That snippet is too long. The limit is ${n(SNIPPET_LIMITS.code)} characters.`,
     }),
@@ -101,9 +101,11 @@ export const renameFolderSchema = body({ id, name: folderName });
 // Empty code and empty queries are allowed through; the handlers answer
 // them without calling Claude.
 export const describeSchema = body({
-  code: z.string({ error: "Code has to be text." }).max(SNIPPET_LIMITS.code, {
-    error: `That snippet is too long to describe. The limit is ${n(SNIPPET_LIMITS.code)} characters.`,
-  }),
+  code: z
+    .string({ error: "A snippet has to be text." })
+    .max(SNIPPET_LIMITS.code, {
+      error: `That snippet is too long to describe. The limit is ${n(SNIPPET_LIMITS.code)} characters.`,
+    }),
   language,
 });
 

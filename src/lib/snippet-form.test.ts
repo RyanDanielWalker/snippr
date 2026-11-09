@@ -1,11 +1,32 @@
 import { describe, expect, it } from "vitest";
 import type { Snippet } from "./library-types";
 import {
+  bodyWording,
   hasRequired,
   initialFields,
   isDirty,
   requestBody,
 } from "./snippet-form";
+
+describe("bodyWording", () => {
+  it("says prompt for a prompt", () => {
+    expect(bodyWording("prompt")).toEqual({
+      label: "Prompt",
+      placeholder: "Paste your prompt here...",
+      copy: "Copy prompt",
+    });
+  });
+
+  it("says code for everything else, other included", () => {
+    for (const language of ["typescript", "other"]) {
+      expect(bodyWording(language)).toEqual({
+        label: "Code",
+        placeholder: "Paste your code here...",
+        copy: "Copy code",
+      });
+    }
+  });
+});
 
 const snippet: Snippet = {
   id: "s1",

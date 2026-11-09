@@ -6,6 +6,7 @@ import { LANGUAGES, SNIPPET_LIMITS } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
 import type { Folder, Snippet } from "@/lib/library-types";
 import {
+  bodyWording,
   hasRequired,
   initialFields,
   isDirty,
@@ -177,10 +178,12 @@ export default function SnippetFormModal({
         </div>
 
         <div>
-          <Label htmlFor={`${id}-code`}>Code</Label>
+          <Label htmlFor={`${id}-code`}>
+            {bodyWording(form.language).label}
+          </Label>
           <textarea
             id={`${id}-code`}
-            placeholder="Paste your code here..."
+            placeholder={bodyWording(form.language).placeholder}
             value={form.code}
             onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
             rows={8}

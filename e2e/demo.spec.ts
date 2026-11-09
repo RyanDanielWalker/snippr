@@ -227,16 +227,17 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   const longLine = "Summarize the notes below in plain English. ".repeat(12);
   const scrollsSideways = (pre: Locator) =>
     pre.evaluate((el) => el.scrollWidth > el.clientWidth);
-  for (const [title, language, sideways] of [
-    ["Long prompt", "prompt", false],
-    ["Long code", "typescript", true],
+  // The form and the preview also change their wording to match.
+  for (const [title, language, sideways, label, copy] of [
+    ["Long prompt", "prompt", false, "Prompt", "Copy prompt"],
+    ["Long code", "typescript", true, "Code", "Copy code"],
   ] as const) {
     await page.getByRole("button", { name: "+ New snippet" }).click();
     await newForm.getByLabel("Title", { exact: true }).fill(title);
     await newForm
       .getByLabel("Language", { exact: true })
       .selectOption(language);
-    await newForm.getByLabel("Code", { exact: true }).fill(longLine);
+    await newForm.getByLabel(label, { exact: true }).fill(longLine);
     await page.getByRole("button", { name: "Save snippet" }).click();
     await expect(newForm).toBeHidden();
 
@@ -249,6 +250,7 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
     const pre = longPreview.locator(".shiki-wrapper pre");
     await expect(pre).toBeVisible();
     expect(await scrollsSideways(pre)).toBe(sideways);
+    await expect(longPreview.getByRole("button", { name: copy })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(longPreview).toBeHidden();
   }

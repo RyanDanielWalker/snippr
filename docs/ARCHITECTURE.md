@@ -382,7 +382,7 @@ src/
 │   ├── security-headers.ts     Headers on every response, applied in next.config.ts (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   ├── site.ts                 Site URL, name, and description for metadata (tested)
-│   ├── snippet-form.ts         The snippet form's starting fields, change check, and request body (tested)
+│   ├── snippet-form.ts         The snippet form's starting fields, change check, request body, and whether to say "code" or "prompt" (tested)
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippets.ts             /api/snippets: sign-in, validation, then the cap or ownership (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)

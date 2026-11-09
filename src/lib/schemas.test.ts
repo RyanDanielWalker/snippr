@@ -59,7 +59,7 @@ describe("createSnippetSchema", () => {
 
   it("requires code", () => {
     expect(errorFor(createSnippetSchema, { ...validSnippet, code: "" })).toBe(
-      "Code is required.",
+      "A snippet can't be empty.",
     );
   });
 
