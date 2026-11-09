@@ -1,6 +1,6 @@
 # 0044. Add a prompt language that wraps and is described as a prompt
 
-- **Status:** Accepted
+- **Status:** Accepted. Its description wording is superseded by [0045](./0045-put-the-saved-prompt-rules-in-the-system-prompt-and-check-the-reply.md)
 - **Date:** 2026-11-09
 - **Related:** [0014](./0014-validate-request-bodies-with-zod.md), [0022](./0022-highlight-cards-on-the-server.md)
 
