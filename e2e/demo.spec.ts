@@ -1,4 +1,7 @@
+import { PrismaClient } from "@prisma/client";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { GUEST_AI_DAILY_CEILING } from "../src/lib/rate-limit";
+import { e2eDatabase } from "../scripts/e2e-guard.mjs";
 
 // Tabs past the end of a dialog and fails if focus ever lands on the page
 // behind it. Leaving for the browser's own toolbar (body is focused then) is
@@ -23,9 +26,11 @@ async function expectTabToStayIn(page: Page, dialog: Locator) {
 }
 
 // The main flow, through the real app and a real database: start a demo, add
-// a snippet, find it with search, and drag it into a folder. AI search isn't
-// covered here; its handler is unit-tested against a fake Claude
-// (src/lib/ai-search.test.ts), and a browser test is Parked on the roadmap.
+// a snippet, find it with search, and drag it into a folder. AI search itself
+// isn't covered here, only the message once the demo's AI is used up for the
+// day, which stops before Claude. The handler is unit-tested against a fake
+// Claude (src/lib/ai-search.test.ts), and a browser test is Parked on the
+// roadmap.
 test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try the demo" }).click();
@@ -253,5 +258,36 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
     await expect(longPreview.getByRole("button", { name: copy })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(longPreview).toBeHidden();
+  }
+
+  // Once all guests have used the day's AI, AI search says so where the guest
+  // pressed Enter, and never reaches Claude (ADR 0046). Here rather than in a
+  // test of its own, because each test starts a demo, and one IP gets 5 an
+  // hour. The count goes back afterwards so a later run of the README images
+  // on this database can still search.
+  const database = e2eDatabase(process.env);
+  if (!database.ok) throw new Error(database.message);
+  const prisma = new PrismaClient({
+    datasources: { db: { url: database.url } },
+  });
+  const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
+  try {
+    await prisma.guestAiDay.upsert({
+      where: { day: today },
+      create: { day: today, count: GUEST_AI_DAILY_CEILING.limit },
+      update: { count: GUEST_AI_DAILY_CEILING.limit },
+    });
+    await page.getByRole("button", { name: "✦ AI search" }).click();
+    const search = page.getByRole("textbox", {
+      name: "Describe the snippet you're looking for",
+    });
+    await search.fill("debounce");
+    await search.press("Enter");
+    await expect(
+      page.getByText(/The demo has used up its AI for today\. It's back in/),
+    ).toBeVisible();
+  } finally {
+    await prisma.guestAiDay.deleteMany({ where: { day: today } });
+    await prisma.$disconnect();
   }
 });
