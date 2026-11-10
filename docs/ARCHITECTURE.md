@@ -148,6 +148,11 @@ erDiagram
         datetime day PK "midnight UTC"
         int count "AI calls by all guests that day"
     }
+    GuestAiAddressDay {
+        string ipHash PK "HMAC of the visitor's IP"
+        datetime day PK "midnight UTC"
+        int count "guest AI calls from that address"
+    }
     Account {
         string id PK
         string userId FK
@@ -192,7 +197,8 @@ erDiagram
 - **Deleting a user** cascades to everything they own.
 - **Deleting a folder** sets `folderId` to null on its snippets. Code is never deleted as a side effect.
 - `AiUsage` counts AI calls per user, endpoint, and hour for rate limiting ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
-- `GuestAiDay` counts the AI calls of all demo guests together, one row per UTC day. It isn't linked to any user, so deleting an expired guest can't lower the count ([0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md)).
+- `GuestAiDay` counts the AI calls of all demo guests together, one row per UTC day. It isn't linked to any user, so deleting an expired guest can't lower the count ([0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md)). Its rows are kept, as a record of demo use.
+- `GuestAiAddressDay` counts demo guests' AI calls per hashed IP and UTC day. Rows from earlier days are deleted whenever a demo starts ([0047](./adr/0047-give-each-address-a-share-of-the-demo-ai-ceiling.md)).
 - `ApiToken` holds the personal access tokens MCP clients sign in with, as a SHA-256 of each token, never the token itself ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)).
 - `DemoStart` counts demos started per IP and hour. It isn't linked to any user ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)).
 - `Account`, `Session`, and `VerificationToken` are the standard NextAuth adapter tables. `VerificationToken` is unused because there's no email sign-in.
@@ -250,7 +256,11 @@ All Claude calls go through `src/lib/ai.ts` ([0023](./adr/0023-one-ai-module-on-
 
 Each user gets 30 calls an hour per feature, or 10 for demo guests. An empty query or empty code is answered without Claude and isn't counted. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. AI search only reads the library after that check, so a request past the limit costs one count instead of a read of every snippet. Oversized input gets a `400` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md), [0014](./adr/0014-validate-request-bodies-with-zod.md)). Describe also only accepts a language from the dropdown's list, since it goes into the prompt.
 
-Demo guests also share a _ceiling_: one limit for the whole group, on top of each guest's own. All guests together get 500 calls a UTC day, searches and descriptions combined. If 499 calls have been made today, the next guest's call goes through and the one after gets a `429` with "The demo has used up its AI for today", until midnight UTC. `checkAiLimits` in `src/lib/rate-limit.ts` runs both checks, the guest's own limit first, so a guest past their own limit can't use up the shared count. Members skip the ceiling entirely. Worst case it costs about $0.50 a day ([0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md)).
+Demo guests also share a _ceiling_: one limit for the whole group, on top of each guest's own. All guests together get 500 calls a UTC day, searches and descriptions combined. If 499 calls have been made today, the next guest's call goes through and the one after gets a `429` with "The demo has used up its AI for today. It's back in about 7 hours, or sign in to keep going." Worst case it costs about $0.50 a day ([0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md)).
+
+Inside that ceiling, guests from one IP address get at most 100 calls a day, so one person starting guest after guest can't use up the day for everyone. Their 101st call gets "Your network has used up its share of the demo's AI for today." The address is stored as an HMAC, like the demo-start limit's, and "network" is the word because everyone behind one router shares an address ([0047](./adr/0047-give-each-address-a-share-of-the-demo-ai-ceiling.md)).
+
+`checkAiLimits` in `src/lib/rate-limit.ts` runs the checks narrowest first: the caller's own hourly limit, then the address's share, then the ceiling. Each one stops a call before the wider counts go up, so a guest or an address past its own limit can't drain what everyone shares. Members skip both guest checks, and their address is never looked up. Both daily messages say how long until the reset, rounded to the hour (`backIn` in `src/lib/api-errors.ts`), because a clock time in UTC means little to most visitors.
 
 Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md).
 
@@ -290,7 +300,7 @@ assets/fonts/                   Font files and licenses for the Open Graph image
 docker-compose.yml              Local Postgres for development and tests
 docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 e2e/
-├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, Tab stays in dialogs, prompts wrap and code doesn't
+├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message
 ├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, delete from preview and form
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
@@ -353,7 +363,7 @@ src/
 │   ├── ai-results.ts           AI search results as ids, looked up in the current snippets (tested)
 │   ├── ai-search.ts            /api/snippets/search and the MCP search tool (tested)
 │   ├── accessible-names.ts     unnamedControls: fields and buttons with no name in rendered HTML (tested)
-│   ├── ai-usage.ts             Atomic AI usage counters, per user and for all guests per day (SQL, tested against Postgres)
+│   ├── ai-usage.ts             Atomic AI usage counters: per user, per guest address and day, all guests per day (SQL, tested against Postgres)
 │   ├── api-client.ts           callApi: how components call the API and read its errors (tested)
 │   ├── api-tokens.ts           MCP tokens: make, hash, revoke, sign in by Bearer header (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
@@ -363,7 +373,7 @@ src/
 │   ├── contrast.ts             WCAG contrast ratio between two colors (tested)
 │   ├── clipboard.ts            copyText: whether a copy actually landed (tested)
 │   ├── demo.ts                 Starting a demo: seed, IP limit, cookie name (tested)
-│   ├── demo-store.ts           Database side of starting a demo
+│   ├── demo-store.ts           Database side of starting a demo, and its cleanup (cleanup tested against Postgres)
 │   ├── dialog-focus.ts         focusDialog: focus in and back to an opener still on the page; inertOutside (tested)
 │   ├── email-case.ts           Lowercases emails in the NextAuth adapter (tested)
 │   ├── email-verification.ts   Provider email verification (tested)
@@ -384,7 +394,7 @@ src/
 │   ├── mcp.ts                  The MCP server: token sign-in, three tools on the API's functions (tested)
 │   ├── mcp-config.ts           What to paste into each MCP client (tested)
 │   ├── provider-tokens.ts      Keeps GitHub's and Google's tokens out of the database (tested)
-│   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits, the guests' daily ceiling (tested)
+│   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits, each address's daily share, the guests' daily ceiling (tested)
 │   ├── request-body.ts         Reads a JSON body and checks it against a schema, or returns a 400 (tested)
 │   ├── security-headers.ts     Headers on every response, applied in next.config.ts (tested)
 │   ├── sign-in-errors.ts       Login error messages (tested)

@@ -77,6 +77,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0043](./0043-dismiss-the-minimatch-alert-as-vulnerable-code-not-used.md) | Dismiss the minimatch alert as "vulnerable code not used" | Accepted |
 | [0044](./0044-add-a-prompt-language-that-wraps-and-is-described-as-a-prompt.md) | Add a prompt language that wraps and is described as a prompt | Accepted; description wording superseded by [0045](./0045-put-the-saved-prompt-rules-in-the-system-prompt-and-check-the-reply.md) |
 | [0045](./0045-put-the-saved-prompt-rules-in-the-system-prompt-and-check-the-reply.md) | Put the saved-prompt rules in the system prompt and check the reply | Accepted |
-| [0046](./0046-a-shared-daily-ceiling-on-demo-ai-calls.md) | Put a shared daily ceiling on demo guests' AI calls | Accepted |
+| [0046](./0046-a-shared-daily-ceiling-on-demo-ai-calls.md) | Put a shared daily ceiling on demo guests' AI calls | Accepted; message wording superseded by [0047](./0047-give-each-address-a-share-of-the-demo-ai-ceiling.md) |
+| [0047](./0047-give-each-address-a-share-of-the-demo-ai-ceiling.md) | Give each address a share of the demo's AI ceiling, and say when it's back in hours | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
