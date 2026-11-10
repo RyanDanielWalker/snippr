@@ -190,7 +190,7 @@ git push origin main
 git push origin --delete migration-check
 ```
 
-Run the second line until it shows `success`, and only then the third. Commits with no migration go straight to `main`. Nothing enforces this, so it's on whoever pushes.
+Run the second line until the run has passed, and only then the third. In a terminal `gh` shows a status symbol, not a word: a green ✓ means it passed, a red X means it failed, and a yellow dot means it's still running. Piped or scripted, the same column reads `success`, `failure`, or `in_progress`. Check that the title is your latest commit's subject, so you're reading the run for what you're about to push. If the output ends in `(END)`, it opened in a pager; press `q` to get the prompt back. Commits with no migration go straight to `main`. Nothing enforces this, so it's on whoever pushes.
 
 **Migrations must work with the code that's already live.** The migration runs first, and the old version keeps serving until the new build is ready. Add first, remove later: new columns are nullable or have a default, and a column or table is dropped only in a later push, after the code stopped using it. Renames are an add and a drop, in that order.
 
