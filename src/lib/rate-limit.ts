@@ -13,6 +13,7 @@ export type RateLimitBucket = "describe" | "search";
 export type RateLimitRule = { limit: number; windowMs: number };
 
 const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
 
 export const AI_RATE_LIMITS: Record<RateLimitBucket, RateLimitRule> = {
   describe: { limit: 30, windowMs: HOUR },
@@ -24,6 +25,15 @@ export const AI_RATE_LIMITS: Record<RateLimitBucket, RateLimitRule> = {
 export const GUEST_AI_RATE_LIMITS: Record<RateLimitBucket, RateLimitRule> = {
   describe: { limit: 10, windowMs: HOUR },
   search: { limit: 10, windowMs: HOUR },
+};
+
+// One count shared by every demo guest, on top of each guest's own limit.
+// Guests only last a day and anyone can start one, so the per-guest limits
+// don't bound what guests spend together (see docs/adr/0046). The day is a
+// fixed UTC day, midnight to midnight.
+export const GUEST_AI_DAILY_CEILING: RateLimitRule = {
+  limit: 500,
+  windowMs: DAY,
 };
 
 export function aiRateLimitRule(
@@ -92,4 +102,52 @@ export async function checkFixedWindow(
     Math.ceil((resetsAt - now.getTime()) / 1000),
   );
   return { allowed: false, retryAfterSeconds };
+}
+
+/**
+ * Adds one to the day's count of AI calls by all demo guests, creating the
+ * counter at 1 if it doesn't exist, and returns the new count. Atomic, like
+ * `IncrementUsage`.
+ */
+export type IncrementGuestAiDay = (day: Date) => Promise<number>;
+
+export type AiLimitDeps = {
+  increment: IncrementUsage;
+  incrementGuestAiDay: IncrementGuestAiDay;
+};
+
+/** Which limit stopped a call: the caller's own, or the one guests share. */
+export type AiLimitReason = "own-limit" | "guest-ceiling";
+
+export type AiLimitResult =
+  | { allowed: true }
+  | { allowed: false; retryAfterSeconds: number; reason: AiLimitReason };
+
+/**
+ * Every limit an AI call has to pass, in order. A guest's own limit comes
+ * first, so one guest hammering the button past it can't use up the count
+ * every other guest shares. Members never touch the shared count.
+ */
+export async function checkAiLimits(
+  deps: AiLimitDeps,
+  user: { id: string; isGuest: boolean },
+  bucket: RateLimitBucket,
+  now: Date = new Date(),
+): Promise<AiLimitResult> {
+  const own = await checkRateLimit(
+    user.id,
+    bucket,
+    deps.increment,
+    now,
+    aiRateLimitRule(bucket, user.isGuest),
+  );
+  if (!own.allowed) return { ...own, reason: "own-limit" };
+  if (!user.isGuest) return { allowed: true };
+
+  const shared = await checkFixedWindow(
+    deps.incrementGuestAiDay,
+    GUEST_AI_DAILY_CEILING,
+    now,
+  );
+  return shared.allowed ? shared : { ...shared, reason: "guest-ceiling" };
 }

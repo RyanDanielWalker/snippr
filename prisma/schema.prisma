@@ -84,6 +84,14 @@ model DemoStart {
   @@id([ipHash, windowStart])
 }
 
+// One row per UTC day, counting the AI calls of all demo guests together.
+// Not linked to any user, so deleting an expired guest can't lower the
+// count. See docs/adr/0046.
+model GuestAiDay {
+  day   DateTime @id
+  count Int      @default(0)
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String

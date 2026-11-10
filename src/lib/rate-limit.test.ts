@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   AI_RATE_LIMITS,
+  GUEST_AI_DAILY_CEILING,
+  GUEST_AI_RATE_LIMITS,
   aiRateLimitRule,
+  checkAiLimits,
   checkFixedWindow,
   checkRateLimit,
   windowStart,
@@ -141,6 +144,79 @@ describe("aiRateLimitRule", () => {
         AI_RATE_LIMITS[bucket].limit,
       );
     }
+  });
+});
+
+describe("checkAiLimits", () => {
+  const now = new Date("2026-10-18T14:45:00.000Z");
+  const guest = { id: "guest-1", isGuest: true };
+  const member = { id: "member-1", isGuest: false };
+
+  function fakeLimits({ own = 0, guestsToday = 0 } = {}) {
+    let ownCount = own;
+    let shared = guestsToday;
+    return {
+      increment: vi.fn<IncrementUsage>(async () => ++ownCount),
+      incrementGuestAiDay: vi.fn(async () => ++shared),
+    };
+  }
+
+  it("never touches the shared count for a member", async () => {
+    const deps = fakeLimits({ guestsToday: 10_000 });
+    await expect(checkAiLimits(deps, member, "search", now)).resolves.toEqual({
+      allowed: true,
+    });
+    expect(deps.incrementGuestAiDay).not.toHaveBeenCalled();
+  });
+
+  it("counts a guest's call against the day that started at midnight UTC", async () => {
+    const deps = fakeLimits();
+    await expect(checkAiLimits(deps, guest, "search", now)).resolves.toEqual({
+      allowed: true,
+    });
+    expect(deps.incrementGuestAiDay).toHaveBeenCalledWith(
+      new Date("2026-10-18T00:00:00.000Z"),
+    );
+  });
+
+  it("lets the last call of the day through and stops the next", async () => {
+    const limit = GUEST_AI_DAILY_CEILING.limit;
+    await expect(
+      checkAiLimits(
+        fakeLimits({ guestsToday: limit - 1 }),
+        guest,
+        "search",
+        now,
+      ),
+    ).resolves.toEqual({ allowed: true });
+    // 14:45 UTC: 9 hours and 15 minutes until midnight.
+    await expect(
+      checkAiLimits(fakeLimits({ guestsToday: limit }), guest, "search", now),
+    ).resolves.toEqual({
+      allowed: false,
+      reason: "guest-ceiling",
+      retryAfterSeconds: 9 * 60 * 60 + 15 * 60,
+    });
+  });
+
+  it("shares one count across both features", async () => {
+    const deps = fakeLimits({
+      guestsToday: GUEST_AI_DAILY_CEILING.limit - 1,
+    });
+    await expect(
+      checkAiLimits(deps, guest, "search", now),
+    ).resolves.toMatchObject({ allowed: true });
+    await expect(
+      checkAiLimits(deps, guest, "describe", now),
+    ).resolves.toMatchObject({ reason: "guest-ceiling" });
+  });
+
+  it("doesn't let a guest past their own limit use up the shared count", async () => {
+    const deps = fakeLimits({ own: GUEST_AI_RATE_LIMITS.search.limit });
+    await expect(
+      checkAiLimits(deps, guest, "search", now),
+    ).resolves.toMatchObject({ allowed: false, reason: "own-limit" });
+    expect(deps.incrementGuestAiDay).not.toHaveBeenCalled();
   });
 });
 

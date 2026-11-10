@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { IncrementUsage } from "@/lib/rate-limit";
+import type { IncrementGuestAiDay, IncrementUsage } from "@/lib/rate-limit";
 
 /**
  * The database side of the AI rate limit (see docs/adr/0011).
@@ -21,6 +21,22 @@ export const incrementAiUsage: IncrementUsage = async ({
     VALUES (${userId}, ${bucket}, ${windowStart}, 1)
     ON CONFLICT ("userId", "bucket", "windowStart")
     DO UPDATE SET "count" = "AiUsage"."count" + 1
+    RETURNING "count"
+  `;
+  return rows[0].count;
+};
+
+/**
+ * The same counter for the day's AI calls by all demo guests together (see
+ * docs/adr/0046). It has its own table because `AiUsage` rows belong to a
+ * user, and this count belongs to no one.
+ */
+export const incrementGuestAiDay: IncrementGuestAiDay = async (day) => {
+  const rows = await prisma.$queryRaw<{ count: number }[]>`
+    INSERT INTO "GuestAiDay" ("day", "count")
+    VALUES (${day}, 1)
+    ON CONFLICT ("day")
+    DO UPDATE SET "count" = "GuestAiDay"."count" + 1
     RETURNING "count"
   `;
   return rows[0].count;

@@ -53,7 +53,7 @@ describe("row-level security", () => {
 
   it("is checking real tables", async () => {
     // Guards the queries above: if they matched no tables at all (a wrong
-    // schema, say), the first test would pass on an empty list. Nine from the
+    // schema, say), the first test would pass on an empty list. Ten from the
     // Prisma schema, plus Prisma's own _prisma_migrations.
     const [{ count }] = await prisma.$queryRaw<{ count: number }[]>`
       SELECT count(*)::int AS count
@@ -61,6 +61,6 @@ describe("row-level security", () => {
       WHERE relnamespace = current_schema()::regnamespace
         AND relkind IN ('r', 'p')
     `;
-    expect(count).toBeGreaterThanOrEqual(10);
+    expect(count).toBeGreaterThanOrEqual(11);
   });
 });
