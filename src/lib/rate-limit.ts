@@ -137,7 +137,16 @@ export type AiLimitDeps = {
    * call, so a member's call never needs it.
    */
   guestAddress: () => string;
+  /** Where notable limit events go. Defaults to the server log. */
+  log?: (...args: unknown[]) => void;
 };
+
+/**
+ * Logged once per address and day, on the first call past its share, so
+ * Vercel's logs show whether real networks ever reach it (docs/adr/0048).
+ * Searching the logs for this text finds every one.
+ */
+export const ADDRESS_SHARE_LOG = "Demo AI: an address used its daily share";
 
 /**
  * Which limit stopped a call: the caller's own, the share one address gets,
@@ -174,12 +183,28 @@ export async function checkAiLimits(
   if (!user.isGuest) return { allowed: true };
 
   const ipHash = deps.guestAddress();
+  let addressCount = 0;
   const address = await checkFixedWindow(
-    (day) => deps.incrementGuestAiAddressDay(ipHash, day),
+    async (day) =>
+      (addressCount = await deps.incrementGuestAiAddressDay(ipHash, day)),
     GUEST_AI_DAILY_PER_ADDRESS,
     now,
   );
-  if (!address.allowed) return { ...address, reason: "address-limit" };
+  if (!address.allowed) {
+    // Only the first call past the share, so a script hammering the button
+    // can't fill the log. Eight characters of the hash tell addresses apart
+    // in one day's log without being any use outside it.
+    if (addressCount === GUEST_AI_DAILY_PER_ADDRESS.limit + 1) {
+      (deps.log ?? console.warn)(ADDRESS_SHARE_LOG, {
+        limit: GUEST_AI_DAILY_PER_ADDRESS.limit,
+        address: ipHash.slice(0, 8),
+        day: windowStart(now, GUEST_AI_DAILY_PER_ADDRESS.windowMs)
+          .toISOString()
+          .slice(0, 10),
+      });
+    }
+    return { ...address, reason: "address-limit" };
+  }
 
   const shared = await checkFixedWindow(
     deps.incrementGuestAiDay,

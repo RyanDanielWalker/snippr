@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  ADDRESS_SHARE_LOG,
   AI_RATE_LIMITS,
   GUEST_AI_DAILY_CEILING,
   GUEST_AI_DAILY_PER_ADDRESS,
@@ -216,6 +217,43 @@ describe("checkAiLimits", () => {
       reason: "address-limit",
       retryAfterSeconds: 9 * 60 * 60 + 15 * 60,
     });
+  });
+
+  it("logs an address once, on its first call past the share", async () => {
+    const log = vi.fn();
+    const deps = {
+      ...fakeLimits({ fromAddress: GUEST_AI_DAILY_PER_ADDRESS.limit - 1 }),
+      log,
+    };
+    await checkAiLimits(deps, guest, "search", now); // the last one allowed
+    expect(log).not.toHaveBeenCalled();
+
+    await checkAiLimits(deps, guest, "search", now); // the first one past
+    await checkAiLimits(deps, guest, "describe", now); // and every one after
+    await checkAiLimits(deps, guest, "search", now);
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(log).toHaveBeenCalledWith(ADDRESS_SHARE_LOG, {
+      limit: GUEST_AI_DAILY_PER_ADDRESS.limit,
+      address: "address-",
+      day: "2026-10-18",
+    });
+  });
+
+  it("doesn't log a member, or a guest stopped by the shared ceiling", async () => {
+    const log = vi.fn();
+    await checkAiLimits(
+      { ...fakeLimits({ fromAddress: 10_000 }), log },
+      member,
+      "search",
+      now,
+    );
+    await checkAiLimits(
+      { ...fakeLimits({ guestsToday: GUEST_AI_DAILY_CEILING.limit }), log },
+      guest,
+      "search",
+      now,
+    );
+    expect(log).not.toHaveBeenCalled();
   });
 
   it("doesn't let an address past its share use up the shared count", async () => {
