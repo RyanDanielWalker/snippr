@@ -6,6 +6,8 @@
  * every serverless instance agrees on which window a request falls in
  * without talking to the others. The counter itself lives in the database
  * and is passed in, so this can be tested without one.
+ *
+ * Demo guests also share one daily ceiling on top of that (docs/adr/0046).
  */
 
 export type RateLimitBucket = "describe" | "search";

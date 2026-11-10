@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-11-09*
+*Last updated: 2026-11-10*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -14,7 +14,7 @@ Phases run in order. Items inside a phase can ship in any order. Each item lands
 
 ### Phase 6: Ready to share the link
 
-- [ ] A daily ceiling on AI calls across all demo guests ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)). The per-guest and per-IP limits bound each guest, but guests last a day, so they stack from one address, and many addresses multiply that. Today the monthly spend limit on the Anthropic key is the only hard stop, and it stops AI for every user at once. First on this list because the checklist below sends more guests to the AI features. Two things to settle before building it are under [Open decisions](#open-decisions)
+- [x] A daily ceiling on AI calls across all demo guests ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md), [0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md)). The per-guest and per-IP limits bound each guest, but guests last a day, so they stack from one address, and many addresses multiply that. First on this list because the checklist below sends more guests to the AI features. Done: all guests share 500 calls a UTC day, counted in `GuestAiDay`, which caps the demo at about $0.50 a day. Call 501 gets a `429` and "The demo has used up its AI for today", shown where the guest pressed the button. Members are never held to it
 - [ ] A "Things to try" checklist in demo mode, so a visitor who glances for a minute still finds the parts that aren't visible on the page: dragging a snippet into a folder (nothing on a card says it moves), turning on ✦ AI search and pressing Enter (typing alone only filters), letting Claude write a description, and `/connect` for the MCP server. Each line ticks itself off when the visitor does it, and a closed checklist stays closed, remembered in a cookie like the theme and sidebar. A checklist, not a step-by-step tour: tours get clicked through without being read, they put another focus layer on top of the dialogs' `inert` handling, and tooltips pinned to elements break at 375px and in the 8-bit theme's sizes. On a phone the drag line points at the folder field in Edit, since touch drag isn't supported.
 - [ ] Move the version to `1.1.0` and tag it `v1.1` ([0041](./adr/0041-give-1-1-a-version-bump-and-a-tag.md)). One commit changes `package.json`, the lockfile, and what the MCP server reports (`src/lib/mcp.ts`). Once that commit has passed CI and deployed, it gets the tag, and Ryan pushes the tag. Last on this list because it marks the other two as shipped
 
@@ -145,9 +145,7 @@ Settled after the tag, starting with the last two findings from the security pas
 
 These need a call before the related work starts. Each one becomes an ADR.
 
-Design direction was decided in [0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md). One is open:
-
-- The daily ceiling on demo AI calls: how many calls a day, and what a guest sees once it's hit. Comes up when that item starts ([0040](./adr/0040-close-1-0-and-scope-1-1-to-two-demo-items.md))
+None are open. Design direction was decided in [0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md), and the demo's AI ceiling in [0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md).
 
 ## Parked
 
