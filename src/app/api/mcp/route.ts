@@ -1,7 +1,7 @@
 import { withErrors } from "@/lib/api-errors";
 import { snippetStore } from "@/lib/library-store";
 import { tokenStore } from "@/lib/token-store";
-import { incrementAiUsage } from "@/lib/ai-usage";
+import { incrementAiUsage, incrementGuestAiDay } from "@/lib/ai-usage";
 import { askClaude } from "@/lib/ai";
 import { handleMcpRequest } from "@/lib/mcp";
 
@@ -17,6 +17,7 @@ export const POST = withErrors(async (req: Request) =>
         countSnippets: snippetStore.count,
         listSnippets: snippetStore.list,
         increment: incrementAiUsage,
+        incrementGuestAiDay,
         ask: askClaude,
       },
       findTokenUser: tokenStore.findUser,

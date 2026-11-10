@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { APIConnectionError } from "@anthropic-ai/sdk";
 import {
+  aiLimitResponse,
   apiError,
   tooManyRequests,
   unauthorized,
@@ -30,6 +31,27 @@ describe("tooManyRequests", () => {
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBe("90");
     expect((await res.json()).error).toEqual(expect.any(String));
+  });
+});
+
+describe("aiLimitResponse", () => {
+  it("keeps the hourly message when the caller's own limit stopped it", async () => {
+    const res = aiLimitResponse({ retryAfterSeconds: 90, reason: "own-limit" });
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("90");
+    expect((await res.json()).error).toContain("for one hour");
+  });
+
+  it("says the demo is done for today when the guests' ceiling stopped it", async () => {
+    const res = aiLimitResponse({
+      retryAfterSeconds: 3600,
+      reason: "guest-ceiling",
+    });
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("3600");
+    const { error } = await res.json();
+    expect(error).toContain("midnight UTC");
+    expect(error).toContain("sign in");
   });
 });
 

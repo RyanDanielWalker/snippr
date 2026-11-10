@@ -7,7 +7,11 @@ import {
   looksLikeDescription,
   savedPromptMessage,
 } from "./ai-describe";
-import { AI_RATE_LIMITS, GUEST_AI_RATE_LIMITS } from "./rate-limit";
+import {
+  AI_RATE_LIMITS,
+  GUEST_AI_DAILY_CEILING,
+  GUEST_AI_RATE_LIMITS,
+} from "./rate-limit";
 
 const me = { id: "user-me", isGuest: false };
 const guest = { id: "user-me", isGuest: true };
@@ -21,10 +25,16 @@ function post(body: unknown) {
 
 // A counter that already stands at `used` calls this hour, and a Claude that
 // always gives the same reply.
-function setup({ used = 0, reply = "  Logs a number.\n" } = {}) {
+function setup({
+  used = 0,
+  guestsToday = 0,
+  reply = "  Logs a number.\n",
+} = {}) {
   let count = used;
+  let guestCount = guestsToday;
   return {
     increment: vi.fn(async () => ++count),
+    incrementGuestAiDay: vi.fn(async () => ++guestCount),
     ask: vi.fn<AskClaude>(async () => ({
       text: reply,
       stopReason: "end_turn",
@@ -159,6 +169,14 @@ describe("describeSnippet", () => {
     expect(
       (await describeSnippet(setup({ used }), guest, post(valid))).status,
     ).toBe(429);
+  });
+
+  it("stops a guest once all guests have used the day's calls", async () => {
+    const deps = setup({ guestsToday: GUEST_AI_DAILY_CEILING.limit });
+    const res = await describeSnippet(deps, guest, post(valid));
+    expect(res.status).toBe(429);
+    expect((await res.json()).error).toContain("used up its AI for today");
+    expect(deps.ask).not.toHaveBeenCalled();
   });
 
   it("counts the call against the user's describe bucket", async () => {

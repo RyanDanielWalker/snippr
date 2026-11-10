@@ -1,12 +1,8 @@
 import type { Snippet } from "@prisma/client";
 import type { AskClaude } from "@/lib/ai";
 import type { ApiUser } from "@/lib/auth";
-import { tooManyRequests, unauthorized } from "@/lib/api-errors";
-import {
-  aiRateLimitRule,
-  checkRateLimit,
-  type IncrementUsage,
-} from "@/lib/rate-limit";
+import { aiLimitResponse, unauthorized } from "@/lib/api-errors";
+import { checkAiLimits, type AiLimitDeps } from "@/lib/rate-limit";
 import { parseBody } from "@/lib/request-body";
 import { searchSchema } from "@/lib/schemas";
 
@@ -17,12 +13,11 @@ import { searchSchema } from "@/lib/schemas";
  * (docs/adr/0005).
  */
 
-export type AiSearchDeps = {
+export type AiSearchDeps = AiLimitDeps & {
   /** How many snippets the user has. */
   countSnippets(userId: string): Promise<number>;
   /** The user's snippets. */
   listSnippets(userId: string): Promise<Snippet[]>;
-  increment: IncrementUsage;
   ask: AskClaude;
   log?: (...args: unknown[]) => void;
 };
@@ -113,14 +108,8 @@ export async function searchSnippets(
   if (!query.trim()) return Response.json([]);
   if ((await deps.countSnippets(user.id)) === 0) return Response.json([]);
 
-  const limit = await checkRateLimit(
-    user.id,
-    "search",
-    deps.increment,
-    new Date(),
-    aiRateLimitRule("search", user.isGuest),
-  );
-  if (!limit.allowed) return tooManyRequests(limit.retryAfterSeconds);
+  const limit = await checkAiLimits(deps, user, "search");
+  if (!limit.allowed) return aiLimitResponse(limit);
 
   // Read every snippet only now, so a request past the limit costs one count
   // and not the whole library.

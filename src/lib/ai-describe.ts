@@ -1,11 +1,7 @@
 import type { AskClaude, ClaudeReply } from "@/lib/ai";
 import type { ApiUser } from "@/lib/auth";
-import { apiError, tooManyRequests, unauthorized } from "@/lib/api-errors";
-import {
-  aiRateLimitRule,
-  checkRateLimit,
-  type IncrementUsage,
-} from "@/lib/rate-limit";
+import { aiLimitResponse, apiError, unauthorized } from "@/lib/api-errors";
+import { checkAiLimits, type AiLimitDeps } from "@/lib/rate-limit";
 import { parseBody } from "@/lib/request-body";
 import { describeSchema } from "@/lib/schemas";
 
@@ -15,8 +11,7 @@ import { describeSchema } from "@/lib/schemas";
  * does.
  */
 
-export type AiDescribeDeps = {
-  increment: IncrementUsage;
+export type AiDescribeDeps = AiLimitDeps & {
   ask: AskClaude;
 };
 
@@ -81,14 +76,8 @@ export async function describeSnippet(
   const { code, language } = body.data;
   if (!code.trim()) return Response.json({ description: "" });
 
-  const limit = await checkRateLimit(
-    user.id,
-    "describe",
-    deps.increment,
-    new Date(),
-    aiRateLimitRule("describe", user.isGuest),
-  );
-  if (!limit.allowed) return tooManyRequests(limit.retryAfterSeconds);
+  const limit = await checkAiLimits(deps, user, "describe");
+  if (!limit.allowed) return aiLimitResponse(limit);
 
   if (language === "prompt") {
     const reply = await deps.ask(

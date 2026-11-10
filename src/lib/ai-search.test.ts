@@ -7,7 +7,11 @@ import {
   searchPrompt,
   searchSnippets,
 } from "./ai-search";
-import { AI_RATE_LIMITS, GUEST_AI_RATE_LIMITS } from "./rate-limit";
+import {
+  AI_RATE_LIMITS,
+  GUEST_AI_DAILY_CEILING,
+  GUEST_AI_RATE_LIMITS,
+} from "./rate-limit";
 
 const me = { id: "user-me", isGuest: false };
 const guest = { id: "user-me", isGuest: true };
@@ -44,8 +48,9 @@ function post(body: unknown) {
 
 // A counter that already stands at `used` calls this hour, and a Claude that
 // always gives the same reply.
-function setup({ used = 0, reply = "[1, 0]" } = {}) {
+function setup({ used = 0, guestsToday = 0, reply = "[1, 0]" } = {}) {
   let count = used;
+  let guestCount = guestsToday;
   const deps = {
     countSnippets: vi.fn(
       async (userId: string) =>
@@ -55,6 +60,7 @@ function setup({ used = 0, reply = "[1, 0]" } = {}) {
       library.filter((s) => s.userId === userId),
     ),
     increment: vi.fn(async () => ++count),
+    incrementGuestAiDay: vi.fn(async () => ++guestCount),
     ask: vi.fn<AskClaude>(async () => ({
       text: reply,
       stopReason: "end_turn",
@@ -138,6 +144,23 @@ describe("searchSnippets", () => {
       (await searchSnippets(setup({ used }), guest, post({ query: "x" })))
         .status,
     ).toBe(429);
+  });
+
+  it("stops a guest once all guests have used the day's calls", async () => {
+    const deps = setup({ guestsToday: GUEST_AI_DAILY_CEILING.limit });
+    const res = await searchSnippets(deps, guest, post({ query: "retry" }));
+    expect(res.status).toBe(429);
+    expect(Number(res.headers.get("Retry-After"))).toBeGreaterThan(0);
+    expect((await res.json()).error).toContain("used up its AI for today");
+    expect(deps.listSnippets).not.toHaveBeenCalled();
+    expect(deps.ask).not.toHaveBeenCalled();
+  });
+
+  it("doesn't hold a member to the guests' daily count", async () => {
+    const deps = setup({ guestsToday: GUEST_AI_DAILY_CEILING.limit });
+    const res = await searchSnippets(deps, me, post({ query: "retry" }));
+    expect(res.status).toBe(200);
+    expect(deps.incrementGuestAiDay).not.toHaveBeenCalled();
   });
 
   it("counts the call against the user's search bucket", async () => {
