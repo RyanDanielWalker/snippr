@@ -10,6 +10,7 @@ import {
 import {
   AI_RATE_LIMITS,
   GUEST_AI_DAILY_CEILING,
+  GUEST_AI_DAILY_PER_ADDRESS,
   GUEST_AI_RATE_LIMITS,
 } from "./rate-limit";
 
@@ -48,9 +49,15 @@ function post(body: unknown) {
 
 // A counter that already stands at `used` calls this hour, and a Claude that
 // always gives the same reply.
-function setup({ used = 0, guestsToday = 0, reply = "[1, 0]" } = {}) {
+function setup({
+  used = 0,
+  guestsToday = 0,
+  fromAddressToday = 0,
+  reply = "[1, 0]",
+} = {}) {
   let count = used;
   let guestCount = guestsToday;
+  let addressCount = fromAddressToday;
   const deps = {
     countSnippets: vi.fn(
       async (userId: string) =>
@@ -61,6 +68,8 @@ function setup({ used = 0, guestsToday = 0, reply = "[1, 0]" } = {}) {
     ),
     increment: vi.fn(async () => ++count),
     incrementGuestAiDay: vi.fn(async () => ++guestCount),
+    incrementGuestAiAddressDay: vi.fn(async () => ++addressCount),
+    guestAddress: vi.fn(() => "address-1"),
     ask: vi.fn<AskClaude>(async () => ({
       text: reply,
       stopReason: "end_turn",
@@ -156,11 +165,26 @@ describe("searchSnippets", () => {
     expect(deps.ask).not.toHaveBeenCalled();
   });
 
-  it("doesn't hold a member to the guests' daily count", async () => {
-    const deps = setup({ guestsToday: GUEST_AI_DAILY_CEILING.limit });
+  it("stops a guest once their address has used its share of the day", async () => {
+    const deps = setup({
+      fromAddressToday: GUEST_AI_DAILY_PER_ADDRESS.limit,
+    });
+    const res = await searchSnippets(deps, guest, post({ query: "retry" }));
+    expect(res.status).toBe(429);
+    expect((await res.json()).error).toContain("Your network has used up");
+    expect(deps.ask).not.toHaveBeenCalled();
+  });
+
+  it("doesn't hold a member to the guests' daily counts, or look up their address", async () => {
+    const deps = setup({
+      guestsToday: GUEST_AI_DAILY_CEILING.limit,
+      fromAddressToday: GUEST_AI_DAILY_PER_ADDRESS.limit,
+    });
     const res = await searchSnippets(deps, me, post({ query: "retry" }));
     expect(res.status).toBe(200);
     expect(deps.incrementGuestAiDay).not.toHaveBeenCalled();
+    expect(deps.incrementGuestAiAddressDay).not.toHaveBeenCalled();
+    expect(deps.guestAddress).not.toHaveBeenCalled();
   });
 
   it("counts the call against the user's search bucket", async () => {

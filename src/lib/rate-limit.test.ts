@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   AI_RATE_LIMITS,
   GUEST_AI_DAILY_CEILING,
+  GUEST_AI_DAILY_PER_ADDRESS,
   GUEST_AI_RATE_LIMITS,
   aiRateLimitRule,
   checkAiLimits,
@@ -152,21 +153,37 @@ describe("checkAiLimits", () => {
   const guest = { id: "guest-1", isGuest: true };
   const member = { id: "member-1", isGuest: false };
 
-  function fakeLimits({ own = 0, guestsToday = 0 } = {}) {
+  // `fromAddress` is how many calls "address-1" has made today. Other
+  // addresses start at zero.
+  function fakeLimits({
+    own = 0,
+    guestsToday = 0,
+    fromAddress = 0,
+    address = "address-1",
+  } = {}) {
     let ownCount = own;
     let shared = guestsToday;
+    const perAddress = new Map([["address-1", fromAddress]]);
     return {
       increment: vi.fn<IncrementUsage>(async () => ++ownCount),
       incrementGuestAiDay: vi.fn(async () => ++shared),
+      incrementGuestAiAddressDay: vi.fn(async (ipHash: string) => {
+        const next = (perAddress.get(ipHash) ?? 0) + 1;
+        perAddress.set(ipHash, next);
+        return next;
+      }),
+      guestAddress: vi.fn(() => address),
     };
   }
 
-  it("never touches the shared count for a member", async () => {
-    const deps = fakeLimits({ guestsToday: 10_000 });
+  it("never touches the guest counts, or asks for an address, for a member", async () => {
+    const deps = fakeLimits({ guestsToday: 10_000, fromAddress: 10_000 });
     await expect(checkAiLimits(deps, member, "search", now)).resolves.toEqual({
       allowed: true,
     });
     expect(deps.incrementGuestAiDay).not.toHaveBeenCalled();
+    expect(deps.incrementGuestAiAddressDay).not.toHaveBeenCalled();
+    expect(deps.guestAddress).not.toHaveBeenCalled();
   });
 
   it("counts a guest's call against the day that started at midnight UTC", async () => {
@@ -174,8 +191,54 @@ describe("checkAiLimits", () => {
     await expect(checkAiLimits(deps, guest, "search", now)).resolves.toEqual({
       allowed: true,
     });
-    expect(deps.incrementGuestAiDay).toHaveBeenCalledWith(
-      new Date("2026-10-18T00:00:00.000Z"),
+    const midnight = new Date("2026-10-18T00:00:00.000Z");
+    expect(deps.incrementGuestAiAddressDay).toHaveBeenCalledWith(
+      "address-1",
+      midnight,
+    );
+    expect(deps.incrementGuestAiDay).toHaveBeenCalledWith(midnight);
+  });
+
+  it("lets an address's last call of the day through and stops the next", async () => {
+    const limit = GUEST_AI_DAILY_PER_ADDRESS.limit;
+    await expect(
+      checkAiLimits(
+        fakeLimits({ fromAddress: limit - 1 }),
+        guest,
+        "search",
+        now,
+      ),
+    ).resolves.toEqual({ allowed: true });
+    await expect(
+      checkAiLimits(fakeLimits({ fromAddress: limit }), guest, "search", now),
+    ).resolves.toEqual({
+      allowed: false,
+      reason: "address-limit",
+      retryAfterSeconds: 9 * 60 * 60 + 15 * 60,
+    });
+  });
+
+  it("doesn't let an address past its share use up the shared count", async () => {
+    const deps = fakeLimits({
+      fromAddress: GUEST_AI_DAILY_PER_ADDRESS.limit,
+    });
+    await checkAiLimits(deps, guest, "search", now);
+    expect(deps.incrementGuestAiDay).not.toHaveBeenCalled();
+  });
+
+  it("counts each address separately", async () => {
+    const deps = fakeLimits({
+      fromAddress: GUEST_AI_DAILY_PER_ADDRESS.limit,
+      address: "address-2",
+    });
+    await expect(checkAiLimits(deps, guest, "search", now)).resolves.toEqual({
+      allowed: true,
+    });
+  });
+
+  it("gives one address less than the whole day", () => {
+    expect(GUEST_AI_DAILY_PER_ADDRESS.limit).toBeLessThan(
+      GUEST_AI_DAILY_CEILING.limit,
     );
   });
 
@@ -211,11 +274,12 @@ describe("checkAiLimits", () => {
     ).resolves.toMatchObject({ reason: "guest-ceiling" });
   });
 
-  it("doesn't let a guest past their own limit use up the shared count", async () => {
+  it("doesn't let a guest past their own limit use up the wider counts", async () => {
     const deps = fakeLimits({ own: GUEST_AI_RATE_LIMITS.search.limit });
     await expect(
       checkAiLimits(deps, guest, "search", now),
     ).resolves.toMatchObject({ allowed: false, reason: "own-limit" });
+    expect(deps.incrementGuestAiAddressDay).not.toHaveBeenCalled();
     expect(deps.incrementGuestAiDay).not.toHaveBeenCalled();
   });
 });

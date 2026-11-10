@@ -32,9 +32,12 @@ function setup({
 } = {}) {
   let count = used;
   let guestCount = guestsToday;
+  let addressCount = 0;
   return {
     increment: vi.fn(async () => ++count),
     incrementGuestAiDay: vi.fn(async () => ++guestCount),
+    incrementGuestAiAddressDay: vi.fn(async () => ++addressCount),
+    guestAddress: () => "address-1",
     ask: vi.fn<AskClaude>(async () => ({
       text: reply,
       stopReason: "end_turn",

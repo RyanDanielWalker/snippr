@@ -1,7 +1,7 @@
 import { currentUser } from "@/lib/auth";
 import { withErrors } from "@/lib/api-errors";
 import { snippetStore } from "@/lib/library-store";
-import { incrementAiUsage, incrementGuestAiDay } from "@/lib/ai-usage";
+import { aiLimitStore } from "@/lib/ai-usage";
 import { askClaude } from "@/lib/ai";
 import { searchSnippets } from "@/lib/ai-search";
 
@@ -10,10 +10,9 @@ import { searchSnippets } from "@/lib/ai-search";
 export const POST = withErrors(async (req: Request) =>
   searchSnippets(
     {
+      ...aiLimitStore(req),
       countSnippets: snippetStore.count,
       listSnippets: snippetStore.list,
-      increment: incrementAiUsage,
-      incrementGuestAiDay,
       ask: askClaude,
     },
     await currentUser(),

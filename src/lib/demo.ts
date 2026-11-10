@@ -67,7 +67,10 @@ def retry(fn, attempts=5, delay=0.5):
 export type DemoStore = {
   /** Atomically adds one to the starts for this IP and window; returns the new count. */
   countStart: (ipHash: string, windowStart: Date) => Promise<number>;
-  /** Deletes guests expired by `now`, and start counts from windows before `keepFrom`. */
+  /**
+   * Deletes guests expired by `now`, start counts from windows before
+   * `keepFrom`, and per-address AI counts from days before today.
+   */
   deleteExpired: (now: Date, keepFrom: Date) => Promise<void>;
   /** Creates the guest, its seeded library, and its session, all or nothing. */
   createGuest: (guest: {

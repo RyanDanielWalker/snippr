@@ -92,6 +92,16 @@ model GuestAiDay {
   count Int      @default(0)
 }
 
+// One row per hashed client IP and UTC day, counting demo guests' AI calls
+// from that address, so one address can only use part of the day's ceiling.
+// Rows from earlier days are deleted when a demo starts. See docs/adr/0047.
+model GuestAiAddressDay {
+  ipHash String
+  day    DateTime
+  count  Int      @default(0)
+  @@id([ipHash, day])
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String

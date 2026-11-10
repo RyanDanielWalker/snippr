@@ -81,6 +81,8 @@ function fakeDeps(extra: Snippet[] = []) {
       listSnippets: store.list,
       increment: vi.fn<IncrementUsage>(async () => 1),
       incrementGuestAiDay: vi.fn(async () => 1),
+      incrementGuestAiAddressDay: vi.fn(async () => 1),
+      guestAddress: () => "address-1",
       // Claude picks the first snippet in the list it's given.
       ask: vi.fn<AskClaude>(async () => ({
         text: "[0]",

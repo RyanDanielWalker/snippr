@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import type { DemoStore } from "@/lib/demo";
+import { GUEST_AI_DAILY_PER_ADDRESS, windowStart } from "@/lib/rate-limit";
 
 /**
  * The database side of starting a demo (see docs/adr/0012 and
- * src/lib/demo.ts). Not unit-tested: it's only Prisma calls.
+ * src/lib/demo.ts). The cleanup is tested against Postgres in
+ * demo-store.db.test.ts.
  */
 export const demoStore: DemoStore = {
   // Same atomic-counter statement as the AI rate limit (src/lib/ai-usage.ts).
@@ -19,10 +21,18 @@ export const demoStore: DemoStore = {
   },
 
   // Deleting a user cascades to its sessions, snippets, folders, and AI usage.
+  // Per-address AI counts from earlier days go too, so hashed addresses
+  // don't pile up (docs/adr/0047). The day-wide GuestAiDay counts stay as a
+  // record of demo use (docs/adr/0046).
   async deleteExpired(now, keepFrom) {
     await prisma.$transaction([
       prisma.user.deleteMany({ where: { guestExpiresAt: { lte: now } } }),
       prisma.demoStart.deleteMany({ where: { windowStart: { lt: keepFrom } } }),
+      prisma.guestAiAddressDay.deleteMany({
+        where: {
+          day: { lt: windowStart(now, GUEST_AI_DAILY_PER_ADDRESS.windowMs) },
+        },
+      }),
     ]);
   },
 

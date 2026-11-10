@@ -1,6 +1,10 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/prisma";
-import { incrementAiUsage, incrementGuestAiDay } from "@/lib/ai-usage";
+import {
+  incrementAiUsage,
+  incrementGuestAiAddressDay,
+  incrementGuestAiDay,
+} from "@/lib/ai-usage";
 
 // The AI rate limit's counter against a real Postgres (`npm run test:db`,
 // docs/adr/0020). The unit tests fake it, so without this a typo in its SQL
@@ -104,5 +108,30 @@ describe("incrementGuestAiDay", () => {
     await incrementGuestAiDay(today);
     await prisma.user.deleteMany();
     expect(await incrementGuestAiDay(today)).toBe(2);
+  });
+});
+
+describe("incrementGuestAiAddressDay", () => {
+  const today = new Date("2026-10-20T00:00:00.000Z");
+  const tomorrow = new Date("2026-10-21T00:00:00.000Z");
+
+  beforeEach(async () => {
+    await prisma.guestAiAddressDay.deleteMany();
+  });
+
+  it("keeps a separate count per address and day", async () => {
+    expect(await incrementGuestAiAddressDay("a", today)).toBe(1);
+    expect(await incrementGuestAiAddressDay("a", today)).toBe(2);
+    expect(await incrementGuestAiAddressDay("b", today)).toBe(1);
+    expect(await incrementGuestAiAddressDay("a", tomorrow)).toBe(1);
+  });
+
+  it("gives calls made at the same moment different counts", async () => {
+    const counts = await Promise.all(
+      Array.from({ length: 10 }, () => incrementGuestAiAddressDay("a", today)),
+    );
+    expect([...counts].sort((a, b) => a - b)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    ]);
   });
 });

@@ -29,11 +29,34 @@ export function tooManyRequests(retryAfterSeconds: number): Response {
   });
 }
 
+/**
+ * When something comes back, in words that hold in any time zone: "in about
+ * 7 hours" rather than a clock time (docs/adr/0047). Rounded to the hour,
+ * since the daily limits reset at midnight UTC and nobody needs minutes.
+ */
+export function backIn(seconds: number): string {
+  const hours = Math.round(seconds / 3600);
+  if (hours < 1) return "in under an hour";
+  if (hours === 1) return "in about an hour";
+  return `in about ${hours} hours`;
+}
+
 /** Every demo guest together has used the day's AI calls (docs/adr/0046). */
 export function guestAiCeilingReached(retryAfterSeconds: number): Response {
   return apiError(
     429,
-    "The demo has used up its AI for today. It's back at midnight UTC, or sign in to keep going.",
+    `The demo has used up its AI for today. It's back ${backIn(retryAfterSeconds)}, or sign in to keep going.`,
+    { "Retry-After": String(retryAfterSeconds) },
+  );
+}
+
+/** Guests from one address have used its share of the day (docs/adr/0047). */
+export function guestAiAddressLimitReached(
+  retryAfterSeconds: number,
+): Response {
+  return apiError(
+    429,
+    `Your network has used up its share of the demo's AI for today. It's back ${backIn(retryAfterSeconds)}, or sign in to keep going.`,
     { "Retry-After": String(retryAfterSeconds) },
   );
 }
@@ -43,9 +66,14 @@ export function aiLimitResponse(limit: {
   retryAfterSeconds: number;
   reason: AiLimitReason;
 }): Response {
-  return limit.reason === "guest-ceiling"
-    ? guestAiCeilingReached(limit.retryAfterSeconds)
-    : tooManyRequests(limit.retryAfterSeconds);
+  switch (limit.reason) {
+    case "guest-ceiling":
+      return guestAiCeilingReached(limit.retryAfterSeconds);
+    case "address-limit":
+      return guestAiAddressLimitReached(limit.retryAfterSeconds);
+    case "own-limit":
+      return tooManyRequests(limit.retryAfterSeconds);
+  }
 }
 
 /**

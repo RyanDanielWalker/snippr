@@ -7,7 +7,8 @@
  * without talking to the others. The counter itself lives in the database
  * and is passed in, so this can be tested without one.
  *
- * Demo guests also share one daily ceiling on top of that (docs/adr/0046).
+ * Demo guests also have a daily share per address and one daily ceiling
+ * between them, on top of that (docs/adr/0046, docs/adr/0047).
  */
 
 export type RateLimitBucket = "describe" | "search";
@@ -35,6 +36,14 @@ export const GUEST_AI_RATE_LIMITS: Record<RateLimitBucket, RateLimitRule> = {
 // fixed UTC day, midnight to midnight.
 export const GUEST_AI_DAILY_CEILING: RateLimitRule = {
   limit: 500,
+  windowMs: DAY,
+};
+
+// The most of that ceiling one address can use in a day: a fifth, so it takes
+// at least five addresses to use up the day for everyone (docs/adr/0047).
+// Guests on a shared network, like an office, share this.
+export const GUEST_AI_DAILY_PER_ADDRESS: RateLimitRule = {
+  limit: 100,
   windowMs: DAY,
 };
 
@@ -113,22 +122,40 @@ export async function checkFixedWindow(
  */
 export type IncrementGuestAiDay = (day: Date) => Promise<number>;
 
+/** The same, for the day's guest AI calls from one hashed address. */
+export type IncrementGuestAiAddressDay = (
+  ipHash: string,
+  day: Date,
+) => Promise<number>;
+
 export type AiLimitDeps = {
   increment: IncrementUsage;
   incrementGuestAiDay: IncrementGuestAiDay;
+  incrementGuestAiAddressDay: IncrementGuestAiAddressDay;
+  /**
+   * The hashed address the request came from. Only asked for a guest's
+   * call, so a member's call never needs it.
+   */
+  guestAddress: () => string;
 };
 
-/** Which limit stopped a call: the caller's own, or the one guests share. */
-export type AiLimitReason = "own-limit" | "guest-ceiling";
+/**
+ * Which limit stopped a call: the caller's own, the share one address gets,
+ * or the ceiling all guests share.
+ */
+export type AiLimitReason = "own-limit" | "address-limit" | "guest-ceiling";
 
 export type AiLimitResult =
   | { allowed: true }
   | { allowed: false; retryAfterSeconds: number; reason: AiLimitReason };
 
 /**
- * Every limit an AI call has to pass, in order. A guest's own limit comes
- * first, so one guest hammering the button past it can't use up the count
- * every other guest shares. Members never touch the shared count.
+ * Every limit an AI call has to pass, narrowest first: the caller's own,
+ * then (for guests) their address's share of the day, then the day's
+ * ceiling for all guests. Each one stops a call before the wider counts go
+ * up, so one guest hammering the button, or one address starting guest
+ * after guest, can't use up what everyone else shares. Members never touch
+ * the guest counts.
  */
 export async function checkAiLimits(
   deps: AiLimitDeps,
@@ -145,6 +172,14 @@ export async function checkAiLimits(
   );
   if (!own.allowed) return { ...own, reason: "own-limit" };
   if (!user.isGuest) return { allowed: true };
+
+  const ipHash = deps.guestAddress();
+  const address = await checkFixedWindow(
+    (day) => deps.incrementGuestAiAddressDay(ipHash, day),
+    GUEST_AI_DAILY_PER_ADDRESS,
+    now,
+  );
+  if (!address.allowed) return { ...address, reason: "address-limit" };
 
   const shared = await checkFixedWindow(
     deps.incrementGuestAiDay,

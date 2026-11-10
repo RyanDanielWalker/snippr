@@ -1,6 +1,6 @@
 import { currentUser } from "@/lib/auth";
 import { withErrors } from "@/lib/api-errors";
-import { incrementAiUsage, incrementGuestAiDay } from "@/lib/ai-usage";
+import { aiLimitStore } from "@/lib/ai-usage";
 import { askClaude } from "@/lib/ai";
 import { describeSnippet } from "@/lib/ai-describe";
 
@@ -9,7 +9,7 @@ import { describeSnippet } from "@/lib/ai-describe";
 
 export const POST = withErrors(async (req: Request) =>
   describeSnippet(
-    { increment: incrementAiUsage, incrementGuestAiDay, ask: askClaude },
+    { ...aiLimitStore(req), ask: askClaude },
     await currentUser(),
     req,
   ),

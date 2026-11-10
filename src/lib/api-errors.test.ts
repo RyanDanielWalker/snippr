@@ -3,6 +3,7 @@ import { APIConnectionError } from "@anthropic-ai/sdk";
 import {
   aiLimitResponse,
   apiError,
+  backIn,
   tooManyRequests,
   unauthorized,
   unexpectedError,
@@ -44,14 +45,38 @@ describe("aiLimitResponse", () => {
 
   it("says the demo is done for today when the guests' ceiling stopped it", async () => {
     const res = aiLimitResponse({
-      retryAfterSeconds: 3600,
+      retryAfterSeconds: 7 * 3600,
       reason: "guest-ceiling",
     });
     expect(res.status).toBe(429);
-    expect(res.headers.get("Retry-After")).toBe("3600");
-    const { error } = await res.json();
-    expect(error).toContain("midnight UTC");
-    expect(error).toContain("sign in");
+    expect(res.headers.get("Retry-After")).toBe(String(7 * 3600));
+    expect((await res.json()).error).toBe(
+      "The demo has used up its AI for today. It's back in about 7 hours, or sign in to keep going.",
+    );
+  });
+
+  it("says the network is done for today when its address's share stopped it", async () => {
+    const res = aiLimitResponse({
+      retryAfterSeconds: 7 * 3600,
+      reason: "address-limit",
+    });
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe(String(7 * 3600));
+    expect((await res.json()).error).toBe(
+      "Your network has used up its share of the demo's AI for today. It's back in about 7 hours, or sign in to keep going.",
+    );
+  });
+});
+
+describe("backIn", () => {
+  it("rounds to the hour, in words that hold in any time zone", () => {
+    expect(backIn(60)).toBe("in under an hour");
+    expect(backIn(29 * 60)).toBe("in under an hour");
+    expect(backIn(30 * 60)).toBe("in about an hour");
+    expect(backIn(89 * 60)).toBe("in about an hour");
+    expect(backIn(90 * 60)).toBe("in about 2 hours");
+    expect(backIn(23869)).toBe("in about 7 hours");
+    expect(backIn(24 * 3600)).toBe("in about 24 hours");
   });
 });
 
