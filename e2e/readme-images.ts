@@ -31,6 +31,9 @@ async function startDemo(page: Page) {
   await page.getByRole("button", { name: "Try the demo" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(card(page, "Debounce")).toBeVisible();
+  // The images show the library. The demo's checklist (ADR 0049) is there
+  // for visitors, so it's closed first, and its cookie keeps it closed.
+  await page.getByRole("button", { name: "Close things to try" }).click();
 }
 
 // Fonts and syntax colors arrive after the page does; a shot taken before

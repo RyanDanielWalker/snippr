@@ -49,6 +49,18 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(card("Debounce")).toBeVisible();
   await expect(card("Retry with backoff")).toBeVisible();
 
+  // The Things to try checklist (ADR 0049), with nothing ticked yet. Each
+  // line is checked again below, after the step that ticks it. A ticked line
+  // starts with "Done:" for a screen reader.
+  const tryList = page.getByRole("region", { name: "Things to try" });
+  const tryLine = (text: string) =>
+    tryList.getByRole("listitem").filter({ hasText: text });
+  await expect(tryList.getByRole("listitem")).toHaveCount(4);
+  await expect(tryList).not.toContainText("Done:");
+  // A mouse drags, so this line says so (phone.spec.ts checks the other).
+  await expect(tryList.getByText(/^Drag a card onto a folder/)).toBeVisible();
+  await expect(tryList.getByText(/^Move a snippet to a folder/)).toBeHidden();
+
   // A card opens from the keyboard, and says so instead of dnd-kit's
   // "press the space bar" to pick it up. phone.spec.ts opens one by tapping.
   await expect(card("Debounce")).toHaveAccessibleDescription(
@@ -160,8 +172,9 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await page.mouse.up();
 
   // A toast says so, the card now carries the folder's name, and the folder
-  // lists it.
+  // lists it. The checklist ticks its first line.
   await expect(page.getByText("Moved to Frontend.")).toBeVisible();
+  await expect(tryLine("onto a folder")).toContainText("Done:");
   await expect(
     card("Slugify").getByText("Frontend", { exact: true }),
   ).toBeVisible();
@@ -206,7 +219,12 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await pickUp("Retry with backoff");
   await dropOn(frontend);
   await expect(unorganized).toBeHidden();
-  await expect(page.getByRole("heading", { level: 2 })).toBeHidden();
+  // All snippets has no heading of its own. The checklist's doesn't count.
+  await expect(
+    page
+      .getByRole("heading", { level: 2 })
+      .filter({ hasNotText: "Things to try" }),
+  ).toBeHidden();
   await expect(cards).toHaveCount(5);
 
   // The row comes back for a drag, because it's the only way out of a folder,
@@ -286,8 +304,60 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
     await expect(
       page.getByText(/The demo has used up its AI for today\. It's back in/),
     ).toBeVisible();
+
+    // The checklist ticks an AI line when it's asked, so a visitor who finds
+    // the AI used up still gets the tick. Generate says the same thing.
+    await expect(tryLine("AI search")).toContainText("Done:");
+    await expect(tryLine("write a description")).not.toContainText("Done:");
+    // Back to the folder's cards, which the empty AI results replaced.
+    await page.getByRole("button", { name: "✦ AI search" }).click();
+    await card("Debounce")
+      .getByRole("button", { name: "Edit", exact: true })
+      .click();
+    await editForm.getByRole("button", { name: "✦ Generate" }).click();
+    await expect(
+      editForm.getByText(/The demo has used up its AI for today/),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(editForm).toBeHidden();
+    await expect(tryLine("write a description")).toContainText("Done:");
   } finally {
     await prisma.guestAiDay.deleteMany({ where: { day: today } });
     await prisma.$disconnect();
   }
+
+  // The last line is a link to Connect, and getting there ticks it. Back on
+  // the dashboard all four are done.
+  await tryList
+    .getByRole("link", { name: "See how Claude Code or Cursor connects" })
+    .click();
+  await expect(page).toHaveURL(/\/connect$/);
+  await expect(page.getByText("Demo guests can't make tokens")).toBeVisible();
+  await page.getByRole("link", { name: "Back to snippets" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(tryList.getByText(/^Done: /)).toHaveCount(4);
+  await expect(tryList).toContainText("That's everything.");
+
+  // Closed stays closed, through a reload, and the demo banner can open it
+  // again with its ticks intact.
+  // Focus lands on the button that replaces the one pressed, both ways.
+  const reopen = page.getByRole("button", {
+    name: "Things to try",
+    exact: true,
+  });
+  const close = tryList.getByRole("button", { name: "Close things to try" });
+  await close.focus();
+  await page.keyboard.press("Enter");
+  await expect(tryList).toBeHidden();
+  await expect(reopen).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(close).toBeFocused();
+  await close.click();
+  await expect(tryList).toBeHidden();
+  await page.reload();
+  await expect(card("Debounce")).toBeVisible();
+  await expect(tryList).toBeHidden();
+  await reopen.click();
+  await expect(tryList).toBeVisible();
+  await expect(tryList.getByText(/^Done: /)).toHaveCount(4);
 });

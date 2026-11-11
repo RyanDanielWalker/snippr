@@ -47,6 +47,29 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   await expect(sidebar).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(sidebar).toBeHidden();
+
+  // A touch screen can't drag a card, so the checklist's first line points
+  // at the folder field in Edit instead (ADR 0049), and moving a snippet
+  // that way ticks it.
+  const moveLine = page
+    .getByRole("region", { name: "Things to try" })
+    .getByRole("listitem")
+    .first();
+  await expect(moveLine.getByText(/^Move a snippet to a folder/)).toBeVisible();
+  await expect(moveLine.getByText(/^Drag a card/)).toBeHidden();
+  await expect(moveLine).not.toContainText("Done:");
+  await page.getByRole("button", { name: "Folders", exact: true }).click();
+  await sidebar.getByRole("button", { name: /^All snippets/ }).click();
+  await card("Retry with backoff").getByRole("heading").click();
+  await page
+    .getByRole("dialog", { name: "Retry with backoff" })
+    .getByRole("button", { name: "Edit", exact: true })
+    .click();
+  const form = page.getByRole("dialog", { name: "Edit snippet" });
+  await form.getByLabel("Folder", { exact: true }).selectOption("Frontend");
+  await form.getByRole("button", { name: /^Save/ }).click();
+  await expect(form).toBeHidden();
+  await expect(moveLine).toContainText("Done:");
 });
 
 // Delete is in the preview and the edit form too, not only on the card.
