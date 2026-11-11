@@ -14,6 +14,7 @@ import {
 } from "@/lib/snippet-form";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
+import { useMarkTried } from "@/components/ThingsToTry";
 
 /**
  * The form for a new snippet and for editing one. Pass `snippet` to edit it;
@@ -46,6 +47,7 @@ export default function SnippetFormModal({
   const heading = editing ? "Edit snippet" : "New snippet";
   const id = useId();
   const titleRef = useDialogFocus<HTMLInputElement>();
+  const tried = useMarkTried();
 
   // Escape closes it like a click outside does: only until anything changes.
   // After that only Cancel and ✕ do, so a stray key can't lose a pasted
@@ -76,6 +78,10 @@ export default function SnippetFormModal({
         setError(result.error);
         return;
       }
+      // The phone's way to move a snippet, since a card can't be dragged
+      // there, so it ticks the same line as a drag does.
+      if (editing && form.folderId && form.folderId !== initial.folderId)
+        tried("drag");
 
       // Close in the same render as the refreshed list, so "Saving..." lasts
       // until the snippet is on screen.
@@ -88,6 +94,8 @@ export default function SnippetFormModal({
 
   async function handleGenerateDescription() {
     if (!form.code) return;
+    // Ticked when it's asked, like AI search in DashboardClient.
+    tried("describe");
     setGenerating(true);
     setDescribeError(null);
     const result = await callApi<{ description: string }>(

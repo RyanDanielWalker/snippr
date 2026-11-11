@@ -12,6 +12,7 @@ import {
   usesSecureCookies,
 } from "@/lib/demo";
 import { demoStore } from "@/lib/demo-store";
+import { TRY_COOKIE } from "@/lib/things-to-try";
 
 /**
  * "Try the demo": makes a guest user and signs the visitor in as it (see
@@ -47,6 +48,9 @@ export async function startDemoAction() {
     secure,
     expires: result.expires,
   });
+  // The checklist belongs to one demo, so a new one starts it fresh
+  // (docs/adr/0049).
+  cookieStore.delete(TRY_COOKIE);
 
   redirect("/dashboard");
 }

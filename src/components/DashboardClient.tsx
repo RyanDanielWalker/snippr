@@ -18,6 +18,11 @@ import SnippetFormModal from "@/components/SnippetFormModal";
 import FolderSidebar from "@/components/FolderSidebar";
 import { Wordmark } from "@/components/LogoMark";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import ThingsToTry, {
+  saveTryState,
+  useMarkTried,
+  useTryState,
+} from "@/components/ThingsToTry";
 import { useToast } from "@/components/Toaster";
 import {
   snippetCap,
@@ -32,6 +37,7 @@ import { matchesKeyword } from "@/lib/keyword-search";
 import { pickByIds, resultsHeading } from "@/lib/ai-results";
 import { latestOnly } from "@/lib/latest-only";
 import { sidebarCookie } from "@/lib/sidebar";
+import { setClosed } from "@/lib/things-to-try";
 import type { Snippet, Folder } from "@/lib/library-types";
 
 type Props = {
@@ -40,6 +46,8 @@ type Props = {
   user: { email: string; image: string; isGuest: boolean };
   /** From the sidebar cookie, read by the page on the server. */
   sidebarCollapsed?: boolean;
+  /** A guest's "Things to try" cookie, read by the page on the server. */
+  tryCookie?: string;
 };
 
 // The chip still glides home, but dnd-kit's default also hides the card by
@@ -53,6 +61,7 @@ export default function DashboardClient({
   folders,
   user,
   sidebarCollapsed: initialSidebarCollapsed = false,
+  tryCookie,
 }: Props) {
   const cap = snippetCap(user.isGuest);
   const capStatus = snippetCapStatus(snippets.length, cap);
@@ -77,6 +86,22 @@ export default function DashboardClient({
   const [draggedSnippet, setDraggedSnippet] = useState<Snippet | null>(null);
   const [movingIds, setMovingIds] = useState<ReadonlySet<string>>(new Set());
   const [, startMoving] = useTransition();
+  const tryState = useTryState(tryCookie);
+  const tried = useMarkTried();
+  // Closing the checklist removes the button that had focus, and opening it
+  // removes the other one. So focus moves to the button that replaces it,
+  // or a keyboard user is dropped back at the top of the page.
+  const tryToggled = useRef(false);
+  const focusIfToggled = (button: HTMLButtonElement | null) => {
+    if (button && tryToggled.current) {
+      tryToggled.current = false;
+      button.focus();
+    }
+  };
+  function toggleTry(closed: boolean) {
+    tryToggled.current = true;
+    saveTryState(setClosed(tryState, closed));
+  }
 
   // Mouse drags only, in practice. On a touch screen the browser takes the same
   // gesture as a scroll and cancels the pointer, so dragging never starts and
@@ -146,6 +171,9 @@ export default function DashboardClient({
   async function handleAiSearch() {
     if (aiLoading || !search.trim()) return;
     const isLatest = aiSearches.current.start();
+    // Ticked when it's asked, not when it answers: the demo's AI may be used
+    // up for the day, and the visitor has still found the feature.
+    tried("search");
     setAiLoading(true);
     setAiResultIds(null);
     setAiError(null);
@@ -223,6 +251,7 @@ export default function DashboardClient({
       // The card stops looking busy as its new folder shows up.
       startMoving(() => {
         doneMoving();
+        if (newFolderId !== null) tried("drag");
         toast(`Moved to ${destination}.`);
         router.refresh();
       });
@@ -327,15 +356,34 @@ export default function DashboardClient({
               This is a demo. It and everything in it is deleted 24 hours after
               you started.
             </span>
-            {/* Signs out first: signing in on top of a guest session would
-                try to attach your account to the guest (docs/adr/0012). */}
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-fg underline underline-offset-4 hover:text-accent-text"
-            >
-              Sign in to keep your own
-            </button>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {tryState.closed && (
+                <button
+                  ref={focusIfToggled}
+                  onClick={() => toggleTry(false)}
+                  className="text-fg underline underline-offset-4 hover:text-accent-text"
+                >
+                  Things to try
+                </button>
+              )}
+              {/* Signs out first: signing in on top of a guest session would
+                  try to attach your account to the guest (docs/adr/0012). */}
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="text-fg underline underline-offset-4 hover:text-accent-text"
+              >
+                Sign in to keep your own
+              </button>
+            </div>
           </div>
+        )}
+
+        {user.isGuest && !tryState.closed && (
+          <ThingsToTry
+            state={tryState}
+            onClose={() => toggleTry(true)}
+            closeRef={focusIfToggled}
+          />
         )}
 
         {/* A fixed id, because without one dnd-kit numbers the cards'

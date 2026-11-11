@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useToast } from "@/components/Toaster";
 import { useCopy } from "@/components/useCopy";
+import { markTried } from "@/components/ThingsToTry";
 import { callApi } from "@/lib/api-client";
 import { TOKEN_NAME_MAX } from "@/lib/field-limits";
 import { clientSetups } from "@/lib/mcp-config";
@@ -28,6 +29,11 @@ export default function ConnectClient({
   isGuest: boolean;
 }) {
   const [created, setCreated] = useState<string | null>(null);
+
+  // Getting here is the last line of the demo's checklist (docs/adr/0049).
+  useEffect(() => {
+    if (isGuest) markTried("connect");
+  }, [isGuest]);
 
   return (
     <main className="min-h-screen text-fg">

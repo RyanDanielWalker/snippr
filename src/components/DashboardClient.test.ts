@@ -14,6 +14,7 @@ vi.mock("next-auth/react", () => ({ signOut: vi.fn() }));
 function serverRender(
   sidebarCollapsed?: boolean,
   folderId: string | null = null,
+  guest?: { tryCookie?: string },
 ) {
   return renderToString(
     createElement(
@@ -32,8 +33,9 @@ function serverRender(
           },
         ],
         folders: [],
-        user: { email: "me@example.com", image: "", isGuest: false },
+        user: { email: "me@example.com", image: "", isGuest: !!guest },
         sidebarCollapsed,
+        tryCookie: guest?.tryCookie,
       }),
     ),
   );
@@ -75,5 +77,37 @@ describe("DashboardClient on the server", () => {
     const second = describedBy(serverRender());
     expect(first).not.toHaveLength(0);
     expect(second).toEqual(first);
+  });
+});
+
+describe("the demo's Things to try checklist", () => {
+  const guestRender = (tryCookie?: string) =>
+    serverRender(undefined, null, { tryCookie });
+
+  it("is there for a guest and not for a member", () => {
+    expect(guestRender()).toContain("Things to try</h2>");
+    expect(serverRender()).not.toContain("Things to try");
+  });
+
+  // Drawn from the cookie on the server, so a ticked line or a closed list
+  // doesn't flash back after the JavaScript runs.
+  it("draws the lines the cookie says are done", () => {
+    expect(guestRender()).not.toContain("Done: ");
+    expect(guestRender("drag.search").match(/Done: /g)).toHaveLength(2);
+  });
+
+  it("says when everything is done", () => {
+    expect(guestRender("drag.search.describe")).not.toContain(
+      "That&#x27;s everything",
+    );
+    expect(guestRender("drag.search.describe.connect")).toContain(
+      "That&#x27;s everything",
+    );
+  });
+
+  it("stays closed, with a way to open it again in the demo banner", () => {
+    const closed = guestRender("drag.closed");
+    expect(closed).not.toContain("Things to try</h2>");
+    expect(closed).toContain(">Things to try</button>");
   });
 });

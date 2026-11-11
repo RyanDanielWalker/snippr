@@ -7,7 +7,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { withCardHtml } from "@/lib/highlight";
 import { SIDEBAR_COOKIE, parseSidebarCollapsed } from "@/lib/sidebar";
+import { TRY_COOKIE } from "@/lib/things-to-try";
 import DashboardClient from "@/components/DashboardClient";
+import { TryProvider } from "@/components/ThingsToTry";
 import { ToastProvider } from "@/components/Toaster";
 
 export const metadata: Metadata = { title: "Your snippets" };
@@ -32,22 +34,29 @@ export default async function DashboardPage() {
   // Highlighted here so the cards arrive in color and the browser never
   // loads Shiki for them (docs/adr/0022).
   const cards = await withCardHtml(snippets, codeToHtml);
+  const cookieStore = await cookies();
   const sidebarCollapsed = parseSidebarCollapsed(
-    (await cookies()).get(SIDEBAR_COOKIE)?.value,
+    cookieStore.get(SIDEBAR_COOKIE)?.value,
   );
+  const isGuest = session.user.isGuest;
+  // Only guests get the checklist (docs/adr/0049).
+  const tryCookie = isGuest ? cookieStore.get(TRY_COOKIE)?.value : undefined;
 
   return (
     <ToastProvider>
-      <DashboardClient
-        snippets={JSON.parse(JSON.stringify(cards))}
-        folders={JSON.parse(JSON.stringify(folders))}
-        user={{
-          email: session.user.email ?? "",
-          image: session.user.image ?? "",
-          isGuest: session.user.isGuest,
-        }}
-        sidebarCollapsed={sidebarCollapsed}
-      />
+      <TryProvider enabled={isGuest}>
+        <DashboardClient
+          snippets={JSON.parse(JSON.stringify(cards))}
+          folders={JSON.parse(JSON.stringify(folders))}
+          user={{
+            email: session.user.email ?? "",
+            image: session.user.image ?? "",
+            isGuest,
+          }}
+          sidebarCollapsed={sidebarCollapsed}
+          tryCookie={tryCookie}
+        />
+      </TryProvider>
     </ToastProvider>
   );
 }
