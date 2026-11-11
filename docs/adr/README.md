@@ -72,7 +72,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0038](./0038-push-commits-with-a-migration-to-a-branch-first.md) | Push commits with a migration to a branch first | Accepted |
 | [0039](./0039-stop-storing-provider-tokens.md) | Stop storing GitHub and Google tokens | Accepted |
 | [0040](./0040-close-1-0-and-scope-1-1-to-two-demo-items.md) | Close 1.0, and scope 1.1 to two demo items | Accepted |
-| [0041](./0041-give-1-1-a-version-bump-and-a-tag.md) | Give 1.1 a version bump and a tag | Accepted |
+| [0041](./0041-give-1-1-a-version-bump-and-a-tag.md) | Give 1.1 a version bump and a tag | Accepted; extended by [0050](./0050-publish-1-1-as-a-github-release-with-notes-kept-in-the-repo.md) |
 | [0042](./0042-leave-the-minimatch-alert-open-until-lint-tools-can-take-the-fix.md) | Leave the minimatch alert open until the lint tools can take the fix | Superseded by 0043 |
 | [0043](./0043-dismiss-the-minimatch-alert-as-vulnerable-code-not-used.md) | Dismiss the minimatch alert as "vulnerable code not used" | Accepted |
 | [0044](./0044-add-a-prompt-language-that-wraps-and-is-described-as-a-prompt.md) | Add a prompt language that wraps and is described as a prompt | Accepted; description wording superseded by [0045](./0045-put-the-saved-prompt-rules-in-the-system-prompt-and-check-the-reply.md) |
@@ -81,5 +81,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0047](./0047-give-each-address-a-share-of-the-demo-ai-ceiling.md) | Give each address a share of the demo's AI ceiling, and say when it's back in hours | Accepted |
 | [0048](./0048-log-when-an-address-uses-its-share-before-changing-it.md) | Log when an address uses its share of the demo AI, before changing the share | Accepted |
 | [0049](./0049-a-things-to-try-checklist-for-demo-guests-kept-in-a-cookie.md) | A "Things to try" checklist for demo guests, kept in a cookie | Accepted |
+| [0050](./0050-publish-1-1-as-a-github-release-with-notes-kept-in-the-repo.md) | Publish 1.1 as a GitHub Release, with notes kept in the repo | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
