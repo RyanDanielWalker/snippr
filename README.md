@@ -19,7 +19,7 @@ Snippr is a portfolio project, so the reasoning is part of what's on show. Every
 - **An MCP server.** Claude Code, Cursor, and other MCP clients can search, read, and save snippets in your library.
 - **Two themes.** A dark default and an 8-bit one, remembered between visits.
 - **Highlighted code** on every card and in the preview, by Shiki.
-- **A demo** in one click, with a small library to try things on.
+- **A demo** in one click, with a small library and a short list of things to try.
 - **A phone layout** where the folders move into a drawer and nothing scrolls sideways.
 
 Accounts hold 50 snippets, and the demo holds 10.

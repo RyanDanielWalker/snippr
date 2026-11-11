@@ -59,7 +59,7 @@ flowchart LR
 2. `src/app/dashboard/page.tsx` is a **Server Component**: it runs only on the server. It calls `getServerSession(authOptions)`, which reads the session cookie and looks the session up in Postgres. No session means a redirect to `/login`.
 3. It loads the user's snippets and folders (with snippet counts) in parallel with `Promise.all`, then highlights the start of each snippet's code with Shiki for its card ([0022](./adr/0022-highlight-cards-on-the-server.md)).
 4. It passes that data as props to `DashboardClient`, a **Client Component** that runs in the browser and owns all the interactive state: search text, AI mode, selected folder, sidebar collapse, the phone folder drawer, the new-snippet modal, and drag state. Each `SnippetCard` owns its own preview and edit modals.
-5. `DashboardClient` is rendered to HTML on the server too, so the snippets arrive with the page, and then **hydrates** in the browser: React attaches its event handlers to that HTML instead of drawing it again. That only works if both renders produce the same markup, which is why `DndContext` has a fixed `id` ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). So a remembered choice the first frame depends on lives in a cookie the server can read, not in `localStorage`: the theme ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)) and the collapsed sidebar (`src/lib/sidebar.ts`, read by the dashboard page).
+5. `DashboardClient` is rendered to HTML on the server too, so the snippets arrive with the page, and then **hydrates** in the browser: React attaches its event handlers to that HTML instead of drawing it again. That only works if both renders produce the same markup, which is why `DndContext` has a fixed `id` ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). So a remembered choice the first frame depends on lives in a cookie the server can read, not in `localStorage`: the theme ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)), the collapsed sidebar (`src/lib/sidebar.ts`, read by the dashboard page), and a demo guest's checklist ([0049](./adr/0049-a-things-to-try-checklist-for-demo-guests-kept-in-a-cookie.md)).
 
 Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded, and keyword search stays inside the open folder. Only AI search makes a network call, and it always searches the whole library: you reach for it when you don't remember where something is, and the MCP server's search works the same way. While its results are up the heading reads "Whole library" instead of the folder's name, and picking a folder clears them. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
 
@@ -243,7 +243,15 @@ The cookie only holds a random session token. All user data stays in the databas
 3. In one transaction it creates a `User` with `guestExpiresAt` 24 hours out, a few seeded folders and snippets, and a `Session` row.
 4. It sets the same session cookie NextAuth would and redirects to `/dashboard`. From there the guest is an ordinary signed-in user.
 
-An adapter wrapper (`src/lib/guest.ts`) enforces the rest. Once `guestExpiresAt` has passed, the guest's session counts as no session, even though NextAuth will have pushed the session row's own expiry out. Guests also can't have a GitHub or Google account attached; the dashboard's "Sign in to keep your own" signs the guest out first. The session carries `isGuest`, which the dashboard uses for its banner and the AI handlers use to pick the guest limit.
+An adapter wrapper (`src/lib/guest.ts`) enforces the rest. Once `guestExpiresAt` has passed, the guest's session counts as no session, even though NextAuth will have pushed the session row's own expiry out. Guests also can't have a GitHub or Google account attached; the dashboard's "Sign in to keep your own" signs the guest out first. The session carries `isGuest`, which the dashboard uses for its banner and checklist, and the AI handlers use to pick the guest limit.
+
+A guest's dashboard also shows "Things to try" under the banner ([0049](./adr/0049-a-things-to-try-checklist-for-demo-guests-kept-in-a-cookie.md)). It lists four things a quick look would miss: dragging a snippet into a folder, AI search, a description written by Claude, and the Connect page. Each line ticks itself when the guest does it. For example, a drop into a folder ticks the first line, and pressing Enter in AI search ticks the second, even if the demo's AI is used up for the day. What's ticked, and whether the list is closed, live in one `snippr-try` cookie, such as `drag.search.closed`:
+
+- **The server reads it** (`src/app/dashboard/page.tsx`, for guests only), so a ticked line or a closed list is right in the first frame.
+- **The browser writes it.** `markTried` in `src/components/ThingsToTry.tsx` reads the cookie, adds the line, writes it back, and tells the list to redraw. The parts of the dashboard reach it through `TryProvider`, a React context the page wraps around everything for a guest only, so a member's actions never write the cookie.
+- **A new demo starts it fresh.** `startDemoAction` deletes it, and it expires after 24 hours, like the guest.
+
+On a touch screen the first line says to move a snippet through Edit instead, since cards can't be dragged there. Both wordings are in the HTML, and Tailwind's `pointer-coarse:` variant shows one.
 
 ## AI features
 
@@ -300,8 +308,8 @@ assets/fonts/                   Font files and licenses for the Open Graph image
 docker-compose.yml              Local Postgres for development and tests
 docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 e2e/
-├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message
-├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, delete from preview and form
+├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
+├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, Things to try's Edit wording and its tick, delete from preview and form
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
 playwright.config.ts            Runs it against a production build on port 3100
@@ -356,6 +364,7 @@ src/
 │   ├── accessible-names.test.ts  Fields and buttons on the snippet forms, preview, and dashboard have names, except the folder name inputs, which only appear after a click
 │   ├── LogoMark.tsx            The logo, colors passed in, and the Wordmark for page headers
 │   ├── ThemeToggle.tsx         ThemeProvider and the 8-bit toggle: cookie and data-theme, in the browser
+│   ├── ThingsToTry.tsx         The demo's checklist, TryProvider, and markTried(), which ticks a line in the cookie
 │   └── LoginButton.tsx         OAuth buttons
 ├── lib/
 │   ├── ai.ts                   The one Claude client: model, timeout, retries, askClaude()
@@ -406,6 +415,7 @@ src/
 │   ├── shiki-8bit.ts           The 8-bit theme's syntax colors (tested: AA on the code background)
 │   ├── theme.ts                The theme list and its cookie (tested)
 │   ├── sidebar.ts              The collapsed sidebar's cookie, read by the dashboard page (tested)
+│   ├── things-to-try.ts        The demo checklist's items and its cookie: read, tick, close, write (tested)
 │   ├── theme-tokens.ts         The default theme's colors for the generated images (tested: match globals.css, WCAG AA in both themes, no palette classes)
 │   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
 │   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
