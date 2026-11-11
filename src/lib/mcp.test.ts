@@ -9,6 +9,7 @@ import { handleMcpRequest, type McpDeps } from "./mcp";
 import type { IncrementUsage } from "./rate-limit";
 import type { SnippetStore } from "./snippets";
 import { SNIPPET_CAPS } from "./snippet-cap";
+import packageJson from "../../package.json";
 
 // The MCP server end to end: the SDK's own client talks to
 // handleMcpRequest through a fake fetch, so every test goes through token
@@ -170,6 +171,17 @@ describe("signing in", () => {
       "save_snippet",
       "search_snippets",
     ]);
+  });
+
+  // The version is written by hand in package.json and in mcp.ts (ADR
+  // 0041). This keeps a later bump from changing one and missing the other.
+  it("reports the same version as package.json", async () => {
+    const { deps } = fakeDeps();
+    const client = await connect(deps);
+    expect(client.getServerVersion()).toMatchObject({
+      name: "snippr",
+      version: packageJson.version,
+    });
   });
 });
 
