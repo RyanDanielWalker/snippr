@@ -196,6 +196,32 @@ Run the second line until the run has passed, and only then the third. In a term
 
 If `db:migrate` says the local database has drifted and offers to reset it, that's a database made with the old `db push`. Saying yes wipes local data only.
 
+### Releasing a version
+
+A *version number* like `1.1.0` has three parts: major, minor, patch. The middle one goes up when features are added and nothing that worked before breaks. A *tag* is a name pinned to one commit, so `v1.1` always means the commit that shipped 1.1, however far `main` moves on. A *GitHub Release* is a page GitHub builds on top of a tag, with a title and notes, shown on the repo's front page.
+
+This is how 1.1 was released ([0041](./adr/0041-give-1-1-a-version-bump-and-a-tag.md), [0050](./adr/0050-publish-1-1-as-a-github-release-with-notes-kept-in-the-repo.md)). Those decisions cover 1.1 only, so a later milestone decides for itself whether to do the same.
+
+1. **One commit moves the version** and adds the notes. `npm version 1.1.0 --no-git-tag-version` changes `package.json` and the lockfile without making a commit or tag of its own. The MCP server's version in `src/lib/mcp.ts` is changed by hand. A test in `src/lib/mcp.test.ts` fails if the two disagree, so a bump can't miss one. The notes go in `docs/releases/v<version>.md`: what a visitor would notice, what was fixed, what changed underneath, with links to the ADRs. Link with full GitHub URLs pinned to the tag (`.../blob/v1.1/docs/adr/...`), because a Release page doesn't resolve relative links.
+2. **Push it, and wait** for CI to pass and Vercel to deploy it (`gh run list --limit 1`). A tag means "this is what shipped", so it goes on a commit that did.
+3. **Tag the commit CI ran on, and push the tag.** CI and Vercel run on the newest commit in a push, not on each commit inside it. So if the bump went out with later commits on top, the tag goes on the newest of them, which is the one that was checked and deployed:
+
+   ```
+   git tag -a v1.1 <commit> -m "Snippr 1.1"
+   git push origin v1.1
+   ```
+
+   `-a` makes an annotated tag, which records who tagged it and when. `v1.0` was made the same way.
+4. **Publish the Release** from the notes:
+
+   ```
+   gh release create v1.1 --title "Snippr 1.1" --notes-file docs/releases/v1.1.md
+   ```
+
+   If the Release page is ever edited on GitHub, the file in the repo is the one to trust.
+
+Claude does step 1 and can make the tag in step 3 locally. Pushing the commit and the tag, and publishing the Release, are Ryan's: each one publishes something.
+
 ### Decision records
 
 If a change involves a decision that's hard to reverse, not obvious from the code, or a deliberate trade-off, it gets an [ADR](./adr/README.md), committed alongside the change. It's as long as someone who wasn't there needs it to be.
