@@ -1,6 +1,6 @@
 # Audit: 2026-11-12, sign-in accounts linked before the verified-email check
 
-A one-off check of production's `Account` rows, which [0009](../adr/0009-require-verified-email-for-new-accounts.md) asked for and the 1.1.1 milestone scheduled ([0051](../adr/0051-close-1-1-and-scope-the-next-milestone-to-three-security-fixes.md)). Claude wrote the queries and tested them locally. Ryan ran them in Supabase's SQL editor on 2026-11-12. Unlike the other audits in this folder, this one reads production data, not the code.
+A one-off check of production's `Account` rows, which [0009](../adr/0009-require-verified-email-for-new-accounts.md) asked for and the 1.1.1 milestone scheduled ([0051](../adr/0051-close-1-1-and-scope-the-next-milestone-to-three-security-fixes.md)). That milestone is called 1.2 now ([0057](../adr/0057-ship-the-milestone-as-1-2-now-that-it-has-the-archive.md)). Claude wrote the queries and tested them locally. Ryan ran them in Supabase's SQL editor on 2026-11-12. Unlike the other audits in this folder, this one reads production data, not the code.
 
 ## Verdict
 
