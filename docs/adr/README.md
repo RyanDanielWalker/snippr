@@ -82,5 +82,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0048](./0048-log-when-an-address-uses-its-share-before-changing-it.md) | Log when an address uses its share of the demo AI, before changing the share | Accepted |
 | [0049](./0049-a-things-to-try-checklist-for-demo-guests-kept-in-a-cookie.md) | A "Things to try" checklist for demo guests, kept in a cookie | Accepted |
 | [0050](./0050-publish-1-1-as-a-github-release-with-notes-kept-in-the-repo.md) | Publish 1.1 as a GitHub Release, with notes kept in the repo | Accepted |
+| [0051](./0051-close-1-1-and-scope-the-next-milestone-to-three-security-fixes.md) | Close 1.1, and scope the next milestone to three security fixes | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
