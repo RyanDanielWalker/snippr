@@ -13,10 +13,11 @@ export const POST = withErrors(async (req: Request) =>
   handleMcpRequest(
     {
       snippets: snippetStore,
+      // AI search reads only snippets that aren't archived (docs/adr/0056).
       search: {
         ...aiLimitStore(req),
-        countSnippets: snippetStore.count,
-        listSnippets: snippetStore.list,
+        countSnippets: snippetStore.countActive,
+        listSnippets: snippetStore.listActive,
         ask: askClaude,
       },
       findTokenUser: tokenStore.findUser,

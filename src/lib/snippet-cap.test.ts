@@ -37,10 +37,10 @@ describe("snippetCapStatus", () => {
 describe("snippetCapMessage", () => {
   it("names the cap and says what to do", () => {
     expect(snippetCapMessage(50, false)).toBe(
-      "You've hit the 50 snippet limit. Delete one to make room.",
+      "You've hit the 50 snippet limit, archived ones included. Delete one to make room.",
     );
     expect(snippetCapMessage(10, true)).toBe(
-      "The demo holds 10 snippets. Delete one to make room.",
+      "The demo holds 10 snippets, archived ones included. Delete one to make room.",
     );
   });
 });

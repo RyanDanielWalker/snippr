@@ -28,6 +28,7 @@ function snippet(id: string, userId: string, title = `Snippet ${id}`): Snippet {
     description: "Logs a number.",
     userId,
     folderId: null,
+    archivedAt: null,
     createdAt: at,
     updatedAt: at,
   };

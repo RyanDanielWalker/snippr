@@ -21,8 +21,12 @@ export function snippetCapStatus(count: number, cap: number): SnippetCapStatus {
   return "ok";
 }
 
+/**
+ * Archived snippets count toward the cap (docs/adr/0056), so the message
+ * says so: otherwise "All snippets 42" next to "limit of 50" reads as a bug.
+ */
 export function snippetCapMessage(cap: number, isGuest: boolean): string {
   return isGuest
-    ? `The demo holds ${cap} snippets. Delete one to make room.`
-    : `You've hit the ${cap} snippet limit. Delete one to make room.`;
+    ? `The demo holds ${cap} snippets, archived ones included. Delete one to make room.`
+    : `You've hit the ${cap} snippet limit, archived ones included. Delete one to make room.`;
 }

@@ -30,7 +30,14 @@ type NewSnippet = Omit<
   userId: string;
 };
 
-type SnippetChanges = Omit<z.output<typeof updateSnippetSchema>, "id">;
+/**
+ * What an update writes. The request says `archived: true or false`; the row
+ * keeps when, as `archivedAt` (docs/adr/0056).
+ */
+type SnippetChanges = Omit<
+  z.output<typeof updateSnippetSchema>,
+  "id" | "archived"
+> & { archivedAt?: Date | null };
 
 /** What creating a snippet reads and writes, all under one lock. */
 export type CreateStore = Pick<
@@ -39,9 +46,14 @@ export type CreateStore = Pick<
 >;
 
 export type SnippetStore = {
-  /** The user's snippets, newest first. */
+  /** The user's snippets, newest first, archived ones included. */
   list(userId: string): Promise<Snippet[]>;
+  /** Every snippet the user has, archived ones included: what the cap counts. */
   count(userId: string): Promise<number>;
+  /** The user's snippets that aren't archived, newest first. What AI search reads. */
+  listActive(userId: string): Promise<Snippet[]>;
+  /** How many of the user's snippets aren't archived. */
+  countActive(userId: string): Promise<number>;
   /** One snippet, only if the user owns it. Null otherwise. */
   get(id: string, userId: string): Promise<Snippet | null>;
   /** Who owns a snippet, or null if there's no such snippet. */
@@ -145,6 +157,7 @@ export async function updateSnippet(
   store: SnippetStore,
   user: ApiUser,
   req: Request,
+  now: () => Date = () => new Date(),
 ): Promise<Response> {
   if (!user) return unauthorized();
 
@@ -152,7 +165,11 @@ export async function updateSnippet(
   if (!body.ok) return body.response;
   // The schema only lets editable fields through, and leaves out the ones
   // the request didn't send, so `data` is a true partial update.
-  const { id, ...data } = body.data;
+  const { id, archived, ...fields } = body.data;
+  const data: SnippetChanges =
+    archived === undefined
+      ? fields
+      : { ...fields, archivedAt: archived ? now() : null };
 
   if (!(await ownsSnippet(store, id, user.id))) return snippetNotFound();
 

@@ -11,8 +11,9 @@ export const POST = withErrors(async (req: Request) =>
   searchSnippets(
     {
       ...aiLimitStore(req),
-      countSnippets: snippetStore.count,
-      listSnippets: snippetStore.list,
+      // Not the archive (docs/adr/0056).
+      countSnippets: snippetStore.countActive,
+      listSnippets: snippetStore.listActive,
       ask: askClaude,
     },
     await currentUser(),

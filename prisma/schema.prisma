@@ -47,6 +47,10 @@ model Snippet {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   folderId    String?
   folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  // When it was archived, or null while it's in the library. An archived
+  // snippet keeps its folder, still counts toward the cap, and is left out
+  // of the library, folder counts, and AI search. See docs/adr/0056.
+  archivedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   @@index([userId])

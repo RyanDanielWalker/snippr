@@ -28,6 +28,7 @@ function snippet(id: string, userId: string, title = `Snippet ${id}`): Snippet {
     description: "",
     userId,
     folderId: null,
+    archivedAt: null,
     createdAt: at,
     updatedAt: at,
   };
@@ -56,6 +57,12 @@ function fakeDeps(extra: Snippet[] = []) {
   const store: SnippetStore = {
     list: vi.fn(async (userId) => own(userId)),
     count: vi.fn(async (userId) => own(userId).length),
+    listActive: vi.fn(async (userId) =>
+      own(userId).filter((s) => !s.archivedAt),
+    ),
+    countActive: vi.fn(
+      async (userId) => own(userId).filter((s) => !s.archivedAt).length,
+    ),
     get: vi.fn(async (id, userId) => {
       const found = snippets.get(id);
       return found && found.userId === userId ? found : null;
@@ -78,8 +85,9 @@ function fakeDeps(extra: Snippet[] = []) {
   const deps = {
     snippets: store,
     search: {
-      countSnippets: store.count,
-      listSnippets: store.list,
+      // Wired like src/app/api/mcp/route.ts: search skips the archive.
+      countSnippets: store.countActive,
+      listSnippets: store.listActive,
       increment: vi.fn<IncrementUsage>(async () => 1),
       incrementGuestAiDay: vi.fn(async () => 1),
       incrementGuestAiAddressDay: vi.fn(async () => 1),
@@ -197,6 +205,20 @@ describe("search_snippets", () => {
     const found = JSON.parse(text(result));
     expect(found.map((s: Snippet) => s.id)).toEqual(["snippet-mine"]);
     expect(deps.search.ask.mock.calls[0][0]).not.toContain("Their secret");
+  });
+
+  it("leaves out snippets the user archived", async () => {
+    const { deps } = fakeDeps([
+      {
+        ...snippet("snippet-archived", "user-me", "Old session prompt"),
+        archivedAt: at,
+      },
+    ]);
+    const client = await connect(deps);
+    await call(client, "search_snippets", { query: "session" });
+    expect(deps.search.ask.mock.calls[0][0]).not.toContain(
+      "Old session prompt",
+    );
   });
 
   it("counts against the AI rate limit, and stops at it", async () => {

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { codeToHtml } from "shiki";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ACTIVE } from "@/lib/library-store";
 import { withCardHtml } from "@/lib/highlight";
 import { SIDEBAR_COOKIE, parseSidebarCollapsed } from "@/lib/sidebar";
 import { TRY_COOKIE } from "@/lib/things-to-try";
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
       where: { userId: session.user.id },
       orderBy: { createdAt: "asc" },
       include: {
-        _count: { select: { snippets: true } },
+        _count: { select: { snippets: ACTIVE } },
       },
     }),
   ]);

@@ -104,7 +104,7 @@ export function mcpServer(deps: McpDeps, user: SignedIn): McpServer {
     {
       title: "Search snippets",
       description:
-        "Finds snippets in the user's library that match a description, using Claude. Searches every folder. Returns the matches, best first, with their contents.",
+        "Finds snippets in the user's library that match a description, using Claude. Searches every folder, but not snippets the user archived. Returns the matches, best first, with their contents.",
       inputSchema: {
         query: z
           .string()

@@ -28,6 +28,12 @@ async function nullIfMissing<T>(write: Promise<T>): Promise<T | null> {
   }
 }
 
+/**
+ * A folder's count leaves out archived snippets, so the number next to it
+ * matches the cards it shows (docs/adr/0056). Shared with the dashboard page.
+ */
+export const ACTIVE = { where: { archivedAt: null } } as const;
+
 function findFolderOwner(id: string, db: Prisma.TransactionClient = prisma) {
   return db.folder.findUnique({ where: { id }, select: { userId: true } });
 }
@@ -49,6 +55,17 @@ export const snippetStore: SnippetStore = {
       where: { userId },
       orderBy: { createdAt: "desc" },
     }),
+
+  // Archived snippets stay out of AI search, here in the query rather than
+  // in a filter after it, so they're never read (docs/adr/0056).
+  listActive: (userId) =>
+    prisma.snippet.findMany({
+      where: { userId, archivedAt: null },
+      orderBy: { createdAt: "desc" },
+    }),
+
+  countActive: (userId) =>
+    prisma.snippet.count({ where: { userId, archivedAt: null } }),
 
   get: (id, userId) => prisma.snippet.findFirst({ where: { id, userId } }),
 
@@ -84,7 +101,7 @@ export const folderStore: FolderStore = {
     prisma.folder.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
-      include: { _count: { select: { snippets: true } } },
+      include: { _count: { select: { snippets: ACTIVE } } },
     }),
 
   findOwner: findFolderOwner,

@@ -16,7 +16,7 @@ async function makeUser(name: string) {
 async function makeSnippet(
   userId: string,
   title: string,
-  extra: { createdAt?: Date; folderId?: string } = {},
+  extra: { createdAt?: Date; folderId?: string; archivedAt?: Date } = {},
 ) {
   return prisma.snippet.create({
     data: {
@@ -61,6 +61,42 @@ describe("snippetStore", () => {
 
     expect(await snippetStore.count(ana.id)).toBe(1);
     expect(await snippetStore.count(ben.id)).toBe(2);
+  });
+
+  it("leaves archived snippets out of listActive and countActive, and keeps them in list and count", async () => {
+    await makeSnippet(ana.id, "Kept", { createdAt: day(1) });
+    await makeSnippet(ana.id, "Archived", {
+      createdAt: day(2),
+      archivedAt: day(3),
+    });
+    await makeSnippet(ben.id, "Ben's", { createdAt: day(4) });
+
+    const active = (await snippetStore.listActive(ana.id)).map((s) => s.title);
+    expect(active).toEqual(["Kept"]);
+    expect(await snippetStore.countActive(ana.id)).toBe(1);
+    expect(await snippetStore.countActive(ben.id)).toBe(1);
+    // The cap counts everything (docs/adr/0056).
+    expect(await snippetStore.count(ana.id)).toBe(2);
+    expect((await snippetStore.list(ana.id)).map((s) => s.title)).toEqual([
+      "Archived",
+      "Kept",
+    ]);
+  });
+
+  it("archives and unarchives through update, only for the owner", async () => {
+    const snippet = await makeSnippet(ana.id, "Ana's");
+
+    expect(
+      await snippetStore.update(snippet.id, ben.id, { archivedAt: day(5) }),
+    ).toBeNull();
+    const archived = await snippetStore.update(snippet.id, ana.id, {
+      archivedAt: day(5),
+    });
+    expect(archived?.archivedAt).toEqual(day(5));
+    const back = await snippetStore.update(snippet.id, ana.id, {
+      archivedAt: null,
+    });
+    expect(back?.archivedAt).toBeNull();
   });
 
   it("gets a snippet only for its owner", async () => {
@@ -148,6 +184,11 @@ describe("folderStore", () => {
       data: { userId: ben.id, name: "Ben's", createdAt: day(3) },
     });
     await makeSnippet(ana.id, "Filed", { folderId: newer.id });
+    // Archived snippets keep their folder but aren't counted in it.
+    await makeSnippet(ana.id, "Archived", {
+      folderId: newer.id,
+      archivedAt: day(4),
+    });
 
     const folders = (await folderStore.list(ana.id)).map((f) => [
       f.name,

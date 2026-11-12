@@ -29,6 +29,7 @@ function snippet(
     description: "",
     userId,
     folderId,
+    archivedAt: null,
     createdAt: at,
     updatedAt: at,
   };
@@ -65,6 +66,17 @@ function fakeStore(extraSnippets: Snippet[] = []) {
     count: vi.fn(
       async (userId: string) =>
         [...snippets.values()].filter((s) => s.userId === userId).length,
+    ),
+    listActive: vi.fn(async (userId: string) =>
+      [...snippets.values()].filter(
+        (s) => s.userId === userId && !s.archivedAt,
+      ),
+    ),
+    countActive: vi.fn(
+      async (userId: string) =>
+        [...snippets.values()].filter(
+          (s) => s.userId === userId && !s.archivedAt,
+        ).length,
     ),
     get: vi.fn(async (id: string, userId: string) => {
       const found = snippets.get(id);
@@ -268,7 +280,7 @@ describe("createSnippet", () => {
     await expectError(
       await createSnippet(store, me, request(newSnippet)),
       409,
-      "You've hit the 50 snippet limit. Delete one to make room.",
+      "You've hit the 50 snippet limit, archived ones included. Delete one to make room.",
     );
     expect(store.create).not.toHaveBeenCalled();
   });
@@ -286,6 +298,25 @@ describe("createSnippet", () => {
       409,
     );
     expect(store.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts archived snippets toward the cap", async () => {
+    const full = Array.from({ length: SNIPPET_CAPS.member - 1 }, (_, i) => ({
+      ...snippet(`archived-${i}`, "user-me"),
+      archivedAt: new Date("2026-11-12T12:00:00.000Z"),
+    }));
+    const { store } = fakeStore(full);
+    await expectError(
+      await createSnippet(store, me, request(newSnippet)),
+      409,
+    );
+  });
+
+  it("ignores archived: true on create, so a new snippet starts in the library", async () => {
+    const { store } = fakeStore();
+    await createSnippet(store, me, request({ ...newSnippet, archived: true }));
+    expect(store.create.mock.calls[0][0]).not.toHaveProperty("archived");
+    expect(store.create.mock.calls[0][0]).not.toHaveProperty("archivedAt");
   });
 
   it("counts only the user's own snippets toward the cap", async () => {
@@ -312,6 +343,58 @@ describe("updateSnippet", () => {
       title: "Renamed",
     });
     expect(snippets.get("snippet-mine")?.folderId).toBe("folder-mine");
+  });
+
+  it("archives it with the time it happened, and unarchives it", async () => {
+    const { store, snippets } = fakeStore();
+    const at = new Date("2026-11-12T17:00:00.000Z");
+    const archive = await updateSnippet(
+      store,
+      me,
+      request({ id: "snippet-mine", archived: true }),
+      () => at,
+    );
+    expect(archive.status).toBe(200);
+    expect(store.update).toHaveBeenCalledWith("snippet-mine", "user-me", {
+      archivedAt: at,
+    });
+    // It keeps its folder, so unarchiving puts it back where it was.
+    expect(snippets.get("snippet-mine")?.folderId).toBe("folder-mine");
+
+    await updateSnippet(
+      store,
+      me,
+      request({ id: "snippet-mine", archived: false }),
+    );
+    expect(snippets.get("snippet-mine")?.archivedAt).toBeNull();
+  });
+
+  it("refuses to archive someone else's snippet", async () => {
+    const { store, snippets } = fakeStore();
+    await expectError(
+      await updateSnippet(
+        store,
+        me,
+        request({ id: "snippet-theirs", archived: true }),
+      ),
+      403,
+    );
+    expect(store.update).not.toHaveBeenCalled();
+    expect(snippets.get("snippet-theirs")?.archivedAt).toBeNull();
+  });
+
+  it("refuses an archived value that isn't true or false", async () => {
+    const { store } = fakeStore();
+    await expectError(
+      await updateSnippet(
+        store,
+        me,
+        request({ id: "snippet-mine", archived: "yes" }),
+      ),
+      400,
+      "Archived has to be true or false.",
+    );
+    expect(store.update).not.toHaveBeenCalled();
   });
 
   it("moves it to Unorganized with folderId: null", async () => {

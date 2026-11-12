@@ -83,8 +83,17 @@ export const createSnippetSchema = body({
   tags: snippetFields.tags.optional(),
 });
 
-/** Partial update: a field the request leaves out stays as it is. */
-export const updateSnippetSchema = createSnippetSchema.partial().extend({ id });
+/**
+ * Partial update: a field the request leaves out stays as it is. `archived`
+ * is here and not on create: a snippet starts in the library, and archiving
+ * is a change to one that exists (docs/adr/0056).
+ */
+export const updateSnippetSchema = createSnippetSchema.partial().extend({
+  id,
+  archived: z
+    .boolean({ error: "Archived has to be true or false." })
+    .optional(),
+});
 
 /** Any DELETE: the body is just the record's id. */
 export const deleteByIdSchema = body({ id });
