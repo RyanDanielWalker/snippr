@@ -1,6 +1,6 @@
 # 0045. Put the saved-prompt rules in the system prompt and check the reply
 
-- **Status:** Accepted
+- **Status:** Accepted. The last paragraph of its system prompt is superseded by [0055](./0055-ask-for-a-saved-prompts-goal-not-its-steps.md)
 - **Date:** 2026-11-09
 - **Related:** [0044](./0044-add-a-prompt-language-that-wraps-and-is-described-as-a-prompt.md), [0017](./0017-one-error-shape-shown-inline.md), [0023](./0023-one-ai-module-on-claude-haiku.md)
 

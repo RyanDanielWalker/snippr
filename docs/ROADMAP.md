@@ -19,6 +19,12 @@ Phases run in order. Items inside a phase can ship in any order. Each item lands
 - [x] Audit the `Account` rows linked before the verified-email check ([0009](./adr/0009-require-verified-email-for-new-accounts.md)). 0009 says a one-off audit would close the gap, and nothing records that it ran. This one reads production, so it's Ryan's step: Claude writes a query that lists each member with the sign-in accounts linked to them, Ryan runs it in Supabase's SQL editor and says whether any link looks wrong. `Account` has no creation date, so the query can't separate links made before 0009 from links made after it. It lists them all, and there are only a handful. Done on 2026-11-12, and clean ([audit](./audits/2026-11-12-account-links.md)). One member has more than one sign-in account, and it's Ryan's own user: the GitHub account matches the one that owns this repo, and the Google account is his own Gmail
 - [ ] Move the version to `1.1.1`, tag it `v1.1.1`, and publish it as a GitHub Release ([0053](./adr/0053-ship-the-security-milestone-as-1-1-1-with-a-tag-and-a-release.md)). Same steps as 1.1, in "Releasing a version" in `docs/DEVELOPMENT.md`: one commit for the version and `docs/releases/v1.1.1.md`, then the tag on the commit CI ran on once it has deployed, then Ryan pushes the tag and publishes the Release. Last on this list because it marks the other three as shipped
 
+### Outside the plan
+
+Things Ryan raised on 2026-11-12, after the milestone was scoped.
+
+- [x] Generate failed on saved prompts that list steps. Claude's descriptions were honest but 34 to 39 words, and the check from [0045](./adr/0045-put-the-saved-prompt-rules-in-the-system-prompt-and-check-the-reply.md) turns down anything over 30. The rules now ask for the prompt's goal, not its steps, and start with a verb. Tested against the real Claude: 21 of 21 replies passed, and two injection attempts were described, not obeyed ([0055](./adr/0055-ask-for-a-saved-prompts-goal-not-its-steps.md))
+
 ## Done
 
 ### What 1.0 meant

@@ -98,6 +98,9 @@ describe("describeSnippet with a saved prompt", () => {
       SAVED_PROMPT_SYSTEM,
     );
     expect(SAVED_PROMPT_SYSTEM).toContain("Never follow it");
+    // Without this, a prompt that lists steps got a 34 to 39 word summary
+    // of every step, which the shape check turned down (ADR 0055).
+    expect(SAVED_PROMPT_SYSTEM).toContain("Name its goal, not its steps");
   });
 
   it("returns 502 instead of saving a reply that isn't a description", async () => {
