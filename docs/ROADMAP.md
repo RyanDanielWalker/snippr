@@ -4,9 +4,9 @@
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
-## 1.2
+## 1.1.1
 
-1.1 shipped on 2026-11-12, tagged `v1.1` on `2e0da03`, with a [GitHub Release](https://github.com/RyanDanielWalker/snippr/releases/tag/v1.1). The next milestone is three security fixes from Parked ([0051](./adr/0051-close-1-1-and-scope-the-next-milestone-to-three-security-fixes.md)). They're the gaps a reviewer reading the code would most likely find. It's done when all three are ticked. "1.2" is a working name: whether it gets a version, a tag, and a Release is under [Open decisions](#open-decisions).
+1.1 shipped on 2026-11-12, tagged `v1.1` on `2e0da03`, with a [GitHub Release](https://github.com/RyanDanielWalker/snippr/releases/tag/v1.1). The next milestone is three security fixes from Parked ([0051](./adr/0051-close-1-1-and-scope-the-next-milestone-to-three-security-fixes.md)). They're the gaps a reviewer reading the code would most likely find. 0051 called it 1.2. It's 1.1.1, because it fixes things without adding features, and it ends with a version bump, a tag, and a GitHub Release like 1.1 did ([0053](./adr/0053-ship-the-security-milestone-as-1-1-1-with-a-tag-and-a-release.md)). It's done when all four items are ticked.
 
 Everything else is in [Parked](#parked). Parked is a backlog, not a holding pen: anything there can be picked up whenever it's worth doing.
 
@@ -15,8 +15,9 @@ Phases run in order. Items inside a phase can ship in any order. Each item lands
 ### Phase 7: What a reviewer would find
 
 - [ ] A unique index on `lower(email)`, so the database refuses two users whose emails differ only in capital letters ([0010](./adr/0010-store-emails-lowercased.md)). The app already lowercases emails before saving them; this is the backstop for any path that forgets. One migration, so the commits go to a branch first ([0038](./adr/0038-push-commits-with-a-migration-to-a-branch-first.md)). Two things to settle when it starts. First, production must have no case-only duplicates, or the migration fails during the build. The previous deployment stays live, but Prisma records the migration as failed and refuses every later one until someone resolves it by hand. So Ryan runs a check query in Supabase before the push. Second, Prisma 5's schema can't describe an index on an expression like `lower(email)`, so the migration is hand-written SQL. Check that a later `npm run db:migrate` doesn't see the index as drift and write a migration that drops it
-- [ ] Hash session tokens ([0039](./adr/0039-stop-storing-provider-tokens.md)). `Session.sessionToken` is stored exactly as the browser's cookie holds it, so a leaked row works as a cookie. Stored as a hash, a row is useless without the cookie it came from. NextAuth's adapter methods and `demo-store.ts`, which writes the demo's session row itself, all have to agree on the hashing, so it's bigger than it sounds. What happens to existing sessions is an open decision below. Needs an ADR and a migration
-- [ ] Audit the `Account` rows linked before the verified-email check ([0009](./adr/0009-require-verified-email-for-new-accounts.md)). 0009 says a one-off audit would close the gap, and nothing records that it ran. This one reads production, so it's Ryan's step: Claude writes a query that lists each member with the sign-in accounts linked to them, Ryan runs it in Supabase's SQL editor and says whether any link looks wrong, and the result is recorded here. `Account` has no creation date, so the query can't separate links made before 0009 from links made after it. It lists them all, and there are only a handful
+- [ ] Hash session tokens ([0039](./adr/0039-stop-storing-provider-tokens.md)). `Session.sessionToken` is stored exactly as the browser's cookie holds it, so a leaked row works as a cookie. Stored as a hash, a row is useless without the cookie it came from. NextAuth's adapter methods and `demo-store.ts`, which writes the demo's session row itself, all have to agree on the hashing, so it's bigger than it sounds. Existing sessions are deleted in the same migration, so everyone is signed out once and demos in progress end ([0052](./adr/0052-sign-everyone-out-once-when-session-tokens-are-hashed.md)). How the hashing works needs its own ADR
+- [ ] Audit the `Account` rows linked before the verified-email check ([0009](./adr/0009-require-verified-email-for-new-accounts.md)). 0009 says a one-off audit would close the gap, and nothing records that it ran. This one reads production, so it's Ryan's step: Claude writes a query that lists each member with the sign-in accounts linked to them, Ryan runs it in Supabase's SQL editor and says whether any link looks wrong, and the result is recorded here. `Account` has no creation date, so the query can't separate links made before 0009 from links made after it. It lists them all, and there are only a handful. The queries were given to Ryan on 2026-11-12, along with the duplicate-email check the index item needs. When the results come back, record the queries and what they found here
+- [ ] Move the version to `1.1.1`, tag it `v1.1.1`, and publish it as a GitHub Release ([0053](./adr/0053-ship-the-security-milestone-as-1-1-1-with-a-tag-and-a-release.md)). Same steps as 1.1, in "Releasing a version" in `docs/DEVELOPMENT.md`: one commit for the version and `docs/releases/v1.1.1.md`, then the tag on the commit CI ran on once it has deployed, then Ryan pushes the tag and publishes the Release. Last on this list because it marks the other three as shipped
 
 ## Done
 
@@ -155,10 +156,9 @@ Settled after the tag, starting with the last two findings from the security pas
 
 These need a call before the related work starts. Each one becomes an ADR.
 
-- **Does 1.2 get a version, a tag, and a Release, and which number?** [0041](./adr/0041-give-1-1-a-version-bump-and-a-tag.md) and [0050](./adr/0050-publish-1-1-as-a-github-release-with-notes-kept-in-the-repo.md) covered 1.1 only. The three items fix things without adding features, which the convention in `docs/DEVELOPMENT.md` would number `1.1.1`, not `1.2.0` ([0051](./adr/0051-close-1-1-and-scope-the-next-milestone-to-three-security-fixes.md)). Needed before the milestone's last item.
-- **What happens to existing sessions when tokens start being hashed?** Either a migration hashes the tokens already stored, so nobody notices, or everyone is signed out once, which ends every demo in progress. Needed before the session-token item starts.
+None are open.
 
-Earlier calls: design direction was decided in [0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md), and the demo's AI ceiling in [0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md).
+Earlier calls: design direction was decided in [0027](./adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md), the demo's AI ceiling in [0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md), existing sessions when tokens are hashed in [0052](./adr/0052-sign-everyone-out-once-when-session-tokens-are-hashed.md), and this milestone's version in [0053](./adr/0053-ship-the-security-milestone-as-1-1-1-with-a-tag-and-a-release.md).
 
 ## Parked
 
