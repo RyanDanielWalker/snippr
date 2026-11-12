@@ -142,6 +142,8 @@ Because a push to `main` *is* a production deploy, the review in step 2 is the s
 
 Claude never pushes, and `.claude/settings.json` backs that up. A *deny rule* is a setting that refuses a command before it runs, whatever Claude decides: `Bash(git push *)` means Claude Code refuses any `git push`. The same file refuses reads of `.env`, and pre-approves the read-only git commands and the checks so they don't stop to ask. It only binds Claude. Ryan pushes from his own terminal as usual ([0034](./adr/0034-block-git-push-and-env-reads-with-permission-rules.md)).
 
+The same file turns off the lines Claude Code adds to commits and pull requests by default: the `Co-Authored-By: Claude` trailer, the "Generated with Claude Code" footer, and the session link. Commits show Ryan as the only author, and the README credits Claude Code once instead ([0054](./adr/0054-credit-claude-in-the-readme-not-on-every-commit.md)).
+
 ### Working with Claude
 
 Ryan learns by building with Claude, reading these docs, and studying on his own ([0033](./adr/0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md)). So:

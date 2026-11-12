@@ -97,6 +97,8 @@ The parts most worth reading, each with the decision record behind it:
 
 The screenshots above are taken by a script against the real app, so they can be retaken whenever the interface changes ([0032](docs/adr/0032-generate-readme-images-from-the-app-with-playwright.md)).
 
+Snippr is built with [Claude Code](https://claude.com/claude-code). Commits before 2026-11-12 name Claude as a co-author. Later ones don't, because this sentence says it once ([0054](docs/adr/0054-credit-claude-in-the-readme-not-on-every-commit.md)).
+
 ### Stack
 
 - **App:** Next.js 16 (App Router), React 19, TypeScript

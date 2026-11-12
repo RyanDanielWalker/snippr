@@ -70,7 +70,7 @@ Then read every file under `src/`, `scripts/`, and `prisma/`. Look for:
 
 ## 6. Can Ryan answer for it?
 
-- From `git log` since the last audit (or the whole history the first time): what changed, and how much of it was co-authored with Claude.
+- From `git log` since the last audit (or the whole history the first time): what changed. Commits after 2026-11-12 no longer carry a `Co-Authored-By: Claude` line ([0054](../../../docs/adr/0054-credit-claude-in-the-readme-not-on-every-commit.md)), so don't count it. Assume Claude worked on everything since October 2026, and ask whether Ryan can answer for it.
 - Write the 5 to 7 questions an engineer would most likely ask after reading this code. For each, give where the answer lives (`file:line` or ADR) and the answer in two sentences he could say out loud.
 - Flag anything clever enough to need explaining that has no comment or ADR, and any ADR or doc too thin for Ryan to learn the decision from ([0033](../../../docs/adr/0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md)).
 

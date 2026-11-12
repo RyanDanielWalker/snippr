@@ -65,7 +65,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0031](./0031-send-security-headers-without-a-full-csp.md) | Send security headers from next.config.ts, without a full Content Security Policy | Accepted |
 | [0032](./0032-generate-readme-images-from-the-app-with-playwright.md) | Generate the README's images from the running app with Playwright | Accepted |
 | [0033](./0033-write-docs-to-learn-from-and-leave-nothing-for-ryan.md) | Write docs to be learned from, and leave nothing for Ryan to fill in | Accepted |
-| [0034](./0034-block-git-push-and-env-reads-with-permission-rules.md) | Stop Claude from pushing or reading `.env` with permission rules | Accepted |
+| [0034](./0034-block-git-push-and-env-reads-with-permission-rules.md) | Stop Claude from pushing or reading `.env` with permission rules | Accepted; its `Co-Authored-By` line is dropped by [0054](./0054-credit-claude-in-the-readme-not-on-every-commit.md) |
 | [0035](./0035-correct-the-record-on-the-2026-11-06-app-sessions.md) | Correct the record on the 2026-11-06 app sessions | Accepted |
 | [0036](./0036-generate-the-case-study-on-request-and-keep-it-off-1-0.md) | Generate the case study on request, and keep it off 1.0 | Accepted |
 | [0037](./0037-turn-on-row-level-security-with-no-policies.md) | Turn on row-level security, with no policies | Accepted |
@@ -85,5 +85,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0051](./0051-close-1-1-and-scope-the-next-milestone-to-three-security-fixes.md) | Close 1.1, and scope the next milestone to three security fixes | Accepted; the milestone it calls 1.2 is 1.1.1, per [0053](./0053-ship-the-security-milestone-as-1-1-1-with-a-tag-and-a-release.md) |
 | [0052](./0052-sign-everyone-out-once-when-session-tokens-are-hashed.md) | Sign everyone out once when session tokens start being hashed | Accepted |
 | [0053](./0053-ship-the-security-milestone-as-1-1-1-with-a-tag-and-a-release.md) | Ship the security milestone as 1.1.1, with a tag and a Release | Accepted |
+| [0054](./0054-credit-claude-in-the-readme-not-on-every-commit.md) | Credit Claude in the README, not on every commit | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
