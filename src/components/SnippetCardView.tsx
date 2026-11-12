@@ -55,15 +55,20 @@ export default function SnippetCardView({
         </div>
       </div>
 
+      {/* The code box starts at 10rem and grows into whatever height the
+          grid row gives the card, so a card without a description, next to
+          one with, shows more code instead of a gap above its buttons.
+          `flex-basis` sets its starting height whatever the code's length,
+          and `min-h-0` lets it scroll instead of stretching to fit. */}
       {snippet.codeHtml ? (
         // Shiki escapes the code, so this is its markup and nothing else.
         <div
-          className={`snippet-code bg-code rounded-box text-sm overflow-hidden ${lineWrapClass(snippet.language)}`}
+          className={`snippet-code bg-code rounded-box text-sm overflow-hidden flex flex-col flex-[1_1_10rem] min-h-0 ${lineWrapClass(snippet.language)}`}
           dangerouslySetInnerHTML={{ __html: snippet.codeHtml }}
         />
       ) : (
         <pre
-          className={`bg-code rounded-box p-4 text-sm text-fg-muted font-mono overflow-x-auto max-h-40 ${lineWrapClass(snippet.language)}`}
+          className={`bg-code rounded-box p-4 text-sm text-fg-muted font-mono overflow-auto flex-[1_1_10rem] min-h-0 ${lineWrapClass(snippet.language)}`}
         >
           <code>{snippet.code}</code>
         </pre>

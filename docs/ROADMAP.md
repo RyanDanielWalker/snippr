@@ -24,6 +24,7 @@ Phases run in order. Items inside a phase can ship in any order. Each item lands
 Things Ryan raised on 2026-11-12, after the milestone was scoped.
 
 - [x] Generate failed on saved prompts that list steps. Claude's descriptions were honest but 34 to 39 words, and the check from [0045](./adr/0045-put-the-saved-prompt-rules-in-the-system-prompt-and-check-the-reply.md) turns down anything over 30. The rules now ask for the prompt's goal, not its steps, and start with a verb. Tested against the real Claude: 21 of 21 replies passed, and two injection attempts were described, not obeyed ([0055](./adr/0055-ask-for-a-saved-prompts-goal-not-its-steps.md))
+- [x] A card without a description looked lopsided next to one with. Cards in a grid row stretch to the tallest, the code box stopped at 10rem, and the buttons sit at the bottom, so the spare height pooled as a gap between the code and the buttons. Now the code box starts at 10rem and grows into the spare height, showing more code (`SnippetCardView.tsx`, `.snippet-code` in `globals.css`). A side effect: a two-line snippet's box is 10rem tall now instead of shrinking to fit, so every card's code box is at least the same height
 
 ## Done
 
