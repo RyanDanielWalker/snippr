@@ -87,5 +87,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0053](./0053-ship-the-security-milestone-as-1-1-1-with-a-tag-and-a-release.md) | Ship the security milestone as 1.1.1, with a tag and a Release | Accepted |
 | [0054](./0054-credit-claude-in-the-readme-not-on-every-commit.md) | Credit Claude in the README, not on every commit | Accepted |
 | [0055](./0055-ask-for-a-saved-prompts-goal-not-its-steps.md) | Ask for a saved prompt's goal, not its steps | Accepted |
+| [0056](./0056-archive-snippets-with-an-archivedat-column.md) | Archive snippets with an `archivedAt` column | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
