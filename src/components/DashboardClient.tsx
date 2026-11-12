@@ -151,20 +151,30 @@ export default function DashboardClient({
     document.cookie = sidebarCookie(newState);
   }
 
-  const unorganizedCount = snippets.filter((s) => !s.folderId).length;
+  // The page sends every snippet. Archived ones only show in the Archive
+  // view; everywhere else, and in AI search, they're left out
+  // (docs/adr/0056). The cap counts both.
+  const active = snippets.filter((s) => !s.archivedAt);
+  const archived = snippets.filter((s) => s.archivedAt);
+  const unorganizedCount = active.filter((s) => !s.folderId).length;
 
   // Its row is gone at zero, so the view can't stay on it. Changing the state
   // rather than deriving it, so a later unfiled snippet doesn't jump back here.
-  if (selectedFolderId === "unorganized" && unorganizedCount === 0) {
+  if (
+    (selectedFolderId === "unorganized" && unorganizedCount === 0) ||
+    (selectedFolderId === "archive" && archived.length === 0)
+  ) {
     setSelectedFolderId(null);
   }
 
   const folderFiltered =
     selectedFolderId === null
-      ? snippets
-      : selectedFolderId === "unorganized"
-        ? snippets.filter((s) => !s.folderId)
-        : snippets.filter((s) => s.folderId === selectedFolderId);
+      ? active
+      : selectedFolderId === "archive"
+        ? archived
+        : selectedFolderId === "unorganized"
+          ? active.filter((s) => !s.folderId)
+          : active.filter((s) => s.folderId === selectedFolderId);
 
   const filtered = folderFiltered.filter((s) => matchesKeyword(s, search));
 
@@ -260,7 +270,8 @@ export default function DashboardClient({
 
   const displaySnippets =
     aiMode && aiResultIds !== null
-      ? pickByIds(aiResultIds, snippets)
+      ? // Not `snippets`: a result archived after the search drops out.
+        pickByIds(aiResultIds, active)
       : filtered;
 
   const heading = resultsHeading(
@@ -268,20 +279,25 @@ export default function DashboardClient({
       ? null
       : selectedFolderId === "unorganized"
         ? "Unorganized"
-        : (folders.find((f) => f.id === selectedFolderId)?.name ?? null),
+        : selectedFolderId === "archive"
+          ? "Archive"
+          : (folders.find((f) => f.id === selectedFolderId)?.name ?? null),
     aiMode && (aiLoading || aiResultIds !== null),
   );
 
   const empty =
     displaySnippets.length === 0
       ? emptyState({
-          librarySize: snippets.length,
+          librarySize: active.length,
+          archivedCount: archived.length,
           view:
             selectedFolderId === null
               ? "all"
               : selectedFolderId === "unorganized"
                 ? "unorganized"
-                : "folder",
+                : selectedFolderId === "archive"
+                  ? "archive"
+                  : "folder",
           search,
           aiMode,
           aiSearched: aiResultIds !== null,
@@ -296,7 +312,9 @@ export default function DashboardClient({
         <SnippetFormModal
           folders={folders}
           defaultFolderId={
-            selectedFolderId && selectedFolderId !== "unorganized"
+            selectedFolderId &&
+            selectedFolderId !== "unorganized" &&
+            selectedFolderId !== "archive"
               ? selectedFolderId
               : null
           }
@@ -417,8 +435,9 @@ export default function DashboardClient({
             >
               <FolderSidebar
                 folders={folders}
-                totalSnippets={snippets.length}
+                totalSnippets={active.length}
                 unorganizedCount={unorganizedCount}
+                archivedCount={archived.length}
                 moving={draggedSnippet !== null || movingIds.size > 0}
                 selectedFolderId={selectedFolderId}
                 onSelectFolder={selectFolder}
@@ -441,7 +460,9 @@ export default function DashboardClient({
                 >
                   {capStatus === "full"
                     ? snippetCapMessage(cap, user.isGuest)
-                    : `${snippets.length} of ${cap} snippets used.`}
+                    : archived.length > 0
+                      ? `${snippets.length} of ${cap} snippets used, ${archived.length} of them archived.`
+                      : `${snippets.length} of ${cap} snippets used.`}
                 </div>
               )}
 

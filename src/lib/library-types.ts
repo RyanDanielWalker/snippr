@@ -13,6 +13,8 @@ export type Snippet = {
   description?: string | null;
   tags: string[];
   folderId?: string | null;
+  /** When it was archived, or null while it's in the library (docs/adr/0056). */
+  archivedAt?: string | null;
   createdAt: string;
   /** The highlighted start of the code, from `withCardHtml` in lib/highlight. */
   codeHtml?: string | null;

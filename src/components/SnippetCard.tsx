@@ -8,6 +8,7 @@ import SnippetModal from "@/components/SnippetModal";
 import SnippetCardView from "@/components/SnippetCardView";
 import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
+import { useArchiveSnippet } from "@/components/useArchiveSnippet";
 import { opensPreview } from "@/lib/card-keys";
 import type { Snippet, Folder } from "@/lib/library-types";
 
@@ -23,13 +24,18 @@ export default function SnippetCard({
 }) {
   const { copy, copied } = useCopy(snippet.code);
   const del = useDeleteSnippet(snippet.id);
+  const isArchived = Boolean(snippet.archivedAt);
+  const archive = useArchiveSnippet(snippet.id, isArchived);
   const [showEdit, setShowEdit] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: snippet.id,
-      disabled: moving,
+      // An archived card isn't dragged into a folder: it would move without
+      // leaving the archive, and the folder's count wouldn't change. Unarchive
+      // puts it back in the folder it kept (docs/adr/0056).
+      disabled: moving || isArchived,
     });
 
   const style = {
@@ -47,6 +53,11 @@ export default function SnippetCard({
   function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
     del.press();
+  }
+
+  function handleArchive(e: React.MouseEvent) {
+    e.stopPropagation();
+    archive.press();
   }
 
   function handleEdit(e: React.MouseEvent) {
@@ -77,6 +88,9 @@ export default function SnippetCard({
         ref={setNodeRef}
         style={style}
         {...attributes}
+        // dnd-kit says aria-disabled whenever dragging is off, but an
+        // archived card still opens its preview, so it isn't disabled.
+        aria-disabled={isArchived ? undefined : attributes["aria-disabled"]}
         {...listeners}
         onClick={() => !isDragging && setShowPreview(true)}
         // After {...listeners}, so it would replace a KeyboardSensor's own
@@ -89,13 +103,15 @@ export default function SnippetCard({
         }}
         snippet={snippet}
         folderName={folderName}
-        aria-busy={moving || del.deleting}
-        className="hover:border-line-strong transition cursor-grab active:cursor-grabbing"
+        aria-busy={moving || del.deleting || archive.pending}
+        className={`hover:border-line-strong transition ${
+          isArchived ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+        }`}
         footer={
           <div className="pt-1 mt-auto space-y-2">
-            {del.error && (
+            {(del.error || archive.error) && (
               <p role="alert" className="text-xs text-danger-text">
-                {del.error}
+                {del.error ?? archive.error}
               </p>
             )}
             {/* Delete sits alone on the far side, away from Edit and Copy. */}
@@ -114,6 +130,14 @@ export default function SnippetCard({
                   className="text-xs case-control text-fg-subtle hover:text-fg transition"
                 >
                   {copied ? "✓ Copied" : "Copy"}
+                </button>
+                <button
+                  onClick={handleArchive}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  disabled={archive.pending}
+                  className="text-xs case-control text-fg-subtle hover:text-fg transition"
+                >
+                  {archive.label}
                 </button>
               </div>
               <button

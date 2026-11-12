@@ -83,6 +83,7 @@ describe("accessible names", () => {
         folders,
         totalSnippets: 1,
         unorganizedCount: 0,
+        archivedCount: 0,
         selectedFolderId: null,
         onSelectFolder: () => {},
         collapsed: true,

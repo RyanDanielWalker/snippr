@@ -15,7 +15,11 @@ vi.mock("@dnd-kit/core", async (original) => ({
   useDroppable: () => ({ setNodeRef: () => {}, isOver: drag.over }),
 }));
 
-function sidebar(unorganizedCount: number, moving?: boolean) {
+function sidebar(
+  unorganizedCount: number,
+  moving?: boolean,
+  archivedCount = 0,
+) {
   return renderToString(
     createElement(
       ToastProvider,
@@ -24,6 +28,7 @@ function sidebar(unorganizedCount: number, moving?: boolean) {
         folders: [{ id: "f1", name: "Frontend", _count: { snippets: 3 } }],
         totalSnippets: 9,
         unorganizedCount,
+        archivedCount,
         moving,
         selectedFolderId: null,
         onSelectFolder: () => {},
@@ -47,6 +52,18 @@ describe("the Unorganized row", () => {
   // back out of its folder.
   it("shows while empty if a snippet is moving, as the drop target", () => {
     expect(sidebar(0, true)).toContain("Unorganized");
+  });
+});
+
+describe("the Archive row", () => {
+  it("hides while nothing is archived", () => {
+    expect(sidebar(0)).not.toContain("Archive");
+  });
+
+  it("shows with its count once something is", () => {
+    expect(sidebar(0, false, 4)).toMatch(
+      /<span>Archive<\/span><span[^>]*>4<\/span>/,
+    );
   });
 });
 

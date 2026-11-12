@@ -360,4 +360,28 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await reopen.click();
   await expect(tryList).toBeVisible();
   await expect(tryList.getByText(/^Done: /)).toHaveCount(4);
+
+  // Archive takes a card out of the library and into its own row at the
+  // bottom of the sidebar, which only shows while something is in it.
+  // Unarchive brings it back (ADR 0056).
+  const archiveRow = page.getByRole("button", { name: /^Archive\s*\d+$/ });
+  await page.getByRole("button", { name: /^All snippets/ }).click();
+  await expect(archiveRow).toBeHidden();
+  await card("Long code")
+    .getByRole("button", { name: "Archive", exact: true })
+    .click();
+  await expect(
+    page.getByText("Archived. It's under Archive in the sidebar."),
+  ).toBeVisible();
+  await expect(card("Long code")).toBeHidden();
+  await archiveRow.click();
+  await expect(card("Long code")).toBeVisible();
+  // It still opens: dnd-kit would call a card that can't be dragged disabled.
+  await expect(card("Long code")).not.toHaveAttribute("aria-disabled");
+  await card("Long code")
+    .getByRole("button", { name: "Unarchive", exact: true })
+    .click();
+  await expect(page.getByText("Back in your library.")).toBeVisible();
+  await expect(archiveRow).toBeHidden();
+  await expect(card("Long code")).toBeVisible();
 });

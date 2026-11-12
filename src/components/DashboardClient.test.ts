@@ -111,3 +111,48 @@ describe("the demo's Things to try checklist", () => {
     expect(closed).toContain(">Things to try</button>");
   });
 });
+
+describe("an archived snippet", () => {
+  // One snippet in the library and one archived (docs/adr/0056).
+  const html = renderToString(
+    createElement(
+      ToastProvider,
+      null,
+      createElement(DashboardClient, {
+        snippets: [
+          {
+            id: "s1",
+            title: "Debounce",
+            code: "const x = 1;",
+            language: "typescript",
+            tags: [],
+            folderId: null,
+            createdAt: "2026-10-19T00:00:00.000Z",
+          },
+          {
+            id: "s2",
+            title: "Old session prompt",
+            code: "Continue the ticket.",
+            language: "prompt",
+            tags: [],
+            folderId: null,
+            archivedAt: "2026-11-12T00:00:00.000Z",
+            createdAt: "2026-10-18T00:00:00.000Z",
+          },
+        ],
+        folders: [],
+        user: { email: "me@example.com", image: "", isGuest: false },
+      }),
+    ),
+  );
+
+  it("stays out of All snippets, and out of its count", () => {
+    expect(html).toContain("Debounce");
+    expect(html).not.toContain("Old session prompt");
+    expect(html).toMatch(/<span>All snippets<\/span><span[^>]*>1<\/span>/);
+  });
+
+  it("shows up as the Archive row's count", () => {
+    expect(html).toMatch(/<span>Archive<\/span><span[^>]*>1<\/span>/);
+  });
+});

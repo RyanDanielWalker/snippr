@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { codeToHtml } from "shiki";
 import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
+import { useArchiveSnippet } from "@/components/useArchiveSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
 import { highlightCode, lineWrapClass } from "@/lib/highlight";
 import type { Snippet } from "@/lib/library-types";
@@ -26,6 +27,12 @@ export default function SnippetModal({
   const html = result?.key === key ? result.html : undefined;
   const { copy, copied } = useCopy(snippet.code);
   const del = useDeleteSnippet(snippet.id, onClose);
+  // Closes too: the card it opened from leaves the view it was in.
+  const archive = useArchiveSnippet(
+    snippet.id,
+    Boolean(snippet.archivedAt),
+    onClose,
+  );
   // The dialog itself, so a screen reader starts by reading its title.
   const dialogRef = useDialogFocus<HTMLDivElement>();
 
@@ -118,9 +125,9 @@ export default function SnippetModal({
           )}
         </div>
 
-        {del.error && (
+        {(del.error || archive.error) && (
           <p role="alert" className="px-4 pt-4 text-sm text-danger-text">
-            {del.error}
+            {del.error ?? archive.error}
           </p>
         )}
         {/* Delete on the opposite side from Edit and Copy, so a near miss
@@ -138,6 +145,13 @@ export default function SnippetModal({
             {del.label}
           </button>
           <div className="flex items-center gap-3">
+            <button
+              onClick={archive.press}
+              disabled={archive.pending}
+              className="px-2 py-2 text-sm text-fg-muted hover:text-fg transition shrink-0"
+            >
+              {archive.label}
+            </button>
             <button
               onClick={onEdit}
               className="px-4 py-2 text-sm text-fg-muted hover:text-fg transition shrink-0"

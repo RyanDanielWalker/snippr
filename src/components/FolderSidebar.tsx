@@ -54,6 +54,8 @@ type Props = {
   folders: Folder[];
   totalSnippets: number;
   unorganizedCount: number;
+  /** Snippets in the archive. Its row only shows while there are some. */
+  archivedCount: number;
   /** A snippet is being dragged or moved, so Unorganized must be droppable. */
   moving?: boolean;
   selectedFolderId: string | null;
@@ -68,6 +70,7 @@ export default function FolderSidebar({
   folders,
   totalSnippets,
   unorganizedCount,
+  archivedCount,
   moving = false,
   selectedFolderId,
   onSelectFolder,
@@ -416,6 +419,26 @@ export default function FolderSidebar({
         >
           + New folder
         </button>
+      )}
+
+      {/* At the bottom, out of the way, like the snippets in it. Not a drop
+          target: archiving is a button on the card (docs/adr/0056). Hidden
+          while empty, like Unorganized; the toast after archiving says
+          where to look. */}
+      {archivedCount > 0 && (
+        <div className="pt-4">
+          <button
+            onClick={() => onSelectFolder("archive")}
+            className={`w-full text-left px-3 py-2 rounded-box text-sm flex items-center justify-between transition ${
+              selectedFolderId === "archive"
+                ? "bg-surface-raised text-fg"
+                : "text-fg-subtle hover:text-fg hover:bg-surface"
+            }`}
+          >
+            <span>Archive</span>
+            <span className="text-xs text-fg-subtle">{archivedCount}</span>
+          </button>
+        </div>
       )}
     </aside>
   );

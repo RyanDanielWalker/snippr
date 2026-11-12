@@ -80,4 +80,34 @@ describe("emptyState", () => {
     expect(full.offerNewSnippet).toBe(false);
     expect(full.hint).toBe("Drag a snippet here.");
   });
+
+  it("says everything is archived instead of calling the library empty", () => {
+    const state = emptyState(input({ librarySize: 0, archivedCount: 3 }));
+    expect(state.title).toBe("Everything's archived.");
+    expect(state.hint).toMatch(/Archive in the sidebar/);
+    expect(state.offerNewSnippet).toBe(true);
+  });
+
+  it("says where search looks while the archive is open", () => {
+    const view = "archive" as const;
+    expect(emptyState(input({ view, search: "x" })).hint).toBe(
+      "Search only looks in the archive.",
+    );
+    expect(emptyState(input({ view, search: "x", aiMode: true })).hint).toBe(
+      "Press Enter to ask Claude, who looks in every folder but not the archive.",
+    );
+  });
+
+  it("doesn't call the library empty from the archive", () => {
+    expect(
+      emptyState(
+        input({
+          librarySize: 0,
+          archivedCount: 2,
+          view: "archive",
+          search: "x",
+        }),
+      ).title,
+    ).toBe("No snippets match your search.");
+  });
 });

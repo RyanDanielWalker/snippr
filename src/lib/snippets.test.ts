@@ -306,10 +306,7 @@ describe("createSnippet", () => {
       archivedAt: new Date("2026-11-12T12:00:00.000Z"),
     }));
     const { store } = fakeStore(full);
-    await expectError(
-      await createSnippet(store, me, request(newSnippet)),
-      409,
-    );
+    await expectError(await createSnippet(store, me, request(newSnippet)), 409);
   });
 
   it("ignores archived: true on create, so a new snippet starts in the library", async () => {
