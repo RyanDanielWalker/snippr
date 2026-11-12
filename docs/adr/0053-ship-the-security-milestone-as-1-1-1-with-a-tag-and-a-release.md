@@ -1,6 +1,6 @@
 # 0053. Ship the security milestone as 1.1.1, with a tag and a Release
 
-- **Status:** Accepted
+- **Status:** Accepted. Its version number is superseded by [0057](./0057-ship-the-milestone-as-1-2-now-that-it-has-the-archive.md); its release steps stand
 - **Date:** 2026-11-12
 - **Related:** [0051](./0051-close-1-1-and-scope-the-next-milestone-to-three-security-fixes.md), [0041](./0041-give-1-1-a-version-bump-and-a-tag.md), [0050](./0050-publish-1-1-as-a-github-release-with-notes-kept-in-the-repo.md), `docs/DEVELOPMENT.md`, `docs/ROADMAP.md`
 
