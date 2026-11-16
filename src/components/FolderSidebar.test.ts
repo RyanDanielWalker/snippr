@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import FolderSidebar from "@/components/FolderSidebar";
+import FolderSidebar, { folderInitial } from "@/components/FolderSidebar";
 import { ToastProvider } from "@/components/Toaster";
 
 vi.mock("next/navigation", () => ({
@@ -19,6 +19,7 @@ function sidebar(
   unorganizedCount: number,
   moving?: boolean,
   archivedCount = 0,
+  collapsed = false,
 ) {
   return renderToString(
     createElement(
@@ -32,7 +33,7 @@ function sidebar(
         moving,
         selectedFolderId: null,
         onSelectFolder: () => {},
-        collapsed: false,
+        collapsed,
         onToggleCollapse: () => {},
       }),
     ),
@@ -94,5 +95,38 @@ describe("a droppable row's snippet count", () => {
 
   it("stays subtle the rest of the time", () => {
     expect(countClass(3)).toContain("text-fg-subtle");
+  });
+});
+
+describe("the collapsed rail", () => {
+  const rail = () => sidebar(2, false, 1, true);
+
+  // Each square is only an icon or a letter, so its name has to come from
+  // aria-label, or a screen reader hears "button" and nothing else.
+  it.each(["All snippets", "Unorganized", "Archive", "Frontend"])(
+    "names the %s button",
+    (name) => {
+      expect(rail()).toContain(`aria-label="${name}"`);
+    },
+  );
+
+  it("shows each folder as its first letter", () => {
+    expect(rail()).toMatch(/<span aria-hidden="true"[^>]*>F<\/span>/);
+  });
+
+  it("leaves out the folder menu and New folder", () => {
+    expect(rail()).not.toContain("Rename or delete");
+    expect(rail()).not.toContain("New folder");
+  });
+});
+
+describe("folderInitial", () => {
+  it.each([
+    ["Frontend", "F"],
+    ["  e & l", "E"],
+    ["🐍 Python", "🐍"],
+    ["   ", "?"],
+  ])("gives %j the badge %j", (name, initial) => {
+    expect(folderInitial(name)).toBe(initial);
   });
 });

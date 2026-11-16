@@ -219,11 +219,12 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await pickUp("Retry with backoff");
   await dropOn(frontend);
   await expect(unorganized).toBeHidden();
-  // All snippets has no heading of its own. The checklist's doesn't count.
+  // All snippets has no heading of its own. The checklist's and the
+  // sidebar's "Library" title don't count.
   await expect(
     page
       .getByRole("heading", { level: 2 })
-      .filter({ hasNotText: "Things to try" }),
+      .filter({ hasNotText: /^(Things to try|Library)$/ }),
   ).toBeHidden();
   await expect(cards).toHaveCount(5);
 

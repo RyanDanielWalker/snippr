@@ -36,8 +36,16 @@ const ICONS = {
     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z" />
   ),
   plus: <path d="M12 5v14M5 12h14" />,
-  collapse: <path d="M15 18l-6-6 6-6" />,
-  expand: <path d="M9 18l6-6-6-6" />,
+  // A window with its left pane marked off: the usual "sidebar" icon. The
+  // same one collapses and expands, like a light switch, so it doesn't
+  // point anywhere.
+  panel: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M9 4v16" />
+    </>
+  ),
+  close: <path d="M18 6 6 18M6 6l12 12" />,
 };
 
 function Icon({
@@ -95,7 +103,19 @@ const HEADING = "font-title text-xs text-fg-subtle uppercase tracking-wider";
 // and headings both have px-3, so the column lands in the same place.
 const RIGHT_COLUMN = "w-6 shrink-0 flex items-center justify-center";
 const COUNT = `${RIGHT_COLUMN} text-xs tabular-nums`;
-const HEADING_BUTTON = `${RIGHT_COLUMN} h-6 rounded-box text-fg-subtle hover:text-fg hover:bg-surface-raised transition`;
+// Bordered at rest, so it reads as something to click before the pointer
+// gets there.
+const HEADING_BUTTON = `${RIGHT_COLUMN} h-6 rounded-box border border-line text-fg-muted hover:text-fg hover:border-line-strong hover:bg-surface-raised transition`;
+
+// The collapsed rail's buttons: square, icon or letter only, named by
+// aria-label and shown by title on hover.
+const RAIL_BUTTON =
+  "w-10 h-10 shrink-0 rounded-box flex items-center justify-center text-sm transition";
+
+/** A folder's first letter, for its badge on the collapsed rail. */
+export function folderInitial(name: string): string {
+  return Array.from(name.trim())[0]?.toUpperCase() ?? "?";
+}
 
 function DroppableFolder({
   id,
@@ -103,6 +123,7 @@ function DroppableFolder({
   onClick,
   count,
   countClassName = "",
+  rail,
   children,
 }: {
   id: string;
@@ -111,9 +132,31 @@ function DroppableFolder({
   /** Drawn here because its color depends on whether something is over it. */
   count: number;
   countClassName?: string;
+  /** On the collapsed rail: a square with no count, named by this label. */
+  rail?: string;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
+
+  if (rail) {
+    return (
+      <button
+        ref={setNodeRef}
+        onClick={onClick}
+        title={`${rail} (${count})`}
+        aria-label={rail}
+        className={`${RAIL_BUTTON} ${
+          isOver
+            ? "bg-accent text-accent-fg ring-2 ring-focus"
+            : selected
+              ? ROW_SELECTED
+              : ROW_IDLE
+        }`}
+      >
+        {children}
+      </button>
+    );
+  }
 
   return (
     <button
@@ -306,16 +349,88 @@ export default function FolderSidebar({
   }
 
   if (collapsed) {
+    // The same panel, narrowed to a rail. Every row is still here and still
+    // a drop target, so dragging a card onto a folder works collapsed too.
+    // Renaming, deleting, and making folders wait for the full sidebar.
+    const railRow = (selected: boolean) =>
+      `${RAIL_BUTTON} ${selected ? ROW_SELECTED : ROW_IDLE}`;
     return (
-      <aside className="w-10 shrink-0">
+      <aside className="w-14 shrink-0 bg-surface border border-line rounded-panel p-2 flex flex-col items-center gap-0.5">
         <button
           onClick={onToggleCollapse}
-          className="w-full h-[42px] flex items-center justify-center text-fg-subtle hover:text-fg transition rounded-box bg-surface hover:bg-surface-raised border border-line"
+          className={`${RAIL_BUTTON} text-fg-muted hover:text-fg hover:bg-surface-raised`}
           title="Expand sidebar"
           aria-label="Expand sidebar"
         >
-          <Icon name="expand" />
+          <Icon name="panel" />
         </button>
+        <div className="w-8 border-t border-line my-1.5" />
+        <button
+          onClick={() => onSelectFolder(null)}
+          title={`All snippets (${totalSnippets})`}
+          aria-label="All snippets"
+          className={railRow(selectedFolderId === null)}
+        >
+          <Icon
+            name="all"
+            className={selectedFolderId === null ? "text-accent-text" : ""}
+          />
+        </button>
+        {(unorganizedCount > 0 || moving) && (
+          <DroppableFolder
+            id="unorganized"
+            selected={selectedFolderId === "unorganized"}
+            onClick={() => onSelectFolder("unorganized")}
+            count={unorganizedCount}
+            rail="Unorganized"
+          >
+            <Icon
+              name="unorganized"
+              className={
+                selectedFolderId === "unorganized" ? "text-accent-text" : ""
+              }
+            />
+          </DroppableFolder>
+        )}
+        {archivedCount > 0 && (
+          <button
+            onClick={() => onSelectFolder("archive")}
+            title={`Archive (${archivedCount})`}
+            aria-label="Archive"
+            className={railRow(selectedFolderId === "archive")}
+          >
+            <Icon
+              name="archive"
+              className={
+                selectedFolderId === "archive" ? "text-accent-text" : ""
+              }
+            />
+          </button>
+        )}
+        {folders.length > 0 && (
+          <div className="w-8 border-t border-line my-1.5" />
+        )}
+        {folders.map((folder) => (
+          <DroppableFolder
+            key={folder.id}
+            id={folder.id}
+            selected={selectedFolderId === folder.id}
+            onClick={() => onSelectFolder(folder.id)}
+            count={folder._count.snippets}
+            rail={folder.name}
+          >
+            <span
+              aria-hidden="true"
+              className={`w-6 h-6 rounded-chip flex items-center justify-center text-xs font-medium ${
+                selectedFolderId === folder.id
+                  ? "bg-accent text-accent-fg"
+                  : "bg-surface-raised"
+              }`}
+            >
+              {folderInitial(folder.name)}
+            </span>
+          </DroppableFolder>
+        ))}
       </aside>
     );
   }
@@ -334,15 +449,17 @@ export default function FolderSidebar({
         drawer ? "" : "bg-surface border border-line rounded-panel p-2"
       }`}
     >
+      {/* Library is the panel's title: everything in the sidebar is part
+          of it, folders included. */}
       <div className="flex items-center justify-between px-3 pt-1 pb-2">
-        <span className={HEADING}>Library</span>
+        <h2 className="font-title text-sm font-medium text-fg">Library</h2>
         <button
           onClick={onToggleCollapse}
           className={HEADING_BUTTON}
           title={drawer ? "Close folders" : "Collapse sidebar"}
           aria-label={drawer ? "Close folders" : "Collapse sidebar"}
         >
-          <Icon name="collapse" />
+          <Icon name={drawer ? "close" : "panel"} />
         </button>
       </div>
 
@@ -393,138 +510,143 @@ export default function FolderSidebar({
         )}
       </div>
 
-      <div className="flex items-center justify-between px-3 pt-3 pb-2 mt-3 border-t border-line">
-        <span className={HEADING}>Folders</span>
-        <button
-          onClick={startCreate}
-          disabled={creating}
-          className={`${HEADING_BUTTON} disabled:opacity-40`}
-          title="New folder"
-          aria-label="New folder"
-        >
-          <Icon name="plus" />
-        </button>
-      </div>
-
-      <div className="space-y-0.5">
-        {folders.map((folder) => (
-          <div
-            key={folder.id}
-            aria-busy={deletingId === folder.id}
-            className={`relative group transition ${
-              deletingId === folder.id ? "opacity-40 pointer-events-none" : ""
-            }`}
+      {/* Folders sit inside the library, so they're indented under it,
+          with a guide line like a file tree's. Their right edge doesn't
+          move, so the counts stay in the same column as the ones above. */}
+      <div className="mt-3 ml-5 pl-1 border-l border-line">
+        <div className="flex items-center justify-between px-3 pt-1 pb-2">
+          <span className={HEADING}>Folders</span>
+          <button
+            onClick={startCreate}
+            disabled={creating}
+            className={`${HEADING_BUTTON} disabled:opacity-40`}
+            title="New folder"
+            aria-label="New folder"
           >
-            {editingId === folder.id ? (
-              <input
-                type="text"
-                maxLength={FOLDER_NAME_MAX}
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                onBlur={() => handleRename(folder, "blur")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename(folder, "enter");
-                  if (e.key === "Escape" && !saving) cancelEdit();
-                }}
-                readOnly={saving}
-                aria-busy={saving}
-                aria-label={`New name for ${folder.name}`}
-                autoFocus
-                className="w-full bg-surface-raised text-fg rounded-box px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
-              />
-            ) : (
-              <DroppableFolder
-                id={folder.id}
-                selected={selectedFolderId === folder.id}
-                onClick={() => onSelectFolder(folder.id)}
-                count={folder._count.snippets}
-                countClassName="group-hover:opacity-0 group-has-focus-visible:opacity-0 pointer-coarse:mr-7 transition"
-              >
-                <RowLabel
-                  icon="folder"
-                  selected={selectedFolderId === folder.id}
-                >
-                  {folder.name}
-                </RowLabel>
-              </DroppableFolder>
-            )}
+            <Icon name="plus" />
+          </button>
+        </div>
 
-            {/* Hover reveals it with a mouse, and keyboard focus anywhere in
+        <div className="space-y-0.5">
+          {folders.map((folder) => (
+            <div
+              key={folder.id}
+              aria-busy={deletingId === folder.id}
+              className={`relative group transition ${
+                deletingId === folder.id ? "opacity-40 pointer-events-none" : ""
+              }`}
+            >
+              {editingId === folder.id ? (
+                <input
+                  type="text"
+                  maxLength={FOLDER_NAME_MAX}
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onBlur={() => handleRename(folder, "blur")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRename(folder, "enter");
+                    if (e.key === "Escape" && !saving) cancelEdit();
+                  }}
+                  readOnly={saving}
+                  aria-busy={saving}
+                  aria-label={`New name for ${folder.name}`}
+                  autoFocus
+                  className="w-full bg-surface-raised text-fg rounded-box px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
+                />
+              ) : (
+                <DroppableFolder
+                  id={folder.id}
+                  selected={selectedFolderId === folder.id}
+                  onClick={() => onSelectFolder(folder.id)}
+                  count={folder._count.snippets}
+                  countClassName="group-hover:opacity-0 group-has-focus-visible:opacity-0 pointer-coarse:mr-7 transition"
+                >
+                  <RowLabel
+                    icon="folder"
+                    selected={selectedFolderId === folder.id}
+                  >
+                    {folder.name}
+                  </RowLabel>
+                </DroppableFolder>
+              )}
+
+              {/* Hover reveals it with a mouse, and keyboard focus anywhere in
                 the row does the same, so Tab never lands on an invisible
                 button. A touch screen can't hover, so there it's always
                 shown, with the count moved aside for it. */}
-            {editingId !== folder.id && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openMenu(menuOpenId === folder.id ? null : folder.id);
-                }}
-                aria-label={`Rename or delete ${folder.name}`}
-                aria-expanded={menuOpenId === folder.id}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 h-6 ${RIGHT_COLUMN} rounded-box text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 group-has-focus-visible:opacity-100 pointer-coarse:opacity-100 transition`}
-              >
-                ⋯
-              </button>
-            )}
-
-            {menuOpenId === folder.id && (
-              <div
-                ref={menuRef}
-                className="absolute right-0 top-full mt-1 bg-surface-raised border border-line-strong rounded-box shadow-popover z-10 overflow-hidden"
-              >
+              {editingId !== folder.id && (
                 <button
-                  onClick={() => startEdit(folder)}
-                  className="block w-full text-left px-4 py-2 text-sm text-fg-muted hover:bg-surface-hover"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openMenu(menuOpenId === folder.id ? null : folder.id);
+                  }}
+                  aria-label={`Rename or delete ${folder.name}`}
+                  aria-expanded={menuOpenId === folder.id}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 h-6 ${RIGHT_COLUMN} rounded-box text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 group-has-focus-visible:opacity-100 pointer-coarse:opacity-100 transition`}
                 >
-                  Rename
+                  ⋯
                 </button>
-                {deleteArmed && folder._count.snippets > 0 && (
-                  <p className="px-4 pt-2 text-xs text-fg-subtle max-w-48">
-                    {folderDeleteText(folder._count.snippets).note}
-                  </p>
-                )}
-                <button
-                  onClick={() => handleDelete(folder.id)}
-                  className="block w-full text-left px-4 py-2 text-sm text-danger-text hover:bg-surface-hover"
+              )}
+
+              {menuOpenId === folder.id && (
+                <div
+                  ref={menuRef}
+                  className="absolute right-0 top-full mt-1 bg-surface-raised border border-line-strong rounded-box shadow-popover z-10 overflow-hidden"
                 >
-                  {deleteArmed ? "Confirm delete" : "Delete"}
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+                  <button
+                    onClick={() => startEdit(folder)}
+                    className="block w-full text-left px-4 py-2 text-sm text-fg-muted hover:bg-surface-hover"
+                  >
+                    Rename
+                  </button>
+                  {deleteArmed && folder._count.snippets > 0 && (
+                    <p className="px-4 pt-2 text-xs text-fg-subtle max-w-48">
+                      {folderDeleteText(folder._count.snippets).note}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => handleDelete(folder.id)}
+                    className="block w-full text-left px-4 py-2 text-sm text-danger-text hover:bg-surface-hover"
+                  >
+                    {deleteArmed ? "Confirm delete" : "Delete"}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
 
-        {creating && (
-          <input
-            type="text"
-            maxLength={FOLDER_NAME_MAX}
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onBlur={() => handleCreate("blur")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreate("enter");
-              if (e.key === "Escape" && !saving) cancelCreate();
-            }}
-            readOnly={saving}
-            aria-busy={saving}
-            aria-label="Folder name"
-            autoFocus
-            placeholder="Folder name"
-            className="w-full bg-surface-raised text-fg rounded-box px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
-          />
-        )}
+          {creating && (
+            <input
+              type="text"
+              maxLength={FOLDER_NAME_MAX}
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onBlur={() => handleCreate("blur")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreate("enter");
+                if (e.key === "Escape" && !saving) cancelCreate();
+              }}
+              readOnly={saving}
+              aria-busy={saving}
+              aria-label="Folder name"
+              autoFocus
+              placeholder="Folder name"
+              className="w-full bg-surface-raised text-fg rounded-box px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
+            />
+          )}
 
-        {/* With no folders yet, the + on the heading is easy to miss, so
+          {/* With no folders yet, the + on the heading is easy to miss, so
             the empty list offers one too. A different name from the +, so
             each button can be told apart by name. */}
-        {folders.length === 0 && !creating && (
-          <button
-            onClick={startCreate}
-            className="w-full text-left px-3 py-1.5 text-sm text-fg-subtle hover:text-fg transition"
-          >
-            Start a folder
-          </button>
-        )}
+          {folders.length === 0 && !creating && (
+            <button
+              onClick={startCreate}
+              className="w-full text-left px-3 py-1.5 text-sm text-fg-subtle hover:text-fg transition"
+            >
+              Start a folder
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
