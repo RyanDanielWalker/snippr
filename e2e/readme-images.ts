@@ -227,7 +227,7 @@ test("demo.gif: AI search, a new folder, drag and drop", async ({
   await click("✦ AI search");
   await page.waitForTimeout(600);
 
-  await click("+ New folder");
+  await click("New folder");
   await page.keyboard.type("Python", { delay: 80 });
   await page.keyboard.press("Enter");
   const python = page.locator("aside").getByRole("button", { name: /^Python/ });

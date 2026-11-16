@@ -10,6 +10,77 @@ import { folderNameAction } from "@/lib/folder-name-input";
 import { useToast } from "@/components/Toaster";
 import type { Folder } from "@/lib/library-types";
 
+// Outline icons, drawn inline so the sidebar needs no icon library. Each is
+// the path data for a 24-unit box, rendered at 16px.
+const ICONS = {
+  all: (
+    <>
+      <path d="M12 3 3 8l9 5 9-5-9-5z" />
+      <path d="m3 13 9 5 9-5" />
+    </>
+  ),
+  unorganized: (
+    <>
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+    </>
+  ),
+  archive: (
+    <>
+      <rect x="2" y="3" width="20" height="5" rx="1" />
+      <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+      <path d="M10 12h4" />
+    </>
+  ),
+  folder: (
+    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z" />
+  ),
+  plus: <path d="M12 5v14M5 12h14" />,
+  collapse: <path d="M15 18l-6-6 6-6" />,
+  expand: <path d="M9 18l6-6-6-6" />,
+};
+
+function Icon({ name }: { name: keyof typeof ICONS }) {
+  return (
+    <svg
+      aria-hidden="true"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+    >
+      {ICONS[name]}
+    </svg>
+  );
+}
+
+/** A row's icon and name. The name truncates; the icon never shrinks. */
+function RowLabel({
+  icon,
+  children,
+}: {
+  icon: keyof typeof ICONS;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="flex items-center gap-2.5 min-w-0">
+      <Icon name={icon} />
+      <span className="truncate">{children}</span>
+    </span>
+  );
+}
+
+const ROW =
+  "w-full text-left px-3 py-1.5 rounded-box text-sm flex items-center justify-between gap-2 transition";
+const ROW_IDLE = "text-fg-subtle hover:text-fg hover:bg-surface";
+const ROW_SELECTED = "bg-surface-raised text-fg";
+const HEADING = "font-title text-xs text-fg-subtle uppercase tracking-wider";
+
 function DroppableFolder({
   id,
   selected,
@@ -32,12 +103,12 @@ function DroppableFolder({
     <button
       ref={setNodeRef}
       onClick={onClick}
-      className={`w-full text-left px-3 py-2 rounded-box text-sm flex items-center justify-between transition ${
+      className={`${ROW} ${
         isOver
           ? "bg-accent text-accent-fg ring-2 ring-focus"
           : selected
-            ? "bg-surface-raised text-fg"
-            : "text-fg-subtle hover:text-fg hover:bg-surface"
+            ? ROW_SELECTED
+            : ROW_IDLE
       }`}
     >
       {children}
@@ -227,218 +298,205 @@ export default function FolderSidebar({
           title="Expand sidebar"
           aria-label="Expand sidebar"
         >
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
+          <Icon name="expand" />
         </button>
       </aside>
     );
   }
 
+  function startCreate() {
+    setCreating(true);
+    setError(null);
+    setFailedName(null);
+  }
+
   return (
-    <aside className="w-56 shrink-0 space-y-1">
-      <div className="flex items-center justify-between px-3 py-2">
-        <span className="font-title text-xs text-fg-subtle uppercase tracking-wider">
-          Library
-        </span>
+    <aside className="w-56 shrink-0">
+      <div className="flex items-center justify-between px-3 pt-2 pb-2">
+        <span className={HEADING}>Library</span>
         <button
           onClick={onToggleCollapse}
           className="text-fg-subtle hover:text-fg transition"
           title={drawer ? "Close folders" : "Collapse sidebar"}
           aria-label={drawer ? "Close folders" : "Collapse sidebar"}
         >
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
+          <Icon name="collapse" />
         </button>
       </div>
 
-      <button
-        onClick={() => onSelectFolder(null)}
-        className={`w-full text-left px-3 py-2 rounded-box text-sm flex items-center justify-between transition ${
-          selectedFolderId === null
-            ? "bg-surface-raised text-fg"
-            : "text-fg-subtle hover:text-fg hover:bg-surface"
-        }`}
-      >
-        <span>All snippets</span>
-        <span className="text-xs text-fg-subtle">{totalSnippets}</span>
-      </button>
-
-      {/* Hidden while empty, except mid-drag: it's the only way to drag a
-          snippet back out of its folder. */}
-      {(unorganizedCount > 0 || moving) && (
-        <DroppableFolder
-          id="unorganized"
-          selected={selectedFolderId === "unorganized"}
-          onClick={() => onSelectFolder("unorganized")}
-          count={unorganizedCount}
+      {/* The places a snippet can be that aren't folders: everything, the
+          ones in no folder, and the archive (docs/adr/0058). */}
+      <div className="space-y-0.5">
+        <button
+          onClick={() => onSelectFolder(null)}
+          className={`${ROW} ${selectedFolderId === null ? ROW_SELECTED : ROW_IDLE}`}
         >
-          <span>Unorganized</span>
-        </DroppableFolder>
-      )}
+          <RowLabel icon="all">All snippets</RowLabel>
+          <span className="text-xs text-fg-subtle">{totalSnippets}</span>
+        </button>
 
-      <div className="pt-4 pb-2 px-3 font-title text-xs text-fg-subtle uppercase tracking-wider">
-        Folders
+        {/* Hidden while empty, except mid-drag: it's the only way to drag a
+            snippet back out of its folder. */}
+        {(unorganizedCount > 0 || moving) && (
+          <DroppableFolder
+            id="unorganized"
+            selected={selectedFolderId === "unorganized"}
+            onClick={() => onSelectFolder("unorganized")}
+            count={unorganizedCount}
+          >
+            <RowLabel icon="unorganized">Unorganized</RowLabel>
+          </DroppableFolder>
+        )}
+
+        {/* Not a drop target: archiving is a button on the card
+            (docs/adr/0056). Hidden while empty, like Unorganized; the toast
+            after archiving says where to look. */}
+        {archivedCount > 0 && (
+          <button
+            onClick={() => onSelectFolder("archive")}
+            className={`${ROW} ${selectedFolderId === "archive" ? ROW_SELECTED : ROW_IDLE}`}
+          >
+            <RowLabel icon="archive">Archive</RowLabel>
+            <span className="text-xs text-fg-subtle">{archivedCount}</span>
+          </button>
+        )}
       </div>
 
-      {folders.map((folder) => (
-        <div
-          key={folder.id}
-          aria-busy={deletingId === folder.id}
-          className={`relative group transition ${
-            deletingId === folder.id ? "opacity-40 pointer-events-none" : ""
-          }`}
+      <div className="flex items-center justify-between px-3 pt-6 pb-2">
+        <span className={HEADING}>Folders</span>
+        <button
+          onClick={startCreate}
+          disabled={creating}
+          className="text-fg-subtle hover:text-fg transition disabled:opacity-40"
+          title="New folder"
+          aria-label="New folder"
         >
-          {editingId === folder.id ? (
-            <input
-              type="text"
-              maxLength={FOLDER_NAME_MAX}
-              value={editingName}
-              onChange={(e) => setEditingName(e.target.value)}
-              onBlur={() => handleRename(folder, "blur")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleRename(folder, "enter");
-                if (e.key === "Escape" && !saving) cancelEdit();
-              }}
-              readOnly={saving}
-              aria-busy={saving}
-              aria-label={`New name for ${folder.name}`}
-              autoFocus
-              className="w-full bg-surface-raised text-fg rounded-box px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
-            />
-          ) : (
-            <DroppableFolder
-              id={folder.id}
-              selected={selectedFolderId === folder.id}
-              onClick={() => onSelectFolder(folder.id)}
-              count={folder._count.snippets}
-              countClassName="group-hover:opacity-0 group-has-focus-visible:opacity-0 pointer-coarse:mr-6 transition"
-            >
-              <span className="truncate pr-6">{folder.name}</span>
-            </DroppableFolder>
-          )}
+          <Icon name="plus" />
+        </button>
+      </div>
 
-          {/* Hover reveals it with a mouse, and keyboard focus anywhere in the
-              row does the same, so Tab never lands on an invisible button. A
-              touch screen can't hover, so there it's always shown, with the
-              count moved aside for it. */}
-          {editingId !== folder.id && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openMenu(menuOpenId === folder.id ? null : folder.id);
-              }}
-              aria-label={`Rename or delete ${folder.name}`}
-              aria-expanded={menuOpenId === folder.id}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 group-has-focus-visible:opacity-100 pointer-coarse:opacity-100 pointer-coarse:px-2 transition px-1"
-            >
-              ⋯
-            </button>
-          )}
+      <div className="space-y-0.5">
+        {folders.map((folder) => (
+          <div
+            key={folder.id}
+            aria-busy={deletingId === folder.id}
+            className={`relative group transition ${
+              deletingId === folder.id ? "opacity-40 pointer-events-none" : ""
+            }`}
+          >
+            {editingId === folder.id ? (
+              <input
+                type="text"
+                maxLength={FOLDER_NAME_MAX}
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onBlur={() => handleRename(folder, "blur")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename(folder, "enter");
+                  if (e.key === "Escape" && !saving) cancelEdit();
+                }}
+                readOnly={saving}
+                aria-busy={saving}
+                aria-label={`New name for ${folder.name}`}
+                autoFocus
+                className="w-full bg-surface-raised text-fg rounded-box px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
+              />
+            ) : (
+              <DroppableFolder
+                id={folder.id}
+                selected={selectedFolderId === folder.id}
+                onClick={() => onSelectFolder(folder.id)}
+                count={folder._count.snippets}
+                countClassName="group-hover:opacity-0 group-has-focus-visible:opacity-0 pointer-coarse:mr-6 transition"
+              >
+                <span className="pr-6 min-w-0">
+                  <RowLabel icon="folder">{folder.name}</RowLabel>
+                </span>
+              </DroppableFolder>
+            )}
 
-          {menuOpenId === folder.id && (
-            <div
-              ref={menuRef}
-              className="absolute right-0 top-full mt-1 bg-surface-raised border border-line-strong rounded-box shadow-popover z-10 overflow-hidden"
-            >
+            {/* Hover reveals it with a mouse, and keyboard focus anywhere in
+                the row does the same, so Tab never lands on an invisible
+                button. A touch screen can't hover, so there it's always
+                shown, with the count moved aside for it. */}
+            {editingId !== folder.id && (
               <button
-                onClick={() => startEdit(folder)}
-                className="block w-full text-left px-4 py-2 text-sm text-fg-muted hover:bg-surface-hover"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openMenu(menuOpenId === folder.id ? null : folder.id);
+                }}
+                aria-label={`Rename or delete ${folder.name}`}
+                aria-expanded={menuOpenId === folder.id}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 group-has-focus-visible:opacity-100 pointer-coarse:opacity-100 pointer-coarse:px-2 transition px-1"
               >
-                Rename
+                ⋯
               </button>
-              {deleteArmed && folder._count.snippets > 0 && (
-                <p className="px-4 pt-2 text-xs text-fg-subtle max-w-48">
-                  {folderDeleteText(folder._count.snippets).note}
-                </p>
-              )}
-              <button
-                onClick={() => handleDelete(folder.id)}
-                className="block w-full text-left px-4 py-2 text-sm text-danger-text hover:bg-surface-hover"
+            )}
+
+            {menuOpenId === folder.id && (
+              <div
+                ref={menuRef}
+                className="absolute right-0 top-full mt-1 bg-surface-raised border border-line-strong rounded-box shadow-popover z-10 overflow-hidden"
               >
-                {deleteArmed ? "Confirm delete" : "Delete"}
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
+                <button
+                  onClick={() => startEdit(folder)}
+                  className="block w-full text-left px-4 py-2 text-sm text-fg-muted hover:bg-surface-hover"
+                >
+                  Rename
+                </button>
+                {deleteArmed && folder._count.snippets > 0 && (
+                  <p className="px-4 pt-2 text-xs text-fg-subtle max-w-48">
+                    {folderDeleteText(folder._count.snippets).note}
+                  </p>
+                )}
+                <button
+                  onClick={() => handleDelete(folder.id)}
+                  className="block w-full text-left px-4 py-2 text-sm text-danger-text hover:bg-surface-hover"
+                >
+                  {deleteArmed ? "Confirm delete" : "Delete"}
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {creating && (
+          <input
+            type="text"
+            maxLength={FOLDER_NAME_MAX}
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onBlur={() => handleCreate("blur")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleCreate("enter");
+              if (e.key === "Escape" && !saving) cancelCreate();
+            }}
+            readOnly={saving}
+            aria-busy={saving}
+            aria-label="Folder name"
+            autoFocus
+            placeholder="Folder name"
+            className="w-full bg-surface-raised text-fg rounded-box px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
+          />
+        )}
+
+        {/* With no folders yet, the + on the heading is easy to miss, so
+            the empty list offers one too. A different name from the +, so
+            each button can be told apart by name. */}
+        {folders.length === 0 && !creating && (
+          <button
+            onClick={startCreate}
+            className="w-full text-left px-3 py-1.5 text-sm text-fg-subtle hover:text-fg transition"
+          >
+            Start a folder
+          </button>
+        )}
+      </div>
 
       {error && (
         <p role="alert" className="px-3 py-2 text-xs text-danger-text">
           {error}
         </p>
-      )}
-
-      {creating ? (
-        <input
-          type="text"
-          maxLength={FOLDER_NAME_MAX}
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onBlur={() => handleCreate("blur")}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleCreate("enter");
-            if (e.key === "Escape" && !saving) cancelCreate();
-          }}
-          readOnly={saving}
-          aria-busy={saving}
-          aria-label="Folder name"
-          autoFocus
-          placeholder="Folder name"
-          className="w-full bg-surface-raised text-fg rounded-box px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-focus read-only:opacity-60"
-        />
-      ) : (
-        <button
-          onClick={() => {
-            setCreating(true);
-            setError(null);
-            setFailedName(null);
-          }}
-          className="w-full text-left px-3 py-2 text-sm text-fg-subtle hover:text-fg transition"
-        >
-          + New folder
-        </button>
-      )}
-
-      {/* At the bottom, out of the way, like the snippets in it. Not a drop
-          target: archiving is a button on the card (docs/adr/0056). Hidden
-          while empty, like Unorganized; the toast after archiving says
-          where to look. */}
-      {archivedCount > 0 && (
-        <div className="pt-4">
-          <button
-            onClick={() => onSelectFolder("archive")}
-            className={`w-full text-left px-3 py-2 rounded-box text-sm flex items-center justify-between transition ${
-              selectedFolderId === "archive"
-                ? "bg-surface-raised text-fg"
-                : "text-fg-subtle hover:text-fg hover:bg-surface"
-            }`}
-          >
-            <span>Archive</span>
-            <span className="text-xs text-fg-subtle">{archivedCount}</span>
-          </button>
-        </div>
       )}
     </aside>
   );

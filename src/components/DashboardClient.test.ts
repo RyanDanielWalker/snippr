@@ -149,10 +149,14 @@ describe("an archived snippet", () => {
   it("stays out of All snippets, and out of its count", () => {
     expect(html).toContain("Debounce");
     expect(html).not.toContain("Old session prompt");
-    expect(html).toMatch(/<span>All snippets<\/span><span[^>]*>1<\/span>/);
+    expect(html).toMatch(
+      /<span[^>]*>All snippets<\/span><\/span><span[^>]*>1<\/span>/,
+    );
   });
 
   it("shows up as the Archive row's count", () => {
-    expect(html).toMatch(/<span>Archive<\/span><span[^>]*>1<\/span>/);
+    expect(html).toMatch(
+      /<span[^>]*>Archive<\/span><\/span><span[^>]*>1<\/span>/,
+    );
   });
 });

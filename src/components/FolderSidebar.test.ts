@@ -62,7 +62,7 @@ describe("the Archive row", () => {
 
   it("shows with its count once something is", () => {
     expect(sidebar(0, false, 4)).toMatch(
-      /<span>Archive<\/span><span[^>]*>4<\/span>/,
+      /<span[^>]*>Archive<\/span><\/span><span[^>]*>4<\/span>/,
     );
   });
 });
