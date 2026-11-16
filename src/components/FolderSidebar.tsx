@@ -40,7 +40,13 @@ const ICONS = {
   expand: <path d="M9 18l6-6-6-6" />,
 };
 
-function Icon({ name }: { name: keyof typeof ICONS }) {
+function Icon({
+  name,
+  className = "",
+}: {
+  name: keyof typeof ICONS;
+  className?: string;
+}) {
   return (
     <svg
       aria-hidden="true"
@@ -52,7 +58,7 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
       strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="shrink-0"
+      className={`shrink-0 ${className}`}
     >
       {ICONS[name]}
     </svg>
@@ -62,14 +68,17 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
 /** A row's icon and name. The name truncates; the icon never shrinks. */
 function RowLabel({
   icon,
+  selected = false,
   children,
 }: {
   icon: keyof typeof ICONS;
+  /** The open row's icon takes the accent color. */
+  selected?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <span className="flex items-center gap-2.5 min-w-0">
-      <Icon name={icon} />
+      <Icon name={icon} className={selected ? "text-accent-text" : ""} />
       <span className="truncate">{children}</span>
     </span>
   );
@@ -77,9 +86,16 @@ function RowLabel({
 
 const ROW =
   "w-full text-left px-3 py-1.5 rounded-box text-sm flex items-center justify-between gap-2 transition";
-const ROW_IDLE = "text-fg-subtle hover:text-fg hover:bg-surface";
-const ROW_SELECTED = "bg-surface-raised text-fg";
+const ROW_IDLE = "text-fg-muted hover:text-fg hover:bg-surface-raised";
+const ROW_SELECTED = "bg-accent-soft text-fg font-medium";
 const HEADING = "font-title text-xs text-fg-subtle uppercase tracking-wider";
+
+// Everything on a row's right edge (counts, the folder's ⋯, the heading's
+// < and +) sits in this one column, so they line up down the sidebar. Rows
+// and headings both have px-3, so the column lands in the same place.
+const RIGHT_COLUMN = "w-6 shrink-0 flex items-center justify-center";
+const COUNT = `${RIGHT_COLUMN} text-xs tabular-nums`;
+const HEADING_BUTTON = `${RIGHT_COLUMN} h-6 rounded-box text-fg-subtle hover:text-fg hover:bg-surface-raised transition`;
 
 function DroppableFolder({
   id,
@@ -113,7 +129,7 @@ function DroppableFolder({
     >
       {children}
       <span
-        className={`text-xs ${isOver ? "text-accent-fg" : "text-fg-subtle"} ${countClassName}`}
+        className={`${COUNT} ${isOver ? "text-accent-fg" : "text-fg-subtle"} ${countClassName}`}
       >
         {count}
       </span>
@@ -311,12 +327,18 @@ export default function FolderSidebar({
   }
 
   return (
-    <aside className="w-56 shrink-0">
-      <div className="flex items-center justify-between px-3 pt-2 pb-2">
+    // On the page it's a panel like the cards, so it reads as its own
+    // region. The phone drawer is already one, so it skips the frame.
+    <aside
+      className={`w-56 shrink-0 ${
+        drawer ? "" : "bg-surface border border-line rounded-panel p-2"
+      }`}
+    >
+      <div className="flex items-center justify-between px-3 pt-1 pb-2">
         <span className={HEADING}>Library</span>
         <button
           onClick={onToggleCollapse}
-          className="text-fg-subtle hover:text-fg transition"
+          className={HEADING_BUTTON}
           title={drawer ? "Close folders" : "Collapse sidebar"}
           aria-label={drawer ? "Close folders" : "Collapse sidebar"}
         >
@@ -331,8 +353,10 @@ export default function FolderSidebar({
           onClick={() => onSelectFolder(null)}
           className={`${ROW} ${selectedFolderId === null ? ROW_SELECTED : ROW_IDLE}`}
         >
-          <RowLabel icon="all">All snippets</RowLabel>
-          <span className="text-xs text-fg-subtle">{totalSnippets}</span>
+          <RowLabel icon="all" selected={selectedFolderId === null}>
+            All snippets
+          </RowLabel>
+          <span className={`${COUNT} text-fg-subtle`}>{totalSnippets}</span>
         </button>
 
         {/* Hidden while empty, except mid-drag: it's the only way to drag a
@@ -344,7 +368,12 @@ export default function FolderSidebar({
             onClick={() => onSelectFolder("unorganized")}
             count={unorganizedCount}
           >
-            <RowLabel icon="unorganized">Unorganized</RowLabel>
+            <RowLabel
+              icon="unorganized"
+              selected={selectedFolderId === "unorganized"}
+            >
+              Unorganized
+            </RowLabel>
           </DroppableFolder>
         )}
 
@@ -356,18 +385,20 @@ export default function FolderSidebar({
             onClick={() => onSelectFolder("archive")}
             className={`${ROW} ${selectedFolderId === "archive" ? ROW_SELECTED : ROW_IDLE}`}
           >
-            <RowLabel icon="archive">Archive</RowLabel>
-            <span className="text-xs text-fg-subtle">{archivedCount}</span>
+            <RowLabel icon="archive" selected={selectedFolderId === "archive"}>
+              Archive
+            </RowLabel>
+            <span className={`${COUNT} text-fg-subtle`}>{archivedCount}</span>
           </button>
         )}
       </div>
 
-      <div className="flex items-center justify-between px-3 pt-6 pb-2">
+      <div className="flex items-center justify-between px-3 pt-3 pb-2 mt-3 border-t border-line">
         <span className={HEADING}>Folders</span>
         <button
           onClick={startCreate}
           disabled={creating}
-          className="text-fg-subtle hover:text-fg transition disabled:opacity-40"
+          className={`${HEADING_BUTTON} disabled:opacity-40`}
           title="New folder"
           aria-label="New folder"
         >
@@ -407,11 +438,14 @@ export default function FolderSidebar({
                 selected={selectedFolderId === folder.id}
                 onClick={() => onSelectFolder(folder.id)}
                 count={folder._count.snippets}
-                countClassName="group-hover:opacity-0 group-has-focus-visible:opacity-0 pointer-coarse:mr-6 transition"
+                countClassName="group-hover:opacity-0 group-has-focus-visible:opacity-0 pointer-coarse:mr-7 transition"
               >
-                <span className="pr-6 min-w-0">
-                  <RowLabel icon="folder">{folder.name}</RowLabel>
-                </span>
+                <RowLabel
+                  icon="folder"
+                  selected={selectedFolderId === folder.id}
+                >
+                  {folder.name}
+                </RowLabel>
               </DroppableFolder>
             )}
 
@@ -427,7 +461,7 @@ export default function FolderSidebar({
                 }}
                 aria-label={`Rename or delete ${folder.name}`}
                 aria-expanded={menuOpenId === folder.id}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 group-has-focus-visible:opacity-100 pointer-coarse:opacity-100 pointer-coarse:px-2 transition px-1"
+                className={`absolute right-3 top-1/2 -translate-y-1/2 h-6 ${RIGHT_COLUMN} rounded-box text-fg-subtle hover:text-fg opacity-0 group-hover:opacity-100 group-has-focus-visible:opacity-100 pointer-coarse:opacity-100 transition`}
               >
                 ⋯
               </button>

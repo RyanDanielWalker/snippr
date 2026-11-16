@@ -34,6 +34,12 @@ Claude offered three, and Ryan chose the first, which Claude had recommended.
 - While there are no folders, the empty list shows a "Start a folder" button too, because a small + on a heading is easy to miss when there's nothing else there. It has a different name from the + so the two can be told apart by name, for a screen reader or a test.
 - The icons are inline SVGs in `FolderSidebar.tsx`, a few paths each. An icon library like `lucide-react` would be another dependency for six icons.
 
+- Later the same day Ryan said the sidebar still wasn't distinct enough, and that the counts didn't line up with the < and + on the headings. So:
+  - The sidebar sits in a panel with the same background, border, and corners as the cards, so it reads as its own region. The phone drawer skips the panel, because the drawer already is one.
+  - The open row uses the accent: an orange-tinted background, an orange icon, and medium-weight text. Before, it was a gray only slightly lighter than the page.
+  - A thin line separates Library from Folders.
+  - Counts, the folder's ⋯, and the headings' < and + all sit in one 24px column on the right, centered (`RIGHT_COLUMN` in `FolderSidebar.tsx`). Before, the counts were right-aligned text and the icons were 16px boxes, so their centers missed each other by a few pixels.
+
 ## Consequences
 
 - The Archive is easier to find. The toast after archiving still says where it went, but it no longer has to.
