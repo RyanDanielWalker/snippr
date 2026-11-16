@@ -354,7 +354,7 @@ src/
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders give the cards the same ids)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
-│   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones): the Library group (All snippets, Unorganized, Archive), then folders, with inline icons; drop targets (tested: when Unorganized and Archive show, the count's color under a drag)
+│   ├── FolderSidebar.tsx       The Library panel (a drawer on phones): All snippets, Unorganized, Archive, then folders indented under them; collapses to an icon rail whose rows are still drop targets (tested: when Unorganized and Archive show, the count's color under a drag, the rail's names and letters)
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; Enter or Space opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── CreatedDate.tsx         A snippet's created date on the card and preview, in the reader's time zone
