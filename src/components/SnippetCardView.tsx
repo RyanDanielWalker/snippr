@@ -1,5 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
 import { lineWrapClass } from "@/lib/highlight";
+import CreatedDate from "@/components/CreatedDate";
 
 export type SnippetCardData = {
   title: string;
@@ -7,6 +8,8 @@ export type SnippetCardData = {
   language: string;
   description?: string | null;
   tags: string[];
+  /** When it was made. The landing page's sample cards leave it out. */
+  createdAt?: string;
   /** The highlighted start of the code, from `withCardHtml` in lib/highlight. */
   codeHtml?: string | null;
 };
@@ -41,6 +44,12 @@ export default function SnippetCardView({
             <p className="text-fg-subtle text-sm mt-0.5">
               {snippet.description}
             </p>
+          )}
+          {snippet.createdAt && (
+            <CreatedDate
+              iso={snippet.createdAt}
+              className="block text-xs text-fg-subtle mt-1"
+            />
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">

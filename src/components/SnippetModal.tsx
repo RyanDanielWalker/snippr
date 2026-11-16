@@ -6,6 +6,7 @@ import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useArchiveSnippet } from "@/components/useArchiveSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
+import CreatedDate from "@/components/CreatedDate";
 import { highlightCode, lineWrapClass } from "@/lib/highlight";
 import type { Snippet } from "@/lib/library-types";
 import { bodyWording } from "@/lib/snippet-form";
@@ -82,6 +83,9 @@ export default function SnippetModal({
             {snippet.description && (
               <p className="text-fg-subtle text-sm">{snippet.description}</p>
             )}
+            <p className="text-xs text-fg-subtle mt-1">
+              Created <CreatedDate iso={snippet.createdAt} />
+            </p>
             {snippet.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {snippet.tags.map((tag) => (
