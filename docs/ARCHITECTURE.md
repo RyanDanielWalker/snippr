@@ -59,9 +59,9 @@ flowchart LR
 2. `src/app/dashboard/page.tsx` is a **Server Component**: it runs only on the server. It calls `getServerSession(authOptions)`, which reads the session cookie and looks the session up in Postgres. No session means a redirect to `/login`.
 3. It loads the user's snippets and folders (with snippet counts) in parallel with `Promise.all`, then highlights the start of each snippet's code with Shiki for its card ([0022](./adr/0022-highlight-cards-on-the-server.md)).
 4. It passes that data as props to `DashboardClient`, a **Client Component** that runs in the browser and owns all the interactive state: search text, AI mode, selected folder, sidebar collapse, the phone folder drawer, the new-snippet modal, and drag state. Each `SnippetCard` owns its own preview and edit modals.
-5. `DashboardClient` is rendered to HTML on the server too, so the snippets arrive with the page, and then **hydrates** in the browser: React attaches its event handlers to that HTML instead of drawing it again. That only works if both renders produce the same markup, which is why `DndContext` has a fixed `id` ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). So a remembered choice the first frame depends on lives in a cookie the server can read, not in `localStorage`: the theme ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)), the collapsed sidebar (`src/lib/sidebar.ts`, read by the dashboard page), and a demo guest's checklist ([0049](./adr/0049-a-things-to-try-checklist-for-demo-guests-kept-in-a-cookie.md)).
+5. `DashboardClient` is rendered to HTML on the server too, so the snippets arrive with the page, and then **hydrates** in the browser: React attaches its event handlers to that HTML instead of drawing it again. That only works if both renders produce the same markup, which is why `DndContext` has a fixed `id` ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). So a remembered choice the first frame depends on lives in a cookie the server can read, not in `localStorage`: the theme ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)), the collapsed sidebar (`src/lib/sidebar.ts`, read by the dashboard page), and a demo guest's checklist ([0049](./adr/0049-a-things-to-try-checklist-for-demo-guests-kept-in-a-cookie.md)). A snippet's created date has the opposite problem: it depends on the reader's time zone, which the server can't know. So `CreatedDate` renders it in UTC on the server and during hydration, and `useTimeZone` (built on `useSyncExternalStore`) renders it again in the browser's zone straight after. The markup matches, and a snippet saved at 9pm in New York still says the 15th, not the 16th.
 
-Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded, and keyword search stays inside the open folder. The page loads archived snippets too, and `DashboardClient` keeps them out of every view except Archive, at the bottom of the sidebar ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md)). Only AI search makes a network call, and it always searches the whole library: you reach for it when you don't remember where something is, and the MCP server's search works the same way. While its results are up the heading reads "Whole library" instead of the folder's name, and picking a folder clears them. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
+Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded, and keyword search stays inside the open folder. The page loads archived snippets too, and `DashboardClient` keeps them out of every view except Archive, which sits in the sidebar's Library group under All snippets and Unorganized ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md), [0058](./adr/0058-group-the-archive-with-the-library-and-give-sidebar-rows-icons.md)). Only AI search makes a network call, and it always searches the whole library: you reach for it when you don't remember where something is, and the MCP server's search works the same way. While its results are up the heading reads "Whole library" instead of the folder's name, and picking a folder clears them. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
 
 ### Changing data (write path)
 
@@ -354,9 +354,11 @@ src/
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders give the cards the same ids)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
-│   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones), drop targets (tested: when Unorganized shows, the count's color under a drag)
+│   ├── FolderSidebar.tsx       Collapsible sidebar (a drawer on phones): the Library group (All snippets, Unorganized, Archive), then folders, with inline icons; drop targets (tested: when Unorganized and Archive show, the count's color under a drag)
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; Enter or Space opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
+│   ├── CreatedDate.tsx         A snippet's created date on the card and preview, in the reader's time zone
+│   ├── useTimeZone.ts          The browser's time zone, or UTC on the server and during hydration
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails
 │   ├── useCopy.ts              Copy button shared by the card, the preview, and the Connect page, toast if it fails
 │   ├── useArchiveSnippet.ts    One-press archive and unarchive, shared by the card and preview
@@ -413,6 +415,7 @@ src/
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   ├── site.ts                 Site URL, name, and description for metadata (tested)
 │   ├── snippet-form.ts         The snippet form's starting fields, change check, request body, and whether to say "code" or "prompt" (tested)
+│   ├── snippet-date.ts         "Nov 16", or "Nov 16, 2025" in an earlier year, in a given time zone (tested)
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
 │   ├── snippets.ts             /api/snippets: sign-in, validation, then the cap or ownership (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)

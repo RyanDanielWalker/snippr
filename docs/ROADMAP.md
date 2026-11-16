@@ -1,6 +1,6 @@
 # Roadmap
 
-*Last updated: 2026-11-12*
+*Last updated: 2026-11-16*
 
 This roadmap came out of an October 2026 audit of the code and the live site. The goal is a project that holds up when someone actually clicks the link, reads the code, and asks how it works.
 
@@ -21,11 +21,13 @@ Phases run in order. Items inside a phase can ship in any order. Each item lands
 
 ### Outside the plan
 
-Things Ryan raised on 2026-11-12, after the milestone was scoped.
+Things Ryan raised from 2026-11-12 on, after the milestone was scoped.
 
 - [x] Generate failed on saved prompts that list steps. Claude's descriptions were honest but 34 to 39 words, and the check from [0045](./adr/0045-put-the-saved-prompt-rules-in-the-system-prompt-and-check-the-reply.md) turns down anything over 30. The rules now ask for the prompt's goal, not its steps, and start with a verb. Tested against the real Claude: 21 of 21 replies passed, and two injection attempts were described, not obeyed ([0055](./adr/0055-ask-for-a-saved-prompts-goal-not-its-steps.md))
 - [x] A card without a description looked lopsided next to one with. Cards in a grid row stretch to the tallest, the code box stopped at 10rem, and the buttons sit at the bottom, so the spare height pooled as a gap between the code and the buttons. Now the code box starts at 10rem and grows into the spare height, showing more code (`SnippetCardView.tsx`, `.snippet-code` in `globals.css`). A side effect: a two-line snippet's box is 10rem tall now instead of shrinking to fit, so every card's code box is at least the same height
 - [x] An archive, so a finished snippet can leave the library without being deleted ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md)). Ryan chose the recommended scope: archive only, with Recently deleted still Parked, and archived snippets counting toward the cap. Archive and Unarchive are on the card and in the preview, and an Archive row sits at the bottom of the sidebar while anything is in it. Archived snippets keep their folder and are left out of the library, folder counts, and AI search, in the app and over MCP. The migration adds one nullable column, so the commits went to a branch first ([0038](./adr/0038-push-commits-with-a-migration-to-a-branch-first.md)). CI passed there, and they reached production on 2026-11-12. `e2e/demo.spec.ts` archives a snippet and brings it back
+- [x] Cards had no date, so Ryan was putting the date in snippet titles (2026-11-16). Each card now shows when it was made, "Nov 16", with the year when it isn't this one, and the preview says "Created Nov 16". The day is in the reader's time zone (`src/lib/snippet-date.ts`, `CreatedDate`, `useTimeZone`)
+- [x] The sidebar looked rough: Archive floated alone at the bottom, and "+ New folder" looked like a folder (2026-11-16). Archive now sits in the Library group, every row has an icon, and New folder is a + on the Folders heading ([0058](./adr/0058-group-the-archive-with-the-library-and-give-sidebar-rows-icons.md)). The README's screenshots still show the old sidebar until `e2e/readme-images.ts` runs again
 
 ## Done
 
