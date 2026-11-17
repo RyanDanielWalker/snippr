@@ -91,5 +91,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0057](./0057-ship-the-milestone-as-1-2-now-that-it-has-the-archive.md) | Ship the milestone as 1.2, now that it has the archive | Accepted |
 | [0058](./0058-group-the-archive-with-the-library-and-give-sidebar-rows-icons.md) | Group the Archive with the library, and give sidebar rows icons | Accepted |
 | [0059](./0059-collapse-the-sidebar-to-an-icon-rail.md) | Collapse the sidebar to an icon rail | Accepted |
+| [0060](./0060-refuse-case-only-duplicate-emails-with-a-unique-index-on-lower-email.md) | Refuse case-only duplicate emails with a unique index on `lower(email)` | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
