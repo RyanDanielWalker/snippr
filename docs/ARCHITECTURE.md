@@ -74,7 +74,7 @@ sequenceDiagram
 
     UI->>RH: fetch("/api/snippets", PATCH, JSON body)
     RH->>NA: getServerSession(authOptions)
-    NA->>DB: look up session token
+    NA->>DB: look up SHA-256 of the cookie token
     DB-->>NA: session + user id
     RH->>DB: find snippet by id
     RH->>RH: snippet.userId === session user id?
@@ -161,7 +161,7 @@ erDiagram
     }
     Session {
         string id PK
-        string sessionToken UK
+        string sessionToken UK "SHA-256 of the cookie"
         string userId FK
         datetime expires
     }
@@ -205,6 +205,7 @@ erDiagram
 - `DemoStart` counts demos started per IP and hour. It isn't linked to any user ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)).
 - `User.email` is stored lowercase ([0010](./adr/0010-store-emails-lowercased.md)). Besides its plain unique index, a second unique index on `lower(email)` makes the database refuse two users whose emails differ only in capital letters, in case a write ever skips the app's lowercasing. Prisma's schema can't describe an index on an expression, so it exists only in the migration `20261116203530_unique_lowercase_email`, with a comment in `schema.prisma` pointing at it. A `test:db` test (`src/lib/email-case.db.test.ts`) checks it ([0060](./adr/0060-refuse-case-only-duplicate-emails-with-a-unique-index-on-lower-email.md)).
 - `Account`, `Session`, and `VerificationToken` are the standard NextAuth adapter tables. `VerificationToken` is unused because there's no email sign-in.
+- `Session.sessionToken` holds the SHA-256 of the token in the browser's cookie, not the token itself, so a row read from the database can't be pasted into a cookie. The column keeps NextAuth's name because the Prisma adapter reads it by that name. Every write goes through `hashSessionToken` in `src/lib/session-tokens.ts`; see [Authentication](#authentication) ([0061](./adr/0061-store-session-tokens-as-their-sha-256.md)).
 - Every foreign key column has an index, since Postgres doesn't add one for the referencing side. A `test:db` test (`src/lib/foreign-key-indexes.db.test.ts`) fails if a new relation arrives without its `@@index`.
 - Every table has row-level security on, with no policies. Postgres then refuses every ordinary role except the table's owner, and the app connects as the owner. Superusers and Supabase's `service_role` key still bypass it, so what this closes off is the Data API's public key, even if the API were turned on. A `test:db` test (`src/lib/row-level-security.db.test.ts`) fails if a new table forgets it ([0037](./adr/0037-turn-on-row-level-security-with-no-policies.md)).
 - Schema changes are SQL migrations in `prisma/migrations/`, starting from a baseline of the schema as it stood in October 2026. Production builds apply new ones before building the app ([0016](./adr/0016-apply-migrations-in-the-production-build.md)).
@@ -231,11 +232,15 @@ sequenceDiagram
         S-->>B: if not verified, redirect to /login?error=AccessDenied
     end
     S->>DB: find Account, or link to User with same email, or create User
-    S->>DB: create Session row
+    S->>DB: create Session row holding the token's SHA-256
     S-->>B: set session cookie, redirect to /dashboard
 ```
 
-The cookie only holds a random session token. All user data stays in the database. Accounts with the same email are linked into one user ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md)), with emails stored and matched in lowercase so casing differences between providers don't split an account ([0010](./adr/0010-store-emails-lowercased.md)). To make that safe, a provider account being attached for the first time must come with an email the provider has verified ([0009](./adr/0009-require-verified-email-for-new-accounts.md)). GitHub's and Google's tokens are used during the sign-in and never stored ([0039](./adr/0039-stop-storing-provider-tokens.md)). Failed sign-ins return to `/login` with an error code that the page turns into a readable message.
+The cookie only holds a random session token. All user data stays in the database.
+
+The `Session` table stores that token's SHA-256, never the token ([0061](./adr/0061-store-session-tokens-as-their-sha-256.md)). A *hash* is a one-way scramble: the same token always gives the same 64 hex characters, and the characters can't be turned back into the token. So on each request NextAuth's lookup hashes the cookie's token and finds the row with that hash. Someone holding a leaked copy of the table has only hashes, and a hash in a cookie matches nothing. This happens in an adapter wrapper, `withHashedSessionTokens` (`src/lib/session-tokens.ts`), around the four adapter methods that carry a token: create, look up, extend, delete. It wraps the Prisma adapter directly, inside the other wrappers, so they and NextAuth only see the cookie's token. It also hands the raw token back from `createSession`, because NextAuth sets the cookie from what that returns. The hash is plain SHA-256, the same as MCP tokens. A keyed or slow hash protects guessable values, and a session token is a random UUID or 32 random bytes, so there's nothing to guess.
+
+Accounts with the same email are linked into one user ([0004](./adr/0004-nextauth-database-sessions-and-account-linking.md)), with emails stored and matched in lowercase so casing differences between providers don't split an account ([0010](./adr/0010-store-emails-lowercased.md)). To make that safe, a provider account being attached for the first time must come with an email the provider has verified ([0009](./adr/0009-require-verified-email-for-new-accounts.md)). GitHub's and Google's tokens are used during the sign-in and never stored ([0039](./adr/0039-stop-storing-provider-tokens.md)). Failed sign-ins return to `/login` with an error code that the page turns into a readable message.
 
 ### Demo guests
 
@@ -243,8 +248,8 @@ The cookie only holds a random session token. All user data stays in the databas
 
 1. The form posts to a Server Action, `startDemoAction` (`src/app/actions/start-demo.ts`). Next.js rejects it unless it came from our own pages.
 2. It counts the start against the visitor's IP (5 an hour, stored as a hash) and deletes guests that have expired.
-3. In one transaction it creates a `User` with `guestExpiresAt` 24 hours out, a few seeded folders and snippets, and a `Session` row.
-4. It sets the same session cookie NextAuth would and redirects to `/dashboard`. From there the guest is an ordinary signed-in user.
+3. In one transaction it creates a `User` with `guestExpiresAt` 24 hours out, a few seeded folders and snippets, and a `Session` row. The row holds the token's SHA-256 (`hashSessionToken`), the same as a NextAuth sign-in, or NextAuth would never find it.
+4. It sets the same session cookie NextAuth would, holding the raw token, and redirects to `/dashboard`. From there the guest is an ordinary signed-in user.
 
 An adapter wrapper (`src/lib/guest.ts`) enforces the rest. Once `guestExpiresAt` has passed, the guest's session counts as no session, even though NextAuth will have pushed the session row's own expiry out. Guests also can't have a GitHub or Google account attached; the dashboard's "Sign in to keep your own" signs the guest out first. The session carries `isGuest`, which the dashboard uses for its banner and checklist, and the AI handlers use to pick the guest limit.
 
@@ -413,6 +418,7 @@ src/
 │   ├── rate-limit.ts           Rate-limit windows and decisions, member and guest AI limits, each address's daily share, the guests' daily ceiling (tested)
 │   ├── request-body.ts         Reads a JSON body and checks it against a schema, or returns a 400 (tested)
 │   ├── security-headers.ts     Headers on every response, applied in next.config.ts (tested)
+│   ├── session-tokens.ts       Stores session tokens as their SHA-256, for NextAuth and the demo (tested, and against Postgres)
 │   ├── sign-in-errors.ts       Login error messages (tested)
 │   ├── site.ts                 Site URL, name, and description for metadata (tested)
 │   ├── snippet-form.ts         The snippet form's starting fields, change check, request body, and whether to say "code" or "prompt" (tested)

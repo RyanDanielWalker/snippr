@@ -70,7 +70,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0036](./0036-generate-the-case-study-on-request-and-keep-it-off-1-0.md) | Generate the case study on request, and keep it off 1.0 | Accepted |
 | [0037](./0037-turn-on-row-level-security-with-no-policies.md) | Turn on row-level security, with no policies | Accepted |
 | [0038](./0038-push-commits-with-a-migration-to-a-branch-first.md) | Push commits with a migration to a branch first | Accepted |
-| [0039](./0039-stop-storing-provider-tokens.md) | Stop storing GitHub and Google tokens | Accepted |
+| [0039](./0039-stop-storing-provider-tokens.md) | Stop storing GitHub and Google tokens | Accepted; the session tokens it left stored raw are hashed since [0061](./0061-store-session-tokens-as-their-sha-256.md) |
 | [0040](./0040-close-1-0-and-scope-1-1-to-two-demo-items.md) | Close 1.0, and scope 1.1 to two demo items | Accepted |
 | [0041](./0041-give-1-1-a-version-bump-and-a-tag.md) | Give 1.1 a version bump and a tag | Accepted; extended by [0050](./0050-publish-1-1-as-a-github-release-with-notes-kept-in-the-repo.md) |
 | [0042](./0042-leave-the-minimatch-alert-open-until-lint-tools-can-take-the-fix.md) | Leave the minimatch alert open until the lint tools can take the fix | Superseded by 0043 |
@@ -92,5 +92,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0058](./0058-group-the-archive-with-the-library-and-give-sidebar-rows-icons.md) | Group the Archive with the library, and give sidebar rows icons | Accepted |
 | [0059](./0059-collapse-the-sidebar-to-an-icon-rail.md) | Collapse the sidebar to an icon rail | Accepted |
 | [0060](./0060-refuse-case-only-duplicate-emails-with-a-unique-index-on-lower-email.md) | Refuse case-only duplicate emails with a unique index on `lower(email)` | Accepted |
+| [0061](./0061-store-session-tokens-as-their-sha-256.md) | Store session tokens as their SHA-256 | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
