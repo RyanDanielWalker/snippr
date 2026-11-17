@@ -36,14 +36,16 @@ export const demoStore: DemoStore = {
     ]);
   },
 
-  async createGuest({ expiresAt, sessionToken, seed }) {
+  async createGuest({ expiresAt, sessionTokenHash, seed }) {
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
           name: "Guest",
           guestExpiresAt: expiresAt,
           folders: { create: seed.folders.map((name) => ({ name })) },
-          sessions: { create: { sessionToken, expires: expiresAt } },
+          sessions: {
+            create: { sessionToken: sessionTokenHash, expires: expiresAt },
+          },
         },
         include: { folders: true },
       });

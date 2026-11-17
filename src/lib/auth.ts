@@ -7,15 +7,21 @@ import { isProviderEmailVerified } from "@/lib/email-verification";
 import { withLowercaseEmails } from "@/lib/email-case";
 import { isGuest, withGuestRules } from "@/lib/guest";
 import { withoutProviderTokens } from "@/lib/provider-tokens";
+import { withHashedSessionTokens } from "@/lib/session-tokens";
 
 export const authOptions: NextAuthOptions = {
   // Emails are stored and matched in lowercase so the same address from two
   // providers links to one user. See docs/adr/0010-store-emails-lowercased.md.
   // Demo guests expire and can't have a sign-in account attached; see
   // src/lib/guest.ts and docs/adr/0012. GitHub's and Google's tokens are never
-  // stored; see src/lib/provider-tokens.ts and docs/adr/0039.
+  // stored; see src/lib/provider-tokens.ts and docs/adr/0039. Session tokens
+  // are stored hashed, and that wrapper sits next to the real adapter so the
+  // others only see the cookie's token; see src/lib/session-tokens.ts and
+  // docs/adr/0061.
   adapter: withGuestRules(
-    withoutProviderTokens(withLowercaseEmails(PrismaAdapter(prisma))),
+    withoutProviderTokens(
+      withLowercaseEmails(withHashedSessionTokens(PrismaAdapter(prisma))),
+    ),
   ),
   providers: [
     GithubProvider({

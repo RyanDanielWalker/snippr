@@ -10,6 +10,7 @@ import {
   type DemoStore,
 } from "./demo";
 import { GUEST_LIFETIME_MS } from "./guest";
+import { hashSessionToken } from "./session-tokens";
 import { SNIPPET_CAPS } from "./snippet-cap";
 import { FOLDER_CAPS } from "./folder-cap";
 import { createFolderSchema, createSnippetSchema } from "./schemas";
@@ -47,7 +48,7 @@ describe("startDemo", () => {
     expect(result).toEqual({ ok: true, sessionToken: "tok", expires });
     expect(store.createGuest).toHaveBeenCalledWith({
       expiresAt: expires,
-      sessionToken: "tok",
+      sessionTokenHash: hashSessionToken("tok"),
       seed: demoSeed(),
     });
   });

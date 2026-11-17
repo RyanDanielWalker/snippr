@@ -5,6 +5,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { searchExample } from "../src/lib/landing-samples";
+import { hashSessionToken } from "../src/lib/session-tokens";
 import { e2eDatabase } from "../scripts/e2e-guard.mjs";
 
 // The README's images, taken from the real app (docs/adr/0032). Run with
@@ -99,7 +100,8 @@ test("phone: both themes", async ({ browser, baseURL }) => {
 });
 
 // Guests can't make tokens, so this signs in a member the way NextAuth
-// would after OAuth: a user and a session row, and the session cookie.
+// would after OAuth: a user and a session row, and the session cookie. The
+// row holds the token's hash and the cookie the token (docs/adr/0061).
 test("connect: a new token and its setup", async ({ browser, baseURL }) => {
   const database = e2eDatabase(process.env);
   if (!database.ok) throw new Error(database.message);
@@ -115,7 +117,7 @@ test("connect: a new token and its setup", async ({ browser, baseURL }) => {
         emailVerified: new Date(),
         sessions: {
           create: {
-            sessionToken,
+            sessionToken: hashSessionToken(sessionToken),
             expires: new Date(Date.now() + 60 * 60 * 1000),
           },
         },

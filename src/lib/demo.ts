@@ -1,6 +1,7 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { landingSamples } from "@/lib/landing-samples";
 import { GUEST_LIFETIME_MS } from "@/lib/guest";
+import { hashSessionToken } from "@/lib/session-tokens";
 import {
   checkFixedWindow,
   windowStart,
@@ -72,10 +73,14 @@ export type DemoStore = {
    * `keepFrom`, and per-address AI counts from days before today.
    */
   deleteExpired: (now: Date, keepFrom: Date) => Promise<void>;
-  /** Creates the guest, its seeded library, and its session, all or nothing. */
+  /**
+   * Creates the guest, its seeded library, and its session, all or nothing.
+   * The session is stored by the token's hash, never the token
+   * (docs/adr/0061).
+   */
   createGuest: (guest: {
     expiresAt: Date;
-    sessionToken: string;
+    sessionTokenHash: string;
     seed: DemoSeed;
   }) => Promise<void>;
 };
@@ -109,10 +114,12 @@ export async function startDemo({
   await store.deleteExpired(now, windowStart(now, DEMO_START_LIMIT.windowMs));
 
   const expires = new Date(now.getTime() + GUEST_LIFETIME_MS);
+  // The cookie gets the token, and the database only its hash, the same as
+  // a sign-in through NextAuth (src/lib/session-tokens.ts).
   const sessionToken = newSessionToken();
   await store.createGuest({
     expiresAt: expires,
-    sessionToken,
+    sessionTokenHash: hashSessionToken(sessionToken),
     seed: demoSeed(),
   });
   return { ok: true, sessionToken, expires };
