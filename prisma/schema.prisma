@@ -10,6 +10,10 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   name          String?
+  // Stored lowercase (docs/adr/0010). A second unique index on lower(email),
+  // in migration 20261116203530_unique_lowercase_email, refuses two emails
+  // that differ only in case. Prisma can't describe an index on an
+  // expression, so it lives in the SQL only (docs/adr/0060).
   email         String?   @unique
   emailVerified DateTime?
   image         String?
