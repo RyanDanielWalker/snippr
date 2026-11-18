@@ -98,5 +98,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0064](./0064-run-on-node-24-named-once-in-package-json-engines.md) | Run on Node 24, named once in `package.json` `engines` | Accepted |
 | [0065](./0065-close-1-2-1-and-scope-1-3-to-finishing-the-archive.md) | Close 1.2.1, and scope 1.3 to finishing the archive | Accepted |
 | [0066](./0066-catch-a-lockfile-from-an-older-npm-in-ci-not-before.md) | Catch a lockfile from an older npm in CI, not before | Accepted |
+| [0067](./0067-recently-deleted-a-30-day-trash-emptied-when-the-library-loads.md) | Recently deleted: a 30-day trash, emptied when the library loads | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
