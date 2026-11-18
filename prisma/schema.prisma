@@ -55,6 +55,12 @@ model Snippet {
   // snippet keeps its folder, still counts toward the cap, and is left out
   // of the library, folder counts, and AI search. See docs/adr/0056.
   archivedAt  DateTime?
+  // When it was deleted, or null while it's in the library or the archive.
+  // A deleted snippet sits in Recently deleted for 30 days, doesn't count
+  // toward the cap, and is purged when its owner's dashboard loads after
+  // that. Deleting keeps archivedAt, so a restore goes back where it was.
+  // See docs/adr/0067.
+  deletedAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   @@index([userId])

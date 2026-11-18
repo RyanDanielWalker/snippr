@@ -29,6 +29,7 @@ function snippet(id: string, userId: string, title = `Snippet ${id}`): Snippet {
     userId,
     folderId: null,
     archivedAt: null,
+    deletedAt: null,
     createdAt: at,
     updatedAt: at,
   };
@@ -78,7 +79,10 @@ function fakeDeps(extra: Snippet[] = []) {
       return created;
     }),
     update: vi.fn(),
-    delete: vi.fn(),
+    trash: vi.fn(),
+    deleteForever: vi.fn(),
+    restore: vi.fn(),
+    purgeExpiredTrash: vi.fn(),
     withCreateLock: (_userId, work) => work(store),
   };
 

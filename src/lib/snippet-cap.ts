@@ -30,3 +30,13 @@ export function snippetCapMessage(cap: number, isGuest: boolean): string {
     ? `The demo holds ${cap} snippets, archived ones included. Delete one to make room.`
     : `You've hit the ${cap} snippet limit, archived ones included. Delete one to make room.`;
 }
+
+/**
+ * Why a restore from Recently deleted was refused. Deleted snippets don't
+ * count toward the cap, so bringing one back has to fit (docs/adr/0067).
+ */
+export function restoreCapMessage(cap: number, isGuest: boolean): string {
+  return isGuest
+    ? `The demo is full at ${cap} snippets, archived ones included. Delete one to make room, then restore this one.`
+    : `Your library is full at ${cap} snippets, archived ones included. Delete one to make room, then restore this one.`;
+}

@@ -1,13 +1,18 @@
 import type { Snippet } from "@prisma/client";
 import type { z } from "zod";
 import { canUseFolder, type FindFolder } from "@/lib/folder-ownership";
-import { snippetCap, snippetCapMessage } from "@/lib/snippet-cap";
+import {
+  restoreCapMessage,
+  snippetCap,
+  snippetCapMessage,
+} from "@/lib/snippet-cap";
+import { trashCutoff, trashLimit } from "@/lib/trash";
 import { parseBody } from "@/lib/request-body";
 import { apiError, unauthorized } from "@/lib/api-errors";
 import type { ApiUser } from "@/lib/auth";
 import {
   createSnippetSchema,
-  deleteByIdSchema,
+  deleteSnippetSchema,
   updateSnippetSchema,
 } from "@/lib/schemas";
 
@@ -36,25 +41,34 @@ type NewSnippet = Omit<
  */
 type SnippetChanges = Omit<
   z.output<typeof updateSnippetSchema>,
-  "id" | "archived"
+  "id" | "archived" | "deleted"
 > & { archivedAt?: Date | null };
 
-/** What creating a snippet reads and writes, all under one lock. */
+/**
+ * What creating or restoring a snippet reads and writes, all under one lock.
+ * Both add a snippet to the cap's count, so they share it.
+ */
 export type CreateStore = Pick<
   SnippetStore,
-  "count" | "findFolderOwner" | "create"
+  "count" | "findFolderOwner" | "create" | "restore"
 >;
 
+// "Deleted" below means in Recently deleted: `deletedAt` is set. Every read
+// and write here skips those rows, except the four that are about them
+// (docs/adr/0067).
 export type SnippetStore = {
-  /** The user's snippets, newest first, archived ones included. */
+  /** The user's snippets, newest first, archived ones included, deleted ones not. */
   list(userId: string): Promise<Snippet[]>;
-  /** Every snippet the user has, archived ones included: what the cap counts. */
+  /**
+   * The user's snippets in the library and the archive: what the cap counts.
+   * Deleted ones don't count, so deleting makes room.
+   */
   count(userId: string): Promise<number>;
-  /** The user's snippets that aren't archived, newest first. What AI search reads. */
+  /** The user's snippets that are neither archived nor deleted, newest first. What AI search reads. */
   listActive(userId: string): Promise<Snippet[]>;
-  /** How many of the user's snippets aren't archived. */
+  /** How many of the user's snippets are neither archived nor deleted. */
   countActive(userId: string): Promise<number>;
-  /** One snippet, only if the user owns it. Null otherwise. */
+  /** One snippet, only if the user owns it and it isn't deleted. Null otherwise. */
   get(id: string, userId: string): Promise<Snippet | null>;
   /** Who owns a snippet, or null if there's no such snippet. */
   findOwner(id: string): Promise<{ userId: string } | null>;
@@ -63,12 +77,26 @@ export type SnippetStore = {
   // The writes take the userId too and only touch a row that matches both,
   // so ownership holds even for a caller that skips `findOwner`. Null or
   // false means nothing matched.
+  /** Changes a snippet that isn't deleted. */
   update(
     id: string,
     userId: string,
     data: SnippetChanges,
   ): Promise<Snippet | null>;
-  delete(id: string, userId: string): Promise<boolean>;
+  /**
+   * Moves a snippet that isn't deleted yet to Recently deleted, dated `now`.
+   * If that leaves more than `keep` there, purges the oldest down to `keep`.
+   */
+  trash(id: string, userId: string, now: Date, keep: number): Promise<boolean>;
+  /** Purges a snippet, only if it's already in Recently deleted. */
+  deleteForever(id: string, userId: string): Promise<boolean>;
+  /** Takes a snippet out of Recently deleted, if it was deleted at or after `cutoff`. */
+  restore(id: string, userId: string, cutoff: Date): Promise<Snippet | null>;
+  /**
+   * Purges the user's snippets deleted before `cutoff`: emptying the trash.
+   * Returns how many went. Only ever this user's rows.
+   */
+  purgeExpiredTrash(userId: string, cutoff: Date): Promise<number>;
   /**
    * Runs `work` with the user's other creates held until it finishes, and
    * hands it a store that reads and writes inside that lock. Without it, two
@@ -165,7 +193,16 @@ export async function updateSnippet(
   if (!body.ok) return body.response;
   // The schema only lets editable fields through, and leaves out the ones
   // the request didn't send, so `data` is a true partial update.
-  const { id, archived, ...fields } = body.data;
+  const { id, archived, deleted, ...fields } = body.data;
+
+  if (deleted === false) {
+    // A deleted snippet can't be edited, so a restore comes on its own.
+    if (archived !== undefined || Object.keys(fields).length > 0) {
+      return apiError(400, "Restore a snippet on its own, then change it.");
+    }
+    return restoreSnippet(store, user, id, now());
+  }
+
   const data: SnippetChanges =
     archived === undefined
       ? fields
@@ -183,19 +220,55 @@ export async function updateSnippet(
   return Response.json(updated);
 }
 
+/**
+ * Takes a snippet out of Recently deleted, back to the library or, if it was
+ * archived, the archive. It adds to the cap's count again, so it's refused
+ * while the library is full, and it takes the create lock so a create and a
+ * restore at 49 can't both get through (docs/adr/0067).
+ */
+async function restoreSnippet(
+  store: SnippetStore,
+  user: NonNullable<ApiUser>,
+  id: string,
+  now: Date,
+): Promise<Response> {
+  if (!(await ownsSnippet(store, id, user.id))) return snippetNotFound();
+
+  return store.withCreateLock(user.id, async (locked) => {
+    const cap = snippetCap(user.isGuest);
+    if ((await locked.count(user.id)) >= cap) {
+      return apiError(409, restoreCapMessage(cap, user.isGuest));
+    }
+    // Null if it isn't in Recently deleted, or has been for over 30 days.
+    const restored = await locked.restore(id, user.id, trashCutoff(now));
+    if (!restored) return snippetNotFound();
+    return Response.json(restored);
+  });
+}
+
+/**
+ * Moves a snippet to Recently deleted, or with `forever: true` purges one
+ * that's already there (docs/adr/0067). Either way, a snippet in the wrong
+ * place for the request is "not found", so deleting twice doesn't restart
+ * its 30 days, and nothing can skip Recently deleted.
+ */
 export async function deleteSnippet(
   store: SnippetStore,
   user: ApiUser,
   req: Request,
+  now: () => Date = () => new Date(),
 ): Promise<Response> {
   if (!user) return unauthorized();
 
-  const body = await parseBody(req, deleteByIdSchema);
+  const body = await parseBody(req, deleteSnippetSchema);
   if (!body.ok) return body.response;
+  const { id, forever } = body.data;
 
-  if (!(await ownsSnippet(store, body.data.id, user.id)))
-    return snippetNotFound();
+  if (!(await ownsSnippet(store, id, user.id))) return snippetNotFound();
 
-  if (!(await store.delete(body.data.id, user.id))) return snippetNotFound();
+  const done = forever
+    ? await store.deleteForever(id, user.id)
+    : await store.trash(id, user.id, now(), trashLimit(user.isGuest));
+  if (!done) return snippetNotFound();
   return Response.json({ success: true });
 }

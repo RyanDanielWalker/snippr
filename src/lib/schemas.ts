@@ -93,10 +93,26 @@ export const updateSnippetSchema = createSnippetSchema.partial().extend({
   archived: z
     .boolean({ error: "Archived has to be true or false." })
     .optional(),
+  // Restores a snippet from Recently deleted. Only false: DELETE is how a
+  // snippet gets there (docs/adr/0067).
+  deleted: z
+    .literal(false, {
+      error: "To delete a snippet, send DELETE. deleted: false restores one.",
+    })
+    .optional(),
 });
 
 /** Any DELETE: the body is just the record's id. */
 export const deleteByIdSchema = body({ id });
+
+/**
+ * Deleting a snippet moves it to Recently deleted. `forever: true` purges
+ * one that's already there (docs/adr/0067).
+ */
+export const deleteSnippetSchema = body({
+  id,
+  forever: z.boolean({ error: "Forever has to be true or false." }).optional(),
+});
 
 const folderName = requiredText(
   FOLDER_NAME_MAX,

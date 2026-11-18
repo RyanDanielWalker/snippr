@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { codeToHtml } from "shiki";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ACTIVE } from "@/lib/library-store";
+import { ACTIVE, snippetStore } from "@/lib/library-store";
+import { trashCutoff } from "@/lib/trash";
 import { withCardHtml } from "@/lib/highlight";
 import { SIDEBAR_COOKIE, parseSidebarCollapsed } from "@/lib/sidebar";
 import { TRY_COOKIE } from "@/lib/things-to-try";
@@ -19,9 +20,14 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
 
+  // Emptying the trash: this user's snippets deleted over 30 days ago go
+  // before anything is read. There's no scheduled job (docs/adr/0067).
+  const cutoff = trashCutoff(new Date());
+  await snippetStore.purgeExpiredTrash(session.user.id, cutoff);
+
   const [snippets, folders] = await Promise.all([
     prisma.snippet.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.user.id, deletedAt: null },
       orderBy: { createdAt: "desc" },
     }),
     prisma.folder.findMany({

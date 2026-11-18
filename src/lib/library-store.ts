@@ -29,10 +29,14 @@ async function nullIfMissing<T>(write: Promise<T>): Promise<T | null> {
 }
 
 /**
- * A folder's count leaves out archived snippets, so the number next to it
- * matches the cards it shows (docs/adr/0056). Shared with the dashboard page.
+ * A folder's count leaves out archived and deleted snippets, so the number
+ * next to it matches the cards it shows (docs/adr/0056, docs/adr/0067).
+ * Shared with the dashboard page.
  */
-export const ACTIVE = { where: { archivedAt: null } } as const;
+export const ACTIVE = { where: { archivedAt: null, deletedAt: null } } as const;
+
+// Every query below adds this unless it's about Recently deleted itself.
+const NOT_DELETED = { deletedAt: null };
 
 function findFolderOwner(id: string, db: Prisma.TransactionClient = prisma) {
   return db.folder.findUnique({ where: { id }, select: { userId: true } });
@@ -41,9 +45,17 @@ function findFolderOwner(id: string, db: Prisma.TransactionClient = prisma) {
 // The queries a create makes, on the plain client or inside a transaction.
 function createStore(db: Prisma.TransactionClient): CreateStore {
   return {
-    count: (userId) => db.snippet.count({ where: { userId } }),
+    // The cap counts the library and the archive, not Recently deleted.
+    count: (userId) => db.snippet.count({ where: { userId, ...NOT_DELETED } }),
     findFolderOwner: (id) => findFolderOwner(id, db),
     create: (data) => db.snippet.create({ data }),
+    restore: (id, userId, cutoff) =>
+      nullIfMissing(
+        db.snippet.update({
+          where: { id, userId, deletedAt: { gte: cutoff } },
+          data: { deletedAt: null },
+        }),
+      ),
   };
 }
 
@@ -52,22 +64,23 @@ export const snippetStore: SnippetStore = {
 
   list: (userId) =>
     prisma.snippet.findMany({
-      where: { userId },
+      where: { userId, ...NOT_DELETED },
       orderBy: { createdAt: "desc" },
     }),
 
-  // Archived snippets stay out of AI search, here in the query rather than
-  // in a filter after it, so they're never read (docs/adr/0056).
+  // Archived and deleted snippets stay out of AI search, here in the query
+  // rather than in a filter after it, so they're never read (docs/adr/0056).
   listActive: (userId) =>
     prisma.snippet.findMany({
-      where: { userId, archivedAt: null },
+      where: { userId, ...ACTIVE.where },
       orderBy: { createdAt: "desc" },
     }),
 
   countActive: (userId) =>
-    prisma.snippet.count({ where: { userId, archivedAt: null } }),
+    prisma.snippet.count({ where: { userId, ...ACTIVE.where } }),
 
-  get: (id, userId) => prisma.snippet.findFirst({ where: { id, userId } }),
+  get: (id, userId) =>
+    prisma.snippet.findFirst({ where: { id, userId, ...NOT_DELETED } }),
 
   findOwner: (id) =>
     prisma.snippet.findUnique({ where: { id }, select: { userId: true } }),
@@ -77,13 +90,49 @@ export const snippetStore: SnippetStore = {
     withUserLock("snippet-create", userId, (tx) => work(createStore(tx))),
 
   update: (id, userId, data) =>
-    nullIfMissing(prisma.snippet.update({ where: { id, userId }, data })),
+    nullIfMissing(
+      prisma.snippet.update({ where: { id, userId, ...NOT_DELETED }, data }),
+    ),
 
-  async delete(id, userId) {
+  // One transaction, so the move and the trim land together. The trim keeps
+  // the newest `keep` by deletedAt and purges the rest, only for this user.
+  trash: (id, userId, now, keep) =>
+    prisma.$transaction(async (tx) => {
+      const { count } = await tx.snippet.updateMany({
+        where: { id, userId, ...NOT_DELETED },
+        data: { deletedAt: now },
+      });
+      if (count === 0) return false;
+      const overLimit = await tx.snippet.findMany({
+        where: { userId, deletedAt: { not: null } },
+        orderBy: [{ deletedAt: "desc" }, { id: "desc" }],
+        skip: keep,
+        select: { id: true },
+      });
+      if (overLimit.length > 0) {
+        await tx.snippet.deleteMany({
+          where: { userId, id: { in: overLimit.map((s) => s.id) } },
+        });
+      }
+      return true;
+    }),
+
+  async deleteForever(id, userId) {
     const { count } = await prisma.snippet.deleteMany({
-      where: { id, userId },
+      where: { id, userId, deletedAt: { not: null } },
     });
     return count > 0;
+  },
+
+  // The only delete nobody clicks (docs/adr/0067), so it's scoped twice
+  // over: this user, and a date that has to be set and older than the
+  // cutoff. A row that isn't deleted has no date, and NULL < cutoff is never
+  // true in SQL, so it can't match.
+  async purgeExpiredTrash(userId, cutoff) {
+    const { count } = await prisma.snippet.deleteMany({
+      where: { userId, deletedAt: { not: null, lt: cutoff } },
+    });
+    return count;
   },
 };
 

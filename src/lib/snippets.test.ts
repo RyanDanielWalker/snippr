@@ -30,6 +30,7 @@ function snippet(
     userId,
     folderId,
     archivedAt: null,
+    deletedAt: null,
     createdAt: at,
     updatedAt: at,
   };
@@ -59,28 +60,22 @@ function fakeStore(extraSnippets: Snippet[] = []) {
     return work(store);
   }
 
+  // Like the Prisma store: everything but the trash methods skips deleted rows.
+  const kept = (userId: string) =>
+    [...snippets.values()].filter((s) => s.userId === userId && !s.deletedAt);
   const store = {
-    list: vi.fn(async (userId: string) =>
-      [...snippets.values()].filter((s) => s.userId === userId),
-    ),
-    count: vi.fn(
-      async (userId: string) =>
-        [...snippets.values()].filter((s) => s.userId === userId).length,
-    ),
+    list: vi.fn(async (userId: string) => kept(userId)),
+    count: vi.fn(async (userId: string) => kept(userId).length),
     listActive: vi.fn(async (userId: string) =>
-      [...snippets.values()].filter(
-        (s) => s.userId === userId && !s.archivedAt,
-      ),
+      kept(userId).filter((s) => !s.archivedAt),
     ),
     countActive: vi.fn(
       async (userId: string) =>
-        [...snippets.values()].filter(
-          (s) => s.userId === userId && !s.archivedAt,
-        ).length,
+        kept(userId).filter((s) => !s.archivedAt).length,
     ),
     get: vi.fn(async (id: string, userId: string) => {
       const found = snippets.get(id);
-      return found?.userId === userId ? found : null;
+      return found?.userId === userId && !found.deletedAt ? found : null;
     }),
     findOwner: vi.fn(async (id: string) => {
       const found = snippets.get(id);
@@ -98,15 +93,37 @@ function fakeStore(extraSnippets: Snippet[] = []) {
     // Writes match on id and userId, like the Prisma store.
     update: vi.fn(async (id, userId, data) => {
       const found = snippets.get(id);
-      if (found?.userId !== userId) return null;
+      if (!found || found.userId !== userId || found.deletedAt) return null;
       const updated = { ...found, ...data };
       snippets.set(id, updated);
       return updated;
     }),
-    delete: vi.fn(async (id: string, userId: string) => {
-      if (snippets.get(id)?.userId !== userId) return false;
+    trash: vi.fn(
+      async (id: string, userId: string, now: Date, keep: number) => {
+        const found = snippets.get(id);
+        if (!found || found.userId !== userId || found.deletedAt) return false;
+        snippets.set(id, { ...found, deletedAt: now });
+        const trashed = [...snippets.values()]
+          .filter((s) => s.userId === userId && s.deletedAt)
+          .sort((a, b) => b.deletedAt!.getTime() - a.deletedAt!.getTime());
+        for (const s of trashed.slice(keep)) snippets.delete(s.id);
+        return true;
+      },
+    ),
+    deleteForever: vi.fn(async (id: string, userId: string) => {
+      const found = snippets.get(id);
+      if (!found || found.userId !== userId || !found.deletedAt) return false;
       return snippets.delete(id);
     }),
+    restore: vi.fn(async (id: string, userId: string, cutoff: Date) => {
+      const found = snippets.get(id);
+      if (!found || found.userId !== userId || !found.deletedAt) return null;
+      if (found.deletedAt < cutoff) return null;
+      const restored = { ...found, deletedAt: null };
+      snippets.set(id, restored);
+      return restored;
+    }),
+    purgeExpiredTrash: vi.fn(async () => 0),
     // vi.fn drops the type parameter, so give it back.
     withCreateLock: vi.fn(withCreateLock) as SnippetStore["withCreateLock"],
   } satisfies SnippetStore;
@@ -461,36 +478,292 @@ describe("updateSnippet", () => {
   });
 });
 
+const NOW = new Date("2026-11-18T12:00:00.000Z");
+const DAY = 24 * 60 * 60 * 1000;
+const daysAgo = (n: number) => new Date(NOW.getTime() - n * DAY);
+const clock = () => NOW;
+
+function deleted(id: string, when: Date, extra: Partial<Snippet> = {}) {
+  return { ...snippet(id, "user-me"), deletedAt: when, ...extra };
+}
+
 describe("deleteSnippet", () => {
-  it("deletes the user's own snippet", async () => {
+  it("moves the user's own snippet to Recently deleted, dated now", async () => {
     const { store, snippets } = fakeStore();
-    const res = await deleteSnippet(store, me, request({ id: "snippet-mine" }));
+    const res = await deleteSnippet(
+      store,
+      me,
+      request({ id: "snippet-mine" }),
+      clock,
+    );
     expect(res.status).toBe(200);
-    expect(snippets.has("snippet-mine")).toBe(false);
+    expect(snippets.get("snippet-mine")?.deletedAt).toEqual(NOW);
+    expect(store.trash).toHaveBeenCalledWith(
+      "snippet-mine",
+      "user-me",
+      NOW,
+      SNIPPET_CAPS.member,
+    );
+  });
+
+  it("keeps a guest's Recently deleted to the guest cap", async () => {
+    const { store } = fakeStore();
+    await deleteSnippet(store, guest, request({ id: "snippet-mine" }), clock);
+    expect(store.trash.mock.calls[0][3]).toBe(SNIPPET_CAPS.guest);
+  });
+
+  // Deleting makes room straight away (docs/adr/0067).
+  it("frees a place under the cap", async () => {
+    const full = Array.from({ length: SNIPPET_CAPS.member - 1 }, (_, i) =>
+      snippet(`full-${i}`, "user-me"),
+    );
+    const { store } = fakeStore(full);
+    await expectError(await createSnippet(store, me, request(newSnippet)), 409);
+    await deleteSnippet(store, me, request({ id: "full-0" }), clock);
+    expect((await createSnippet(store, me, request(newSnippet))).status).toBe(
+      200,
+    );
+  });
+
+  it("is a 403 for a snippet already in Recently deleted, so its 30 days don't restart", async () => {
+    const { store, snippets } = fakeStore([deleted("gone", daysAgo(3))]);
+    await expectError(
+      await deleteSnippet(store, me, request({ id: "gone" }), clock),
+      403,
+      "Snippet not found.",
+    );
+    expect(snippets.get("gone")?.deletedAt).toEqual(daysAgo(3));
   });
 
   it("refuses someone else's snippet and a missing one with the same 403", async () => {
     const { store, snippets } = fakeStore();
     for (const id of ["snippet-theirs", "snippet-missing"]) {
+      for (const forever of [undefined, true]) {
+        await expectError(
+          await deleteSnippet(store, me, request({ id, forever })),
+          403,
+          "Snippet not found.",
+        );
+      }
+    }
+    expect(store.trash).not.toHaveBeenCalled();
+    expect(store.deleteForever).not.toHaveBeenCalled();
+    expect(snippets.get("snippet-theirs")?.deletedAt).toBeNull();
+  });
+
+  it("is a 403 when the write itself finds nothing of the user's", async () => {
+    const { store, snippets } = fakeStore();
+    store.findOwner.mockResolvedValue({ userId: "user-me" });
+    await expectError(
+      await deleteSnippet(store, me, request({ id: "snippet-theirs" }), clock),
+      403,
+      "Snippet not found.",
+    );
+    expect(store.trash).toHaveBeenCalledWith(
+      "snippet-theirs",
+      "user-me",
+      NOW,
+      SNIPPET_CAPS.member,
+    );
+    expect(snippets.get("snippet-theirs")?.deletedAt).toBeNull();
+  });
+
+  it("refuses a forever that isn't true or false", async () => {
+    const { store } = fakeStore();
+    await expectError(
+      await deleteSnippet(
+        store,
+        me,
+        request({ id: "snippet-mine", forever: "yes" }),
+      ),
+      400,
+    );
+    untouched(store);
+  });
+});
+
+describe("deleteSnippet with forever: true", () => {
+  it("purges a snippet that's in Recently deleted", async () => {
+    const { store, snippets } = fakeStore([deleted("gone", daysAgo(3))]);
+    const res = await deleteSnippet(
+      store,
+      me,
+      request({ id: "gone", forever: true }),
+    );
+    expect(res.status).toBe(200);
+    expect(snippets.has("gone")).toBe(false);
+  });
+
+  // Nothing can skip Recently deleted.
+  it("is a 403 for a snippet that isn't in Recently deleted", async () => {
+    const { store, snippets } = fakeStore();
+    await expectError(
+      await deleteSnippet(
+        store,
+        me,
+        request({ id: "snippet-mine", forever: true }),
+      ),
+      403,
+      "Snippet not found.",
+    );
+    expect(snippets.has("snippet-mine")).toBe(true);
+  });
+});
+
+describe("restoring with deleted: false", () => {
+  const restore = (id: string) => request({ id, deleted: false });
+
+  it("takes a snippet out of Recently deleted, back to its folder", async () => {
+    const { store, snippets } = fakeStore([
+      deleted("gone", daysAgo(3), { folderId: "folder-mine" }),
+    ]);
+    const res = await updateSnippet(store, me, restore("gone"), clock);
+    expect(res.status).toBe(200);
+    expect(snippets.get("gone")).toMatchObject({
+      deletedAt: null,
+      folderId: "folder-mine",
+    });
+  });
+
+  it("keeps an archived snippet archived", async () => {
+    const archivedAt = daysAgo(10);
+    const { store, snippets } = fakeStore([
+      deleted("gone", daysAgo(3), { archivedAt }),
+    ]);
+    await updateSnippet(store, me, restore("gone"), clock);
+    expect(snippets.get("gone")).toMatchObject({ deletedAt: null, archivedAt });
+  });
+
+  it("restores with the cutoff 30 days before now", async () => {
+    const { store } = fakeStore([deleted("gone", daysAgo(3))]);
+    await updateSnippet(store, me, restore("gone"), clock);
+    expect(store.restore).toHaveBeenCalledWith("gone", "user-me", daysAgo(30));
+  });
+
+  it("is a 403 for one deleted over 30 days ago, even before it's purged", async () => {
+    const old = new Date(daysAgo(30).getTime() - 1);
+    const { store, snippets } = fakeStore([deleted("old", old)]);
+    await expectError(
+      await updateSnippet(store, me, restore("old"), clock),
+      403,
+      "Snippet not found.",
+    );
+    expect(snippets.get("old")?.deletedAt).toEqual(old);
+  });
+
+  it("is a 409 while the library is full, archived ones included", async () => {
+    const full = Array.from({ length: SNIPPET_CAPS.member - 1 }, (_, i) => ({
+      ...snippet(`archived-${i}`, "user-me"),
+      archivedAt: daysAgo(1),
+    }));
+    const { store, snippets } = fakeStore([
+      ...full,
+      deleted("gone", daysAgo(3)),
+    ]);
+    await expectError(
+      await updateSnippet(store, me, restore("gone"), clock),
+      409,
+      "Your library is full at 50 snippets, archived ones included. Delete one to make room, then restore this one.",
+    );
+    expect(snippets.get("gone")?.deletedAt).toEqual(daysAgo(3));
+  });
+
+  it("uses the guest cap for guests", async () => {
+    const full = Array.from({ length: SNIPPET_CAPS.guest - 1 }, (_, i) =>
+      snippet(`full-${i}`, "user-me"),
+    );
+    const { store } = fakeStore([...full, deleted("gone", daysAgo(3))]);
+    await expectError(
+      await updateSnippet(store, guest, restore("gone"), clock),
+      409,
+    );
+  });
+
+  it("runs the count and the restore under the create lock", async () => {
+    const { store } = fakeStore([deleted("gone", daysAgo(3))]);
+    await updateSnippet(store, me, restore("gone"), clock);
+    expect(store.withCreateLock).toHaveBeenCalledWith(
+      "user-me",
+      expect.any(Function),
+    );
+  });
+
+  it("refuses someone else's snippet and a missing one with the same 403", async () => {
+    const theirs = {
+      ...snippet("theirs-gone", "user-other"),
+      deletedAt: daysAgo(3),
+    };
+    const { store, snippets } = fakeStore([theirs]);
+    for (const id of ["theirs-gone", "snippet-missing"]) {
       await expectError(
-        await deleteSnippet(store, me, request({ id })),
+        await updateSnippet(store, me, restore(id), clock),
         403,
         "Snippet not found.",
       );
     }
-    expect(store.delete).not.toHaveBeenCalled();
-    expect(snippets.has("snippet-theirs")).toBe(true);
+    expect(store.restore).not.toHaveBeenCalled();
+    expect(snippets.get("theirs-gone")?.deletedAt).toEqual(daysAgo(3));
   });
 
-  it("is a 403 when the delete itself finds nothing of the user's", async () => {
-    const { store, snippets } = fakeStore();
-    store.findOwner.mockResolvedValue({ userId: "user-me" });
+  it("is a 400 alongside any other change", async () => {
+    const { store } = fakeStore([deleted("gone", daysAgo(3))]);
+    for (const extra of [{ title: "New" }, { archived: false }]) {
+      await expectError(
+        await updateSnippet(
+          store,
+          me,
+          request({ id: "gone", deleted: false, ...extra }),
+          clock,
+        ),
+        400,
+        "Restore a snippet on its own, then change it.",
+      );
+    }
+    untouched(store);
+  });
+
+  it("is a 400 for deleted: true, which is DELETE's job", async () => {
+    const { store } = fakeStore();
     await expectError(
-      await deleteSnippet(store, me, request({ id: "snippet-theirs" })),
-      403,
-      "Snippet not found.",
+      await updateSnippet(
+        store,
+        me,
+        request({ id: "snippet-mine", deleted: true }),
+      ),
+      400,
+      "To delete a snippet, send DELETE. deleted: false restores one.",
     );
-    expect(store.delete).toHaveBeenCalledWith("snippet-theirs", "user-me");
-    expect(snippets.has("snippet-theirs")).toBe(true);
+    untouched(store);
+  });
+});
+
+describe("a snippet in Recently deleted", () => {
+  it("can't be edited, moved, or archived", async () => {
+    const { store, snippets } = fakeStore([deleted("gone", daysAgo(3))]);
+    for (const change of [
+      { title: "New" },
+      { folderId: null },
+      { archived: true },
+    ]) {
+      await expectError(
+        await updateSnippet(
+          store,
+          me,
+          request({ id: "gone", ...change }),
+          clock,
+        ),
+        403,
+        "Snippet not found.",
+      );
+    }
+    expect(snippets.get("gone")?.title).toBe("Snippet gone");
+  });
+
+  it("isn't listed, fetched, or counted", async () => {
+    const { store } = fakeStore([deleted("gone", daysAgo(3))]);
+    const listed = await (await listSnippets(store, me)).json();
+    expect(listed.map((s: Snippet) => s.id)).toEqual(["snippet-mine"]);
+    await expectError(await getSnippet(store, me, "gone"), 403);
+    expect(await store.count("user-me")).toBe(1);
   });
 });

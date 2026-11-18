@@ -29,6 +29,7 @@ function snippet(id: string, userId: string, title = `Snippet ${id}`): Snippet {
     userId,
     folderId: null,
     archivedAt: null,
+    deletedAt: null,
     createdAt: at,
     updatedAt: at,
   };
