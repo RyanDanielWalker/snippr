@@ -186,6 +186,12 @@ type Props = {
   unorganizedCount: number;
   /** Snippets in the archive. Its row only shows while there are some. */
   archivedCount: number;
+  /**
+   * Archived snippets in each folder, by folder id. A folder's own count
+   * leaves them out, but deleting it touches them too, so the delete
+   * confirmation counts them (docs/adr/0065).
+   */
+  archivedByFolder?: Record<string, number>;
   /** A snippet is being dragged or moved, so Unorganized must be droppable. */
   moving?: boolean;
   selectedFolderId: string | null;
@@ -201,6 +207,7 @@ export default function FolderSidebar({
   totalSnippets,
   unorganizedCount,
   archivedCount,
+  archivedByFolder = {},
   moving = false,
   selectedFolderId,
   onSelectFolder,
@@ -226,6 +233,14 @@ export default function FolderSidebar({
   const [saving, startSaving] = useTransition();
   const [, startDeleting] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
+  // What the open folder's armed Delete warns about. Only one menu is open at
+  // a time, so it's worked out once, for that folder.
+  const deleteNote = menuOpenId
+    ? folderDeleteText(
+        folders.find((f) => f.id === menuOpenId)?._count.snippets ?? 0,
+        archivedByFolder[menuOpenId] ?? 0,
+      ).note
+    : null;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -330,6 +345,7 @@ export default function FolderSidebar({
       }
       const { toast: message } = folderDeleteText(
         folders.find((f) => f.id === id)?._count.snippets ?? 0,
+        archivedByFolder[id] ?? 0,
       );
       startDeleting(() => {
         setDeletingId(null);
@@ -599,9 +615,9 @@ export default function FolderSidebar({
                   >
                     Rename
                   </button>
-                  {deleteArmed && folder._count.snippets > 0 && (
+                  {deleteArmed && deleteNote && (
                     <p className="px-4 pt-2 text-xs text-fg-subtle max-w-48">
-                      {folderDeleteText(folder._count.snippets).note}
+                      {deleteNote}
                     </p>
                   )}
                   <button

@@ -38,6 +38,7 @@ import { pickByIds, resultsHeading } from "@/lib/ai-results";
 import { latestOnly } from "@/lib/latest-only";
 import { sidebarCookie } from "@/lib/sidebar";
 import { setClosed } from "@/lib/things-to-try";
+import { archivedCountsByFolder } from "@/lib/folder-delete";
 import type { Snippet, Folder } from "@/lib/library-types";
 
 type Props = {
@@ -438,6 +439,7 @@ export default function DashboardClient({
                 totalSnippets={active.length}
                 unorganizedCount={unorganizedCount}
                 archivedCount={archived.length}
+                archivedByFolder={archivedCountsByFolder(archived)}
                 moving={draggedSnippet !== null || movingIds.size > 0}
                 selectedFolderId={selectedFolderId}
                 onSelectFolder={selectFolder}

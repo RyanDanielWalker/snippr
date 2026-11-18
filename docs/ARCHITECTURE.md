@@ -196,7 +196,7 @@ erDiagram
 ```
 
 - **Deleting a user** cascades to everything they own.
-- **Deleting a folder** sets `folderId` to null on its snippets. Code is never deleted as a side effect.
+- **Deleting a folder** sets `folderId` to null on its snippets. Code is never deleted as a side effect. Active snippets land in Unorganized. Archived ones stay archived, now without a folder, so unarchiving one puts it in Unorganized. The armed Delete in the folder's menu names both counts, for example "Its 3 snippets move to Unorganized. Its 2 archived snippets stay archived, without a folder." The folder's count in the sidebar is active snippets only, so `DashboardClient` counts the archived ones per folder from the snippets it already has and passes them to `FolderSidebar` (`archivedCountsByFolder` in `src/lib/folder-delete.ts`, [0065](./adr/0065-close-1-2-1-and-scope-1-3-to-finishing-the-archive.md)).
 - **Archiving a snippet** sets `archivedAt` to the time it happened, and unarchiving sets it back to null. An archived snippet keeps its folder, still counts toward the snippet cap, and is left out of the library views, folder counts, and AI search ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md)).
 - `AiUsage` counts AI calls per user, endpoint, and hour for rate limiting ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
 - `GuestAiDay` counts the AI calls of all demo guests together, one row per UTC day. It isn't linked to any user, so deleting an expired guest can't lower the count ([0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md)). Its rows are kept, as a record of demo use.
@@ -401,7 +401,7 @@ src/
 │   ├── empty-state.ts          What the dashboard says when there are no cards to show (tested)
 │   ├── field-limits.ts         Field limits and the language list, shared with the UI
 │   ├── folder-cap.ts           Folder cap: 50 per member, 10 per guest (tested)
-│   ├── folder-delete.ts        What the folder menu says before and after a delete (tested)
+│   ├── folder-delete.ts        What the folder menu says before and after a delete, and each folder's archived count (tested)
 │   ├── folder-name-input.ts    What Enter and blur do in the folder name input (tested)
 │   ├── folders.ts              /api/folders: sign-in, validation, then the cap or ownership (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)

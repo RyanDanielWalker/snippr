@@ -385,4 +385,28 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(page.getByText("Back in your library.")).toBeVisible();
   await expect(archiveRow).toBeHidden();
   await expect(card("Long code")).toBeVisible();
+
+  // Deleting a folder touches its archived snippets too, so the armed
+  // Delete counts them, though the folder's own count leaves them out
+  // (ADR 0065). Closing the menu backs out without deleting.
+  await card("Debounce")
+    .getByRole("button", { name: "Archive", exact: true })
+    .click();
+  await expect(card("Debounce")).toBeHidden();
+  await sidebar
+    .getByRole("button", { name: "Rename or delete Frontend" })
+    .click();
+  await sidebar.getByRole("button", { name: "Delete", exact: true }).click();
+  await expect(
+    sidebar.getByText("Its archived snippet stays archived, without a folder."),
+  ).toBeVisible();
+  await page.mouse.click(5, 5);
+  await expect(
+    sidebar.getByRole("button", { name: "Confirm delete" }),
+  ).toBeHidden();
+  await archiveRow.click();
+  await card("Debounce")
+    .getByRole("button", { name: "Unarchive", exact: true })
+    .click();
+  await expect(card("Debounce")).toBeVisible();
 });
