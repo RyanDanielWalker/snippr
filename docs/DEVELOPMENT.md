@@ -211,7 +211,14 @@ A *version number* like `1.1.0` has three parts: major, minor, patch. The middle
 This is how 1.1 was released ([0041](./adr/0041-give-1-1-a-version-bump-and-a-tag.md), [0050](./adr/0050-publish-1-1-as-a-github-release-with-notes-kept-in-the-repo.md)). Those decisions cover 1.1 only, so a later milestone decides for itself whether to do the same.
 
 1. **One commit moves the version** and adds the notes. `npm version 1.1.0 --no-git-tag-version` changes `package.json` and the lockfile without making a commit or tag of its own. The MCP server's version in `src/lib/mcp.ts` is changed by hand. A test in `src/lib/mcp.test.ts` fails if the two disagree, so a bump can't miss one. The notes go in `docs/releases/v<version>.md`: what a visitor would notice, what was fixed, what changed underneath, with links to the ADRs. Link with full GitHub URLs pinned to the tag (`.../blob/v1.1/docs/adr/...`), because a Release page doesn't resolve relative links.
-2. **Push it, and wait** for CI to pass and Vercel to deploy it (`gh run list --limit 1`). A tag means "this is what shipped", so it goes on a commit that did.
+2. **Push it, and wait** for CI to pass and Vercel to deploy it. A tag means "this is what shipped", so it goes on a commit that did.
+
+   ```
+   git push origin main
+   gh run list --limit 1
+   ```
+
+   Pushing a tag doesn't deploy anything, because Vercel only deploys pushes to `main`. So if steps 3 and 4 run first, the Release describes a version production isn't running yet. That happened with both 1.2 and 1.2.1, each time for a few minutes.
 3. **Tag the commit CI ran on, and push the tag.** CI and Vercel run on the newest commit in a push, not on each commit inside it. So if the bump went out with later commits on top, the tag goes on the newest of them, which is the one that was checked and deployed:
 
    ```
