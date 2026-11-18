@@ -61,7 +61,7 @@ flowchart LR
 4. It passes that data as props to `DashboardClient`, a **Client Component** that runs in the browser and owns all the interactive state: search text, AI mode, selected folder, sidebar collapse, the phone folder drawer, the new-snippet modal, and drag state. Each `SnippetCard` owns its own preview and edit modals.
 5. `DashboardClient` is rendered to HTML on the server too, so the snippets arrive with the page, and then **hydrates** in the browser: React attaches its event handlers to that HTML instead of drawing it again. That only works if both renders produce the same markup, which is why `DndContext` has a fixed `id` ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). So a remembered choice the first frame depends on lives in a cookie the server can read, not in `localStorage`: the theme ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)), the collapsed sidebar (`src/lib/sidebar.ts`, read by the dashboard page), and a demo guest's checklist ([0049](./adr/0049-a-things-to-try-checklist-for-demo-guests-kept-in-a-cookie.md)). A snippet's created date has the opposite problem: it depends on the reader's time zone, which the server can't know. So `CreatedDate` renders it in UTC on the server and during hydration, and `useTimeZone` (built on `useSyncExternalStore`) renders it again in the browser's zone straight after. The markup matches, and a snippet saved at 9pm in New York still says the 15th, not the 16th.
 
-Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded, and keyword search stays inside the open folder. The page loads archived snippets too, and `DashboardClient` keeps them out of every view except Archive, which sits in the sidebar's Library group under All snippets and Unorganized ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md), [0058](./adr/0058-group-the-archive-with-the-library-and-give-sidebar-rows-icons.md)). Only AI search makes a network call, and it always searches the whole library: you reach for it when you don't remember where something is, and the MCP server's search works the same way. While its results are up the heading reads "Whole library" instead of the folder's name, and picking a folder clears them. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
+Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded, and keyword search stays inside the open folder. The page loads archived snippets too, and `DashboardClient` keeps them out of every view except Archive, which sits in the sidebar's Library group under All snippets and Unorganized ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md), [0058](./adr/0058-group-the-archive-with-the-library-and-give-sidebar-rows-icons.md)). Deleted snippets work the same way, under a Recently deleted row below Archive ([0067](./adr/0067-recently-deleted-a-30-day-trash-emptied-when-the-library-loads.md)). Before it reads anything, the page empties the trash: it purges this user's snippets deleted over 30 days ago (see "Recently deleted" under the data model). Only AI search makes a network call, and it always searches the whole library: you reach for it when you don't remember where something is, and the MCP server's search works the same way. While its results are up the heading reads "Whole library" instead of the folder's name, and picking a folder clears them. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
 
 Dragging a card is the other way to change where a snippet lives. A **drop target** is a place on the page that accepts a dragged item, registered with dnd-kit's `useDroppable`. The sidebar has one for each folder, one for Unorganized, and one for Archive. When a card is let go over one, `DashboardClient` asks `dropAction` (`src/lib/card-drop.ts`) what that means, and gets back one of three answers. For example, a card in Frontend dropped on Shell is `move` to Shell's id, dropped on Unorganized is `move` to no folder, and dropped on Archive is `archive`. Dropped back on Frontend, it's `none`, and nothing is sent. A move or an archive is one `PATCH` with only the field that changes, then a toast ("Moved to Shell." or "Archived."). Unorganized and Archive hide while they're empty, so the sidebar shows them while a card is being dragged, and keeps them up until the dropped card has landed. Without that, the first drop on either would have nowhere to go.
 
@@ -102,7 +102,7 @@ One exception to that order: making a token refuses a demo guest with `403` befo
 
 Lists are always filtered with `where: { userId }`, so one user can never see another's data. Foreign keys in a request body get the same rule: when a snippet is created or updated, its `folderId` must be null, left out, or a folder you own, or the request gets a `403` (`src/lib/folder-ownership.ts`; history in [0006](./adr/0006-folders-as-optional-one-to-many.md)). On create the cap comes first, so a full library answers `409` before the folder is checked.
 
-Creating a snippet when the library is full returns `409`: 50 snippets for members, 10 for demo guests ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)). Archived snippets count toward it ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md)). The count and the insert run in one transaction behind a per-user advisory lock, so parallel creates (from an MCP client, say) can't slip past it ([0025](./adr/0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md)). Folders work the same way, with the same numbers ([0014](./adr/0014-validate-request-bodies-with-zod.md)), and MCP tokens stop at 10. Both take the same kind of lock, each with its own key prefix (`src/lib/create-lock.ts`), so a user's folder creates never wait on their snippet ones. Field limits (200-character titles, 20,000 characters of code, and so on) are listed in 0014 and kept in `src/lib/field-limits.ts`, which the UI imports too.
+Creating a snippet when the library is full returns `409`: 50 snippets for members, 10 for demo guests ([0013](./adr/0013-snippet-cap-of-50-for-members-and-10-for-guests.md)). Archived snippets count toward it ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md)). Deleted ones don't, so deleting makes room straight away ([0067](./adr/0067-recently-deleted-a-30-day-trash-emptied-when-the-library-loads.md)). Restoring one adds it back, so a restore is also `409` while the library is full, and takes the same lock as a create. The count and the insert run in one transaction behind a per-user advisory lock, so parallel creates (from an MCP client, say) can't slip past it ([0025](./adr/0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md)). Folders work the same way, with the same numbers ([0014](./adr/0014-validate-request-bodies-with-zod.md)), and MCP tokens stop at 10. Both take the same kind of lock, each with its own key prefix (`src/lib/create-lock.ts`), so a user's folder creates never wait on their snippet ones. Field limits (200-character titles, 20,000 characters of code, and so on) are listed in 0014 and kept in `src/lib/field-limits.ts`, which the UI imports too.
 
 ### Errors
 
@@ -194,15 +194,32 @@ erDiagram
         string userId FK
         string folderId FK "nullable"
         datetime archivedAt "nullable"
+        datetime deletedAt "nullable"
     }
 ```
 
 - **Deleting a user** cascades to everything they own.
 - **Deleting a folder** sets `folderId` to null on its snippets. Code is never deleted as a side effect. Active snippets land in Unorganized. Archived ones stay archived, now without a folder, so unarchiving one puts it in Unorganized. The armed Delete in the folder's menu names both counts, for example "Its 3 snippets move to Unorganized. Its 2 archived snippets stay archived, without a folder." The folder's count in the sidebar is active snippets only, so `DashboardClient` counts the archived ones per folder from the snippets it already has and passes them to `FolderSidebar` (`archivedCountsByFolder` in `src/lib/folder-delete.ts`, [0065](./adr/0065-close-1-2-1-and-scope-1-3-to-finishing-the-archive.md)).
+- **Deleting a snippet** is a *soft delete*: it sets `deletedAt` instead of removing the row, and the snippet moves to Recently deleted. See below.
 - **Archiving a snippet** sets `archivedAt` to the time it happened, and unarchiving sets it back to null. An archived snippet keeps its folder, still counts toward the snippet cap, and is left out of the library views, folder counts, and AI search ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md)). There are two ways to archive: the Archive button on a card or in the preview, and dropping a card on the sidebar's Archive row ([0065](./adr/0065-close-1-2-1-and-scope-1-3-to-finishing-the-archive.md)). Both send the same `PATCH` with `archived: true`. Unarchive is a button only, since an archived card can't be dragged.
 - `AiUsage` counts AI calls per user, endpoint, and hour for rate limiting ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
 - `GuestAiDay` counts the AI calls of all demo guests together, one row per UTC day. It isn't linked to any user, so deleting an expired guest can't lower the count ([0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md)). Its rows are kept, as a record of demo use.
 - `GuestAiAddressDay` counts demo guests' AI calls per hashed IP and UTC day. Rows from earlier days are deleted whenever a demo starts ([0047](./adr/0047-give-each-address-a-share-of-the-demo-ai-ceiling.md)).
+
+### Recently deleted
+
+Deleting a snippet moves it to Recently deleted for 30 days ([0067](./adr/0067-recently-deleted-a-30-day-trash-emptied-when-the-library-loads.md)). It's a *soft delete*: the row stays, with the time of the delete in `deletedAt`. For example, a snippet deleted at noon on 1 November has `deletedAt = 2026-11-01 12:00`, shows "Gone in 30 days" on its card, and is purged (deleted for real, with SQL's `DELETE`) the first time its owner's dashboard loads after noon on 1 December.
+
+What happens to a deleted snippet:
+
+- **It's out of everything else.** Every query in `snippetStore` except the four about the trash adds `deletedAt: null`. So it isn't in the cap's count, AI search, folder counts, `GET /api/snippets`, or MCP's `get_snippet`, and `PATCH` can't edit, move, or archive it. Only the dashboard page loads it, for the Recently deleted view.
+- **Restoring** (`PATCH` with `{ id, deleted: false }`) clears `deletedAt`. Deleting doesn't touch `archivedAt` or `folderId`, so the snippet goes back where it was: the archive, its folder, or Unorganized if its folder was deleted meanwhile. It's refused while the library is full, and for a snippet deleted over 30 days ago, even if it hasn't been purged yet.
+- **Delete forever** (`DELETE` with `{ id, forever: true }`) purges it, but only if it's already in Recently deleted. A plain `DELETE` on a snippet that's already there is "not found", so its 30 days don't restart.
+- **The trash has a limit**: as many as the library, so 50 for members and 10 for guests (`trashLimit` in `src/lib/trash.ts`). The delete that goes over it also purges the oldest deleted snippets, in the same transaction. With the cap, that keeps an account to twice its cap in rows.
+
+**Emptying the trash** has no scheduled job. The dashboard page calls `snippetStore.purgeExpiredTrash(userId, cutoff)` before reading anything. The cutoff is 30 days before now (`trashCutoff`). It's the only delete in Snippr that nobody clicks, so it's scoped twice: `userId` in the `WHERE`, and a `deletedAt` that has to be set and older than the cutoff. `library-store.db.test.ts` gives two users an expired, a borderline, a recent, an archived, and an active snippet each, purges one user, and checks that exactly one row went. Someone who never comes back keeps their expired rows. Nobody can see them, and deleting the account removes them.
+
+The countdown on each card ("Gone in 12 days", `goneIn`) is worked out from a time the page passes to `DashboardClient` as `now`. If each render read its own clock, the server's HTML and the browser's first render could disagree around a day boundary, and React would complain that the markup didn't match (see "hydrates" above).
 - `ApiToken` holds the personal access tokens MCP clients sign in with, as a SHA-256 of each token, never the token itself ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)).
 - `DemoStart` counts demos started per IP and hour. It isn't linked to any user ([0012](./adr/0012-demo-mode-as-expiring-guest-users.md)).
 - `User.email` is stored lowercase ([0010](./adr/0010-store-emails-lowercased.md)). Besides its plain unique index, a second unique index on `lower(email)` makes the database refuse two users whose emails differ only in capital letters, in case a write ever skips the app's lowercasing. Prisma's schema can't describe an index on an expression, so it exists only in the migration `20261116203530_unique_lowercase_email`, with a comment in `schema.prisma` pointing at it. A `test:db` test (`src/lib/email-case.db.test.ts`) checks it ([0060](./adr/0060-refuse-case-only-duplicate-emails-with-a-unique-index-on-lower-email.md)).
@@ -269,7 +286,7 @@ Both features call Claude synchronously from a Route Handler. The API key never 
 
 All Claude calls go through `src/lib/ai.ts` ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)): one client, Claude Haiku 5.5 for both features, thinking off, a 15-second timeout and one retry. A timeout or any error from the Anthropic API is a `502`. A missing `ANTHROPIC_API_KEY` is a `500`, since that's Snippr's setup and not Claude failing. The features take its `askClaude` function as an argument, so their tests use a fake Claude.
 
-- **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Archived snippets aren't read: the route passes `snippetStore.listActive`, which filters them out in the query ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md)). Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets. A reply that isn't one is logged and shown as no matches. The dashboard runs one search at a time and ignores a reply that arrives after a newer search or after AI mode is switched off (`src/lib/latest-only.ts`).
+- **AI search** (`POST /api/snippets/search`): sends the query and a numbered list of every snippet's title, language, tags, and description. Archived and deleted snippets aren't read: the route passes `snippetStore.listActive`, which filters them out in the query ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md), [0067](./adr/0067-recently-deleted-a-30-day-trash-emptied-when-the-library-loads.md)). Claude replies with a JSON array of the matching numbers, and the handler maps those back to snippets. A reply that isn't one is logged and shown as no matches. The dashboard runs one search at a time and ignores a reply that arrives after a newer search or after AI mode is switched off (`src/lib/latest-only.ts`).
 - **AI descriptions** (`POST /api/snippets/describe`): sends the code and language and asks for one sentence under 15 words. A snippet whose language is `prompt` gets its own wording. A saved prompt is written to be obeyed, so the rules go in the system prompt (a separate field Claude gives more weight than the text it's sent with), and the prompt goes between `<saved_prompt>` tags it can't close itself. A reply that isn't one finished line of at most 30 words is turned down with a `502`, and the form says so instead of filling in the description ([0044](./adr/0044-add-a-prompt-language-that-wraps-and-is-described-as-a-prompt.md), [0045](./adr/0045-put-the-saved-prompt-rules-in-the-system-prompt-and-check-the-reply.md)). The rules ask for the prompt's goal, not its steps, because a prompt with a list of steps used to get a step-by-step summary too long to pass ([0055](./adr/0055-ask-for-a-saved-prompts-goal-not-its-steps.md)).
 
 Each user gets 30 calls an hour per feature, or 10 for demo guests. An empty query or empty code is answered without Claude and isn't counted. The count is kept in the `AiUsage` table with one atomic statement per call; past the limit the handler returns `429` with a `Retry-After` header and Claude is never called. AI search only reads the library after that check, so a request past the limit costs one count instead of a read of every snippet. Oversized input gets a `400` first: 20,000 characters of code for descriptions, 1,000 for a search ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md), [0014](./adr/0014-validate-request-bodies-with-zod.md)). Describe also only accepts a language from the dropdown's list, since it goes into the prompt.
@@ -288,7 +305,7 @@ Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-feat
 
 | Tool | What it does | Same rules as |
 | --- | --- | --- |
-| `search_snippets` | AI search over the whole library except the archive, counted against the hourly AI limit | `POST /api/snippets/search` |
+| `search_snippets` | AI search over the whole library except the archive and Recently deleted, counted against the hourly AI limit | `POST /api/snippets/search` |
 | `get_snippet` | One snippet by id, only the caller's | the `403` for anyone else's |
 | `save_snippet` | Creates a snippet, with the field limits, folder check, and cap | `POST /api/snippets` |
 
@@ -320,7 +337,7 @@ docs/images/                    The README's screenshots and GIF, made by e2e/re
 docs/releases/                  Release notes, one file per GitHub Release (v1.1.md), published with gh release create
 e2e/
 ├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
-├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, Things to try's Edit wording and its tick, delete from preview and form
+├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, Things to try's Edit wording and its tick, delete from preview and form, then restore one from Recently deleted and delete the other forever
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
 playwright.config.ts            Runs it against a production build on port 3100
@@ -356,21 +373,22 @@ src/
 │       ├── mcp/                MCP server, signed in by token (logic in lib/mcp.ts)
 │       ├── tokens/             Make, list, and revoke MCP tokens (logic in lib/api-tokens.ts)
 │       └── snippets/
-│           ├── route.ts        Snippet CRUD (logic in lib/snippets.ts)
+│           ├── route.ts        Snippet CRUD, restore, and delete forever (logic in lib/snippets.ts)
 │           ├── search/         AI search (logic in lib/ai-search.ts)
 │           └── describe/       AI descriptions (logic in lib/ai-describe.ts)
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders give the cards the same ids)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
-│   ├── FolderSidebar.tsx       The Library panel (a drawer on phones): All snippets, Unorganized, Archive, then folders indented under them; collapses to an icon rail whose rows are still drop targets (tested: when Unorganized and Archive show, including mid-drag, the count's color under a drag, the rail's names and letters)
-│   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; Enter or Space opens the preview
+│   ├── FolderSidebar.tsx       The Library panel (a drawer on phones): All snippets, Unorganized, Archive, Recently deleted, then folders indented under them; collapses to an icon rail whose rows are still drop targets (tested: when Unorganized and Archive show, including mid-drag, the count's color under a drag, the rail's names and letters)
+│   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; in Recently deleted, restore, copy, and delete forever; Enter or Space opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── CreatedDate.tsx         A snippet's created date on the card and preview, in the reader's time zone
 │   ├── useTimeZone.ts          The browser's time zone, or UTC on the server and during hydration
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails
 │   ├── useCopy.ts              Copy button shared by the card, the preview, and the Connect page, toast if it fails
 │   ├── useArchiveSnippet.ts    One-press archive and unarchive, shared by the card and preview
-│   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form
+│   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form: to Recently deleted, or forever from there
+│   ├── useRestoreSnippet.ts    Restore from Recently deleted, shared by the card and preview
 │   ├── useDialogFocus.ts       Focus into the preview and form, the page behind inert while open, focus back on close
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
@@ -427,7 +445,7 @@ src/
 │   ├── snippet-form.ts         The snippet form's starting fields, change check, request body, and whether to say "code" or "prompt" (tested)
 │   ├── snippet-date.ts         "Nov 16", or "Nov 16, 2025" in an earlier year, in a given time zone (tested)
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
-│   ├── snippets.ts             /api/snippets: sign-in, validation, then the cap or ownership (tested)
+│   ├── snippets.ts             /api/snippets: sign-in, validation, then the cap or ownership; restore and delete forever (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
 │   ├── shiki-8bit.ts           The 8-bit theme's syntax colors (tested: AA on the code background)
 │   ├── theme.ts                The theme list and its cookie (tested)
@@ -436,6 +454,7 @@ src/
 │   ├── theme-tokens.ts         The default theme's colors for the generated images (tested: match globals.css, WCAG AA in both themes, no palette classes)
 │   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
 │   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
+│   ├── trash.ts                Recently deleted's 30 days, its limit, and a card's countdown (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id and user.isGuest to the Session type, and guestExpiresAt to the adapter's user
 vitest.config.mts               npm test: the *.test.ts files next to the code
