@@ -94,5 +94,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0060](./0060-refuse-case-only-duplicate-emails-with-a-unique-index-on-lower-email.md) | Refuse case-only duplicate emails with a unique index on `lower(email)` | Accepted |
 | [0061](./0061-store-session-tokens-as-their-sha-256.md) | Store session tokens as their SHA-256 | Accepted |
 | [0062](./0062-clear-the-production-audit-before-tagging-1-2.md) | Clear the production audit before tagging 1.2 | Accepted |
+| [0063](./0063-close-1-2-and-scope-1-2-1-to-dependency-housekeeping.md) | Close 1.2, and scope 1.2.1 to dependency housekeeping | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
