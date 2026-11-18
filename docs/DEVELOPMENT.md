@@ -4,7 +4,7 @@ How to run Snippr locally, and how changes get from an idea to production.
 
 ## Prerequisites
 
-- Node.js 20.12 or newer
+- Node.js 24. `package.json`'s `engines` field names it, and it's the only place the version is written ([0064](./adr/0064-run-on-node-24-named-once-in-package-json-engines.md)). Vercel and CI read it from there. With fnm, run `fnm use` in the repo and it picks the newest Node 24 you have installed. nvm doesn't read `engines`, so run `nvm use 24`. On any other version, `npm install` prints an `EBADENGINE` warning and carries on
 - Docker Desktop, for the local database
 - A GitHub OAuth app, and optionally a Google OAuth client
 - An Anthropic API key

@@ -113,7 +113,7 @@ Snippr is built with [Claude Code](https://claude.com/claude-code). Commits befo
 
 ## Run it locally
 
-You need Node.js 20.12 or newer, Docker Desktop, a GitHub OAuth app, and an Anthropic API key. Google sign-in is optional.
+You need Node.js 24, Docker Desktop, a GitHub OAuth app, and an Anthropic API key. Google sign-in is optional.
 
 ```bash
 git clone https://github.com/RyanDanielWalker/snippr.git

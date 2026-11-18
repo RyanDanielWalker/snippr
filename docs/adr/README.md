@@ -51,7 +51,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0017](./0017-one-error-shape-shown-inline.md) | Send every API error as `{ error }` and show it where it happened | Accepted, amended by 0021 |
 | [0018](./0018-route-handler-logic-in-lib-with-a-store.md) | Keep Route Handler logic in `src/lib`, with the database passed in as a store | Accepted |
 | [0019](./0019-end-to-end-tests-with-playwright-on-their-own-database.md) | Run end-to-end tests with Playwright, on a production build and their own database | Accepted |
-| [0020](./0020-ci-on-github-actions-gating-production-deploys.md) | Run CI on GitHub Actions, test the stores against Postgres, and hold deploys until it passes | Accepted |
+| [0020](./0020-ci-on-github-actions-gating-production-deploys.md) | Run CI on GitHub Actions, test the stores against Postgres, and hold deploys until it passes | Accepted; CI's Node 22 is Node 24 since [0064](./0064-run-on-node-24-named-once-in-package-json-engines.md) |
 | [0021](./0021-hand-rolled-toasts-for-what-happens-out-of-sight.md) | Use hand-rolled toasts for what happens out of sight, and keep fixable errors inline | Accepted |
 | [0022](./0022-highlight-cards-on-the-server.md) | Highlight snippet cards on the server, and keep AI search results as ids | Accepted |
 | [0023](./0023-one-ai-module-on-claude-haiku.md) | Call Claude from one module, on Claude Haiku 5.5, with a short timeout | Accepted |
@@ -95,5 +95,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0061](./0061-store-session-tokens-as-their-sha-256.md) | Store session tokens as their SHA-256 | Accepted |
 | [0062](./0062-clear-the-production-audit-before-tagging-1-2.md) | Clear the production audit before tagging 1.2 | Accepted |
 | [0063](./0063-close-1-2-and-scope-1-2-1-to-dependency-housekeeping.md) | Close 1.2, and scope 1.2.1 to dependency housekeeping | Accepted |
+| [0064](./0064-run-on-node-24-named-once-in-package-json-engines.md) | Run on Node 24, named once in `package.json` `engines` | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

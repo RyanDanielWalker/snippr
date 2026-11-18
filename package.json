@@ -2,6 +2,9 @@
   "name": "snippr",
   "version": "1.2.0",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "build": "prisma generate && node scripts/deploy-migrations.mjs && next build",
     "dev": "node scripts/check-db.mjs && next dev",
@@ -39,7 +42,7 @@
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20.19.39",
+    "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
