@@ -22,12 +22,18 @@ export default async function DashboardPage() {
 
   // Emptying the trash: this user's snippets deleted over 30 days ago go
   // before anything is read. There's no scheduled job (docs/adr/0067).
-  const cutoff = trashCutoff(new Date());
+  const now = new Date();
+  const cutoff = trashCutoff(now);
   await snippetStore.purgeExpiredTrash(session.user.id, cutoff);
 
   const [snippets, folders] = await Promise.all([
     prisma.snippet.findMany({
-      where: { userId: session.user.id, deletedAt: null },
+      // Recently deleted too, for its own view. The date check repeats the
+      // purge's, so an expired snippet can't show even if the purge missed it.
+      where: {
+        userId: session.user.id,
+        OR: [{ deletedAt: null }, { deletedAt: { gte: cutoff } }],
+      },
       orderBy: { createdAt: "desc" },
     }),
     prisma.folder.findMany({
@@ -62,6 +68,7 @@ export default async function DashboardPage() {
           }}
           sidebarCollapsed={sidebarCollapsed}
           tryCookie={tryCookie}
+          now={now.getTime()}
         />
       </TryProvider>
     </ToastProvider>

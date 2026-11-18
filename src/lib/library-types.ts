@@ -15,6 +15,8 @@ export type Snippet = {
   folderId?: string | null;
   /** When it was archived, or null while it's in the library (docs/adr/0056). */
   archivedAt?: string | null;
+  /** When it was deleted, or null unless it's in Recently deleted (docs/adr/0067). */
+  deletedAt?: string | null;
   createdAt: string;
   /** The highlighted start of the code, from `withCardHtml` in lib/highlight. */
   codeHtml?: string | null;

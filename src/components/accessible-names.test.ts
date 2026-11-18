@@ -66,9 +66,24 @@ describe("accessible names", () => {
     expect(unnamedControls(html)).toEqual([]);
   });
 
+  it("names everything in a deleted snippet's preview", () => {
+    const html = render(
+      createElement(SnippetModal, {
+        snippet: { ...snippet, deletedAt: "2026-11-17T00:00:00.000Z" },
+        onClose: () => {},
+        onEdit: () => {},
+      }),
+    );
+    expect(unnamedControls(html)).toEqual([]);
+    expect(html).toContain(">Restore</button>");
+    expect(html).toContain(">Delete forever</button>");
+    expect(html).not.toContain(">Edit</button>");
+  });
+
   it("names everything on the dashboard, folder menus included", () => {
     const html = render(
       createElement(DashboardClient, {
+        now: Date.UTC(2026, 10, 18),
         snippets: [snippet],
         folders,
         user: { email: "me@example.com", image: "", isGuest: false },
@@ -96,6 +111,7 @@ describe("accessible names", () => {
   it("says whether AI search is on, and hides the avatar from screen readers", () => {
     const html = render(
       createElement(DashboardClient, {
+        now: Date.UTC(2026, 10, 18),
         snippets: [snippet],
         folders,
         user: {

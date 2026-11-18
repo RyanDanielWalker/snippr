@@ -7,12 +7,12 @@
  */
 
 export type EmptyStateInput = {
-  /** The whole library, before any folder or search. Archived snippets aren't in it. */
+  /** The whole library, before any folder or search. Archived and deleted snippets aren't in it. */
   librarySize: number;
   /** How many snippets are archived (docs/adr/0056). */
   archivedCount?: number;
   /** Which part of the library is open. */
-  view: "all" | "unorganized" | "folder" | "archive";
+  view: "all" | "unorganized" | "folder" | "archive" | "trash";
   search: string;
   aiMode: boolean;
   /** An AI search ran and came back, with or without results. */
@@ -54,9 +54,12 @@ export function emptyState({
   if (aiMode && aiError)
     return { title: aiError, tone: "error", offerNewSnippet: false };
 
-  // Everything archived is not the same as never having started. The
-  // Archive view itself has cards, so it skips this.
-  if (librarySize === 0 && archivedCount > 0 && view !== "archive") {
+  // Archive and Recently deleted list what the library leaves out, so an
+  // empty library says nothing about them.
+  const outside = view === "archive" || view === "trash";
+
+  // Everything archived is not the same as never having started.
+  if (librarySize === 0 && archivedCount > 0 && !outside) {
     return empty(
       "Everything's archived.",
       "Open Archive in the sidebar to bring a snippet back.",
@@ -64,7 +67,7 @@ export function emptyState({
     );
   }
 
-  if (librarySize === 0 && view !== "archive") {
+  if (librarySize === 0 && !outside) {
     return empty(
       "Your library is empty.",
       "Start with the code you keep rewriting.",
@@ -85,12 +88,16 @@ export function emptyState({
         ? "Press Enter to ask Claude instead."
         : view === "archive"
           ? "Press Enter to ask Claude, who looks in every folder but not the archive."
-          : "Press Enter to ask Claude, who looks in every folder."
+          : view === "trash"
+            ? "Press Enter to ask Claude, who looks in every folder but not Recently deleted."
+            : "Press Enter to ask Claude, who looks in every folder."
       : view === "all"
         ? "Search looks at titles, tags, and languages."
         : view === "archive"
           ? "Search only looks in the archive."
-          : "Search only looks in the folder that's open.";
+          : view === "trash"
+            ? "Search only looks in Recently deleted."
+            : "Search only looks in the folder that's open.";
     return empty("No snippets match your search.", hint);
   }
 
@@ -105,6 +112,7 @@ export function emptyState({
   }
 
   // With snippets in the library, "all" always has something to show, and the
-  // dashboard leaves "unorganized" and "archive" as soon as they're empty.
+  // dashboard leaves "unorganized", "archive", and "trash" as soon as they're
+  // empty.
   return empty("No snippets here yet.");
 }

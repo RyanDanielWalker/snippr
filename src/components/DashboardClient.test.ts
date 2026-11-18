@@ -21,6 +21,7 @@ function serverRender(
       ToastProvider,
       null,
       createElement(DashboardClient, {
+        now: Date.UTC(2026, 10, 18),
         snippets: [
           {
             id: "s1",
@@ -119,6 +120,7 @@ describe("an archived snippet", () => {
       ToastProvider,
       null,
       createElement(DashboardClient, {
+        now: Date.UTC(2026, 10, 18),
         snippets: [
           {
             id: "s1",
@@ -157,6 +159,74 @@ describe("an archived snippet", () => {
   it("shows up as the Archive row's count", () => {
     expect(html).toMatch(
       /<span[^>]*>Archive<\/span><\/span><span[^>]*>1<\/span>/,
+    );
+  });
+});
+
+describe("a deleted snippet", () => {
+  // One snippet in the library, one archived, and one in Recently deleted
+  // (docs/adr/0067).
+  const html = renderToString(
+    createElement(
+      ToastProvider,
+      null,
+      createElement(DashboardClient, {
+        now: Date.UTC(2026, 10, 18),
+        snippets: [
+          {
+            id: "s1",
+            title: "Debounce",
+            code: "const x = 1;",
+            language: "typescript",
+            tags: [],
+            folderId: null,
+            createdAt: "2026-10-19T00:00:00.000Z",
+          },
+          {
+            id: "s2",
+            title: "Deleted prompt",
+            code: "Continue the ticket.",
+            language: "prompt",
+            tags: [],
+            folderId: null,
+            deletedAt: "2026-11-17T00:00:00.000Z",
+            createdAt: "2026-10-18T00:00:00.000Z",
+          },
+          {
+            id: "s3",
+            title: "Deleted from the archive",
+            code: "x",
+            language: "prompt",
+            tags: [],
+            folderId: null,
+            archivedAt: "2026-11-12T00:00:00.000Z",
+            deletedAt: "2026-11-16T00:00:00.000Z",
+            createdAt: "2026-10-17T00:00:00.000Z",
+          },
+        ],
+        folders: [],
+        user: { email: "me@example.com", image: "", isGuest: false },
+      }),
+    ),
+  );
+
+  it("stays out of All snippets, its count, Unorganized, and Archive", () => {
+    expect(html).toContain("Debounce");
+    expect(html).not.toContain("Deleted prompt");
+    expect(html).toMatch(
+      /<span[^>]*>All snippets<\/span><\/span><span[^>]*>1<\/span>/,
+    );
+    // One unfiled snippet in the library, so Unorganized shows 1, not 3.
+    expect(html).toMatch(
+      /<span[^>]*>Unorganized<\/span><\/span><span[^>]*>1<\/span>/,
+    );
+    // Archived and then deleted: it's in Recently deleted, not the archive.
+    expect(html).not.toMatch(/>Archive<\/span>/);
+  });
+
+  it("shows up as the Recently deleted row's count", () => {
+    expect(html).toMatch(
+      /<span[^>]*>Recently deleted<\/span><\/span><span[^>]*>2<\/span>/,
     );
   });
 });

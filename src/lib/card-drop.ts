@@ -16,14 +16,19 @@ export type DropAction =
   | { kind: "archive"; toast: string };
 
 export function dropAction(
-  snippet: { folderId?: string | null; archivedAt?: string | null },
+  snippet: {
+    folderId?: string | null;
+    archivedAt?: string | null;
+    deletedAt?: string | null;
+  },
   targetId: string,
   folders: { id: string; name: string }[],
 ): DropAction {
-  // Archived cards can't be dragged (SnippetCard), so this is a guard, not a
-  // path the interface offers. A move would leave the snippet in the archive
-  // with a new folder, and archiving it again would reset its date.
-  if (snippet.archivedAt) return { kind: "none" };
+  // Archived and deleted cards can't be dragged (SnippetCard), so this is a
+  // guard, not a path the interface offers. A move would leave the snippet
+  // in the archive with a new folder, and archiving it again would reset its
+  // date. The API refuses any change to a deleted one (docs/adr/0067).
+  if (snippet.archivedAt || snippet.deletedAt) return { kind: "none" };
 
   if (targetId === ARCHIVE_DROP_ID) {
     // The card was just dropped on the row, so the toast doesn't need to say

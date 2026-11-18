@@ -110,4 +110,22 @@ describe("emptyState", () => {
       ).title,
     ).toBe("No snippets match your search.");
   });
+
+  it("says where search looks while Recently deleted is open", () => {
+    const view = "trash" as const;
+    expect(emptyState(input({ view, search: "x" })).hint).toBe(
+      "Search only looks in Recently deleted.",
+    );
+    expect(emptyState(input({ view, search: "x", aiMode: true })).hint).toBe(
+      "Press Enter to ask Claude, who looks in every folder but not Recently deleted.",
+    );
+  });
+
+  // Deleting your last snippet opens no special state: it's in Recently
+  // deleted, and the library really is empty.
+  it("doesn't call the library empty from Recently deleted", () => {
+    expect(
+      emptyState(input({ librarySize: 0, view: "trash", search: "x" })).title,
+    ).toBe("No snippets match your search.");
+  });
 });

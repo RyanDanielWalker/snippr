@@ -33,6 +33,13 @@ const ICONS = {
       <path d="M10 12h4" />
     </>
   ),
+  trash: (
+    <>
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </>
+  ),
   folder: (
     <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z" />
   ),
@@ -187,6 +194,8 @@ type Props = {
   unorganizedCount: number;
   /** Snippets in the archive. Its row only shows while there are some. */
   archivedCount: number;
+  /** Snippets in Recently deleted. Its row only shows while there are some. */
+  deletedCount?: number;
   /**
    * Archived snippets in each folder, by folder id. A folder's own count
    * leaves them out, but deleting it touches them too, so the delete
@@ -211,6 +220,7 @@ export default function FolderSidebar({
   totalSnippets,
   unorganizedCount,
   archivedCount,
+  deletedCount = 0,
   archivedByFolder = {},
   moving = false,
   selectedFolderId,
@@ -428,6 +438,19 @@ export default function FolderSidebar({
             />
           </DroppableFolder>
         )}
+        {deletedCount > 0 && (
+          <button
+            onClick={() => onSelectFolder("trash")}
+            title={`Recently deleted (${deletedCount})`}
+            aria-label="Recently deleted"
+            className={railRow(selectedFolderId === "trash")}
+          >
+            <Icon
+              name="trash"
+              className={selectedFolderId === "trash" ? "text-accent-text" : ""}
+            />
+          </button>
+        )}
         {folders.length > 0 && (
           <div className="w-8 border-t border-line my-1.5" />
         )}
@@ -530,6 +553,21 @@ export default function FolderSidebar({
               Archive
             </RowLabel>
           </DroppableFolder>
+        )}
+
+        {/* Not a drop target: a drop would delete without the two-step
+            confirm (docs/adr/0067). Hidden while empty; Delete's toast says
+            where the snippet went. */}
+        {deletedCount > 0 && (
+          <button
+            onClick={() => onSelectFolder("trash")}
+            className={`${ROW} ${selectedFolderId === "trash" ? ROW_SELECTED : ROW_IDLE}`}
+          >
+            <RowLabel icon="trash" selected={selectedFolderId === "trash"}>
+              Recently deleted
+            </RowLabel>
+            <span className={`${COUNT} text-fg-subtle`}>{deletedCount}</span>
+          </button>
         )}
       </div>
 

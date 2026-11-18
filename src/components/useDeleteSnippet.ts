@@ -13,10 +13,16 @@ const CONFIRM_MS = 3000;
  * form so they behave the same. The first press arms it, the second deletes.
  * Errors stay inline (docs/adr/0017); success is a toast (docs/adr/0021).
  * Without an id (a snippet not saved yet) pressing does nothing.
+ *
+ * A delete moves the snippet to Recently deleted. With `forever`, for a
+ * snippet already there, it's purged instead (docs/adr/0067). Both keep the
+ * confirm: the first can be undone, but a stray press would still take a
+ * card off the screen.
  */
 export function useDeleteSnippet(
   id: string | undefined,
   onDeleted?: () => void,
+  forever = false,
 ) {
   const router = useRouter();
   const toast = useToast();
@@ -37,7 +43,11 @@ export function useDeleteSnippet(
     clearTimeout(disarmTimer.current);
     setError(null);
     startDeleting(async () => {
-      const result = await callApi("/api/snippets", "DELETE", { id });
+      const result = await callApi(
+        "/api/snippets",
+        "DELETE",
+        forever ? { id, forever: true } : { id },
+      );
       if (!result.ok) {
         setArmed(false);
         setError(result.error);
@@ -46,13 +56,19 @@ export function useDeleteSnippet(
       // The toast and the snippet's removal land in the same render.
       startDeleting(() => {
         onDeleted?.();
-        toast("Snippet deleted.");
+        toast(forever ? "Deleted for good." : "Moved to Recently deleted.");
         router.refresh();
       });
     });
   }
 
-  const label = deleting ? "Deleting..." : armed ? "Confirm delete" : "Delete";
+  const label = deleting
+    ? "Deleting..."
+    : armed
+      ? "Confirm delete"
+      : forever
+        ? "Delete forever"
+        : "Delete";
 
   return { press, armed, deleting, error, label };
 }

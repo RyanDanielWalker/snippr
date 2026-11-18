@@ -50,6 +50,11 @@ type Props = {
   sidebarCollapsed?: boolean;
   /** A guest's "Things to try" cookie, read by the page on the server. */
   tryCookie?: string;
+  /**
+   * When the page was made, for Recently deleted's countdown. Passed in so
+   * the server's render and the browser's first one say the same thing.
+   */
+  now: number;
 };
 
 // The chip still glides home, but dnd-kit's default also hides the card by
@@ -64,9 +69,22 @@ export default function DashboardClient({
   user,
   sidebarCollapsed: initialSidebarCollapsed = false,
   tryCookie,
+  now,
 }: Props) {
+  // The page sends the library, the archive, and Recently deleted. The cap
+  // counts the first two (docs/adr/0056, docs/adr/0067). Archived snippets
+  // only show in the Archive view and deleted ones only in Recently
+  // deleted; everywhere else, and in AI search, they're left out.
+  const kept = snippets.filter((s) => !s.deletedAt);
+  const active = kept.filter((s) => !s.archivedAt);
+  const archived = kept.filter((s) => s.archivedAt);
+  // Most recently deleted first. ISO dates sort as text in date order.
+  const deleted = snippets
+    .filter((s) => s.deletedAt)
+    .sort((a, b) => (b.deletedAt ?? "").localeCompare(a.deletedAt ?? ""));
+  const unorganizedCount = active.filter((s) => !s.folderId).length;
   const cap = snippetCap(user.isGuest);
-  const capStatus = snippetCapStatus(snippets.length, cap);
+  const capStatus = snippetCapStatus(kept.length, cap);
   const router = useRouter();
   const toast = useToast();
   const [showModal, setShowModal] = useState(false);
@@ -153,18 +171,12 @@ export default function DashboardClient({
     document.cookie = sidebarCookie(newState);
   }
 
-  // The page sends every snippet. Archived ones only show in the Archive
-  // view; everywhere else, and in AI search, they're left out
-  // (docs/adr/0056). The cap counts both.
-  const active = snippets.filter((s) => !s.archivedAt);
-  const archived = snippets.filter((s) => s.archivedAt);
-  const unorganizedCount = active.filter((s) => !s.folderId).length;
-
   // Its row is gone at zero, so the view can't stay on it. Changing the state
   // rather than deriving it, so a later unfiled snippet doesn't jump back here.
   if (
     (selectedFolderId === "unorganized" && unorganizedCount === 0) ||
-    (selectedFolderId === "archive" && archived.length === 0)
+    (selectedFolderId === "archive" && archived.length === 0) ||
+    (selectedFolderId === "trash" && deleted.length === 0)
   ) {
     setSelectedFolderId(null);
   }
@@ -174,9 +186,11 @@ export default function DashboardClient({
       ? active
       : selectedFolderId === "archive"
         ? archived
-        : selectedFolderId === "unorganized"
-          ? active.filter((s) => !s.folderId)
-          : active.filter((s) => s.folderId === selectedFolderId);
+        : selectedFolderId === "trash"
+          ? deleted
+          : selectedFolderId === "unorganized"
+            ? active.filter((s) => !s.folderId)
+            : active.filter((s) => s.folderId === selectedFolderId);
 
   const filtered = folderFiltered.filter((s) => matchesKeyword(s, search));
 
@@ -289,7 +303,9 @@ export default function DashboardClient({
         ? "Unorganized"
         : selectedFolderId === "archive"
           ? "Archive"
-          : (folders.find((f) => f.id === selectedFolderId)?.name ?? null),
+          : selectedFolderId === "trash"
+            ? "Recently deleted"
+            : (folders.find((f) => f.id === selectedFolderId)?.name ?? null),
     aiMode && (aiLoading || aiResultIds !== null),
   );
 
@@ -305,7 +321,9 @@ export default function DashboardClient({
                 ? "unorganized"
                 : selectedFolderId === "archive"
                   ? "archive"
-                  : "folder",
+                  : selectedFolderId === "trash"
+                    ? "trash"
+                    : "folder",
           search,
           aiMode,
           aiSearched: aiResultIds !== null,
@@ -322,7 +340,8 @@ export default function DashboardClient({
           defaultFolderId={
             selectedFolderId &&
             selectedFolderId !== "unorganized" &&
-            selectedFolderId !== "archive"
+            selectedFolderId !== "archive" &&
+            selectedFolderId !== "trash"
               ? selectedFolderId
               : null
           }
@@ -446,6 +465,7 @@ export default function DashboardClient({
                 totalSnippets={active.length}
                 unorganizedCount={unorganizedCount}
                 archivedCount={archived.length}
+                deletedCount={deleted.length}
                 archivedByFolder={archivedCountsByFolder(archived)}
                 // Keeps Unorganized and Archive up as drop targets during a
                 // drag, and until the dropped card has landed.
@@ -472,8 +492,8 @@ export default function DashboardClient({
                   {capStatus === "full"
                     ? snippetCapMessage(cap, user.isGuest)
                     : archived.length > 0
-                      ? `${snippets.length} of ${cap} snippets used, ${archived.length} of them archived.`
-                      : `${snippets.length} of ${cap} snippets used.`}
+                      ? `${kept.length} of ${cap} snippets used, ${archived.length} of them archived.`
+                      : `${kept.length} of ${cap} snippets used.`}
                 </div>
               )}
 
@@ -575,6 +595,7 @@ export default function DashboardClient({
                       snippet={snippet}
                       folders={folders}
                       moving={movingIds.has(snippet.id)}
+                      now={now}
                     />
                   ))}
                 </div>

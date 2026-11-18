@@ -20,6 +20,7 @@ function sidebar(
   moving?: boolean,
   archivedCount = 0,
   collapsed = false,
+  deletedCount = 0,
 ) {
   return renderToString(
     createElement(
@@ -30,6 +31,7 @@ function sidebar(
         totalSnippets: 9,
         unorganizedCount,
         archivedCount,
+        deletedCount,
         moving,
         selectedFolderId: null,
         onSelectFolder: () => {},
@@ -78,6 +80,30 @@ describe("the Archive row", () => {
   it("shows on the collapsed rail while a snippet is moving", () => {
     expect(sidebar(0, true, 0, true)).toContain('aria-label="Archive"');
     expect(sidebar(0, false, 0, true)).not.toContain('aria-label="Archive"');
+  });
+});
+
+describe("the Recently deleted row", () => {
+  it("hides while nothing is deleted", () => {
+    expect(sidebar(0)).not.toContain("Recently deleted");
+  });
+
+  it("shows with its count once something is", () => {
+    expect(sidebar(0, false, 0, false, 2)).toMatch(
+      /<span[^>]*>Recently deleted<\/span><\/span><span[^>]*>2<\/span>/,
+    );
+  });
+
+  // A drop on it would delete without the two-step confirm (ADR 0067), so
+  // unlike Unorganized and Archive it doesn't come up for a drag.
+  it("stays hidden mid-drag while empty, since it isn't a drop target", () => {
+    expect(sidebar(0, true)).not.toContain("Recently deleted");
+  });
+
+  it("is named on the collapsed rail", () => {
+    expect(sidebar(0, false, 0, true, 1)).toContain(
+      'aria-label="Recently deleted"',
+    );
   });
 });
 

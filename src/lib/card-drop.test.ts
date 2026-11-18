@@ -62,6 +62,19 @@ describe("dropAction", () => {
   });
 
   it.each([ARCHIVE_DROP_ID, UNORGANIZED_DROP_ID, "f2"])(
+    "ignores a deleted card dropped on %s",
+    (target) => {
+      expect(
+        dropAction(
+          { folderId: "f1", deletedAt: "2026-11-18T00:00:00.000Z" },
+          target,
+          folders,
+        ),
+      ).toEqual({ kind: "none" });
+    },
+  );
+
+  it.each([ARCHIVE_DROP_ID, UNORGANIZED_DROP_ID, "f2"])(
     "ignores an archived card dropped on %s",
     (target) => {
       expect(

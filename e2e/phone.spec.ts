@@ -72,8 +72,10 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   await expect(moveLine).toContainText("Done:");
 });
 
-// Delete is in the preview and the edit form too, not only on the card.
-test("a snippet can be deleted from its preview or its edit form", async ({
+// Delete is in the preview and the edit form too, not only on the card. A
+// delete goes to Recently deleted, where a snippet can be restored or
+// deleted for good (ADR 0067).
+test("a snippet can be deleted from its preview or its edit form, then restored or deleted forever", async ({
   page,
 }) => {
   await page.goto("/");
@@ -92,7 +94,7 @@ test("a snippet can be deleted from its preview or its edit form", async ({
   await preview.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(card("Debounce")).toBeVisible();
   await preview.getByRole("button", { name: "Confirm delete" }).click();
-  await expect(page.getByText("Snippet deleted.")).toBeVisible();
+  await expect(page.getByText("Moved to Recently deleted.")).toBeVisible();
   await expect(preview).toBeHidden();
   await expect(card("Debounce")).toBeHidden();
 
@@ -107,4 +109,50 @@ test("a snippet can be deleted from its preview or its edit form", async ({
   await form.getByRole("button", { name: "Confirm delete" }).click();
   await expect(form).toBeHidden();
   await expect(card("Retry with backoff")).toBeHidden();
+
+  // Both wait in Recently deleted, newest first, with their 30 days.
+  const sidebar = page.locator("aside");
+  const trashRow = sidebar.getByRole("button", { name: /^Recently deleted/ });
+  await page.getByRole("button", { name: "Folders", exact: true }).click();
+  await expect(trashRow).toContainText("2");
+  await trashRow.click();
+  await expect(
+    page.getByRole("heading", { name: "Recently deleted", level: 2 }),
+  ).toBeVisible();
+  await expect(cards).toHaveCount(2);
+  await expect(cards.first()).toContainText("Retry with backoff");
+  await expect(card("Debounce")).toContainText("Gone in 30 days");
+  // A deleted snippet can't be edited or archived, here or in its preview.
+  await expect(
+    card("Debounce").getByRole("button", { name: "Edit", exact: true }),
+  ).toHaveCount(0);
+  await card("Debounce").getByRole("heading").click();
+  const deletedPreview = page.getByRole("dialog", { name: "Debounce" });
+  await expect(
+    deletedPreview.getByRole("button", { name: "Edit", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    deletedPreview.getByRole("button", { name: "Archive", exact: true }),
+  ).toHaveCount(0);
+
+  // Restore sends it back to the library.
+  await deletedPreview
+    .getByRole("button", { name: "Restore", exact: true })
+    .click();
+  await expect(page.getByText("Back in your library.")).toBeVisible();
+  await expect(deletedPreview).toBeHidden();
+  await expect(card("Debounce")).toBeHidden();
+  await expect(cards).toHaveCount(1);
+
+  // Delete forever takes two presses, like Delete, and then it's gone. With
+  // nothing left, the row goes and the view falls back to All snippets.
+  const last = card("Retry with backoff");
+  await last.getByRole("button", { name: "Delete forever" }).click();
+  await expect(last).toBeVisible();
+  await last.getByRole("button", { name: "Confirm delete" }).click();
+  await expect(page.getByText("Deleted for good.")).toBeVisible();
+  await expect(card("Debounce")).toBeVisible();
+  await expect(card("Retry with backoff")).toBeHidden();
+  await page.getByRole("button", { name: "Folders", exact: true }).click();
+  await expect(trashRow).toBeHidden();
 });

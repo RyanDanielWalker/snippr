@@ -5,6 +5,7 @@ import { codeToHtml } from "shiki";
 import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useArchiveSnippet } from "@/components/useArchiveSnippet";
+import { useRestoreSnippet } from "@/components/useRestoreSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
 import CreatedDate from "@/components/CreatedDate";
 import { highlightCode, lineWrapClass } from "@/lib/highlight";
@@ -27,13 +28,15 @@ export default function SnippetModal({
   const [result, setResult] = useState<{ key: string; html: string | null }>();
   const html = result?.key === key ? result.html : undefined;
   const { copy, copied } = useCopy(snippet.code);
-  const del = useDeleteSnippet(snippet.id, onClose);
+  // In Recently deleted, the preview offers Restore and Delete forever
+  // instead of Edit and Archive, like the card (docs/adr/0067).
+  const isDeleted = Boolean(snippet.deletedAt);
+  const isArchived = Boolean(snippet.archivedAt);
+  const del = useDeleteSnippet(snippet.id, onClose, isDeleted);
   // Closes too: the card it opened from leaves the view it was in.
-  const archive = useArchiveSnippet(
-    snippet.id,
-    Boolean(snippet.archivedAt),
-    onClose,
-  );
+  const archive = useArchiveSnippet(snippet.id, isArchived, onClose);
+  const restore = useRestoreSnippet(snippet.id, isArchived, onClose);
+  const actionError = del.error ?? archive.error ?? restore.error;
   // The dialog itself, so a screen reader starts by reading its title.
   const dialogRef = useDialogFocus<HTMLDivElement>();
 
@@ -129,9 +132,9 @@ export default function SnippetModal({
           )}
         </div>
 
-        {(del.error || archive.error) && (
+        {actionError && (
           <p role="alert" className="px-4 pt-4 text-sm text-danger-text">
-            {del.error ?? archive.error}
+            {actionError}
           </p>
         )}
         {/* Delete on the opposite side from Edit and Copy, so a near miss
@@ -149,19 +152,31 @@ export default function SnippetModal({
             {del.label}
           </button>
           <div className="flex items-center gap-3">
-            <button
-              onClick={archive.press}
-              disabled={archive.pending}
-              className="px-2 py-2 text-sm text-fg-muted hover:text-fg transition shrink-0"
-            >
-              {archive.label}
-            </button>
-            <button
-              onClick={onEdit}
-              className="px-4 py-2 text-sm text-fg-muted hover:text-fg transition shrink-0"
-            >
-              Edit
-            </button>
+            {isDeleted ? (
+              <button
+                onClick={restore.press}
+                disabled={restore.pending}
+                className="px-4 py-2 text-sm text-fg-muted hover:text-fg transition shrink-0"
+              >
+                {restore.label}
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={archive.press}
+                  disabled={archive.pending}
+                  className="px-2 py-2 text-sm text-fg-muted hover:text-fg transition shrink-0"
+                >
+                  {archive.label}
+                </button>
+                <button
+                  onClick={onEdit}
+                  className="px-4 py-2 text-sm text-fg-muted hover:text-fg transition shrink-0"
+                >
+                  Edit
+                </button>
+              </>
+            )}
             <button
               onClick={copy}
               className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition shrink-0"
