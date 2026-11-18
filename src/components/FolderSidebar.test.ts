@@ -66,12 +66,25 @@ describe("the Archive row", () => {
       /<span[^>]*>Archive<\/span><\/span><span[^>]*>4<\/span>/,
     );
   });
+
+  // Dropping a card on it archives the card (ADR 0065), so the first
+  // archive can be a drag, before the row has ever shown.
+  it("shows while empty if a snippet is moving, as the drop target", () => {
+    expect(sidebar(0, true)).toMatch(
+      /<span[^>]*>Archive<\/span><\/span><span[^>]*>0<\/span>/,
+    );
+  });
+
+  it("shows on the collapsed rail while a snippet is moving", () => {
+    expect(sidebar(0, true, 0, true)).toContain('aria-label="Archive"');
+    expect(sidebar(0, false, 0, true)).not.toContain('aria-label="Archive"');
+  });
 });
 
 describe("a droppable row's snippet count", () => {
   function countClass(count: number) {
     const match = new RegExp(`<span class="([^"]*)">${count}</span>`).exec(
-      sidebar(7),
+      sidebar(7, false, 5),
     );
     expect(match).not.toBeNull();
     return match?.[1];
@@ -82,6 +95,7 @@ describe("a droppable row's snippet count", () => {
   it.each([
     ["a folder", 3],
     ["Unorganized", 7],
+    ["Archive", 5],
   ])("uses the accent's text color on %s while a drag is over it", (_, n) => {
     drag.over = true;
     try {

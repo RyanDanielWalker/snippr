@@ -39,6 +39,7 @@ import { latestOnly } from "@/lib/latest-only";
 import { sidebarCookie } from "@/lib/sidebar";
 import { setClosed } from "@/lib/things-to-try";
 import { archivedCountsByFolder } from "@/lib/folder-delete";
+import { dropAction } from "@/lib/card-drop";
 import type { Snippet, Folder } from "@/lib/library-types";
 
 type Props = {
@@ -231,13 +232,9 @@ export default function DashboardClient({
     const snippet = snippets.find((s) => s.id === snippetId);
     if (!snippet) return;
 
-    const newFolderId = dropTargetId === "unorganized" ? null : dropTargetId;
-    if (snippet.folderId === newFolderId) return;
+    const action = dropAction(snippet, dropTargetId, folders);
+    if (action.kind === "none") return;
 
-    const destination =
-      newFolderId === null
-        ? "Unorganized"
-        : (folders.find((f) => f.id === newFolderId)?.name ?? "the folder");
     const doneMoving = () =>
       setMovingIds((ids) => {
         const next = new Set(ids);
@@ -247,23 +244,33 @@ export default function DashboardClient({
 
     setMovingIds((ids) => new Set(ids).add(snippet.id));
     startMoving(async () => {
-      // Only the folder: PATCH is a partial update, and resending every field
-      // would fail validation for an older snippet that predates the limits.
-      const result = await callApi("/api/snippets", "PATCH", {
-        id: snippet.id,
-        folderId: newFolderId,
-      });
+      // Only the one field: PATCH is a partial update, and resending every
+      // field would fail validation for an older snippet that predates the
+      // limits. Archiving is the same PATCH as the card's Archive button.
+      const result = await callApi(
+        "/api/snippets",
+        "PATCH",
+        action.kind === "archive"
+          ? { id: snippet.id, archived: true }
+          : { id: snippet.id, folderId: action.folderId },
+      );
       // Nothing moved on screen yet, so there's nothing to undo; just say so.
       if (!result.ok) {
         doneMoving();
-        toast(`That snippet didn't move. ${result.error}`, "error");
+        toast(
+          action.kind === "archive"
+            ? `That snippet wasn't archived. ${result.error}`
+            : `That snippet didn't move. ${result.error}`,
+          "error",
+        );
         return;
       }
-      // The card stops looking busy as its new folder shows up.
+      // The card stops looking busy as it shows up where it went.
       startMoving(() => {
         doneMoving();
-        if (newFolderId !== null) tried("drag");
-        toast(`Moved to ${destination}.`);
+        // The checklist's line is about filing a snippet in a folder.
+        if (action.kind === "move" && action.folderId !== null) tried("drag");
+        toast(action.toast);
         router.refresh();
       });
     });
@@ -440,6 +447,8 @@ export default function DashboardClient({
                 unorganizedCount={unorganizedCount}
                 archivedCount={archived.length}
                 archivedByFolder={archivedCountsByFolder(archived)}
+                // Keeps Unorganized and Archive up as drop targets during a
+                // drag, and until the dropped card has landed.
                 moving={draggedSnippet !== null || movingIds.size > 0}
                 selectedFolderId={selectedFolderId}
                 onSelectFolder={selectFolder}

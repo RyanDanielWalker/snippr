@@ -7,6 +7,7 @@ import { FOLDER_NAME_MAX } from "@/lib/field-limits";
 import { callApi, type ApiResult } from "@/lib/api-client";
 import { folderDeleteText } from "@/lib/folder-delete";
 import { folderNameAction } from "@/lib/folder-name-input";
+import { ARCHIVE_DROP_ID, UNORGANIZED_DROP_ID } from "@/lib/card-drop";
 import { useToast } from "@/components/Toaster";
 import type { Folder } from "@/lib/library-types";
 
@@ -192,7 +193,10 @@ type Props = {
    * confirmation counts them (docs/adr/0065).
    */
   archivedByFolder?: Record<string, number>;
-  /** A snippet is being dragged or moved, so Unorganized must be droppable. */
+  /**
+   * A snippet is being dragged or moved, so Unorganized and Archive must be
+   * droppable even while empty.
+   */
   moving?: boolean;
   selectedFolderId: string | null;
   onSelectFolder: (id: string | null) => void;
@@ -394,7 +398,7 @@ export default function FolderSidebar({
         </button>
         {(unorganizedCount > 0 || moving) && (
           <DroppableFolder
-            id="unorganized"
+            id={UNORGANIZED_DROP_ID}
             selected={selectedFolderId === "unorganized"}
             onClick={() => onSelectFolder("unorganized")}
             count={unorganizedCount}
@@ -408,12 +412,13 @@ export default function FolderSidebar({
             />
           </DroppableFolder>
         )}
-        {archivedCount > 0 && (
-          <button
+        {(archivedCount > 0 || moving) && (
+          <DroppableFolder
+            id={ARCHIVE_DROP_ID}
+            selected={selectedFolderId === "archive"}
             onClick={() => onSelectFolder("archive")}
-            title={`Archive (${archivedCount})`}
-            aria-label="Archive"
-            className={railRow(selectedFolderId === "archive")}
+            count={archivedCount}
+            rail="Archive"
           >
             <Icon
               name="archive"
@@ -421,7 +426,7 @@ export default function FolderSidebar({
                 selectedFolderId === "archive" ? "text-accent-text" : ""
               }
             />
-          </button>
+          </DroppableFolder>
         )}
         {folders.length > 0 && (
           <div className="w-8 border-t border-line my-1.5" />
@@ -496,7 +501,7 @@ export default function FolderSidebar({
             snippet back out of its folder. */}
         {(unorganizedCount > 0 || moving) && (
           <DroppableFolder
-            id="unorganized"
+            id={UNORGANIZED_DROP_ID}
             selected={selectedFolderId === "unorganized"}
             onClick={() => onSelectFolder("unorganized")}
             count={unorganizedCount}
@@ -510,19 +515,21 @@ export default function FolderSidebar({
           </DroppableFolder>
         )}
 
-        {/* Not a drop target: archiving is a button on the card
-            (docs/adr/0056). Hidden while empty, like Unorganized; the toast
-            after archiving says where to look. */}
-        {archivedCount > 0 && (
-          <button
+        {/* A drop target, like Unorganized: a card dropped here is archived
+            (docs/adr/0065). Hidden while empty except mid-drag, so the first
+            archive can be a drop too. After the button, the toast says
+            where to look. */}
+        {(archivedCount > 0 || moving) && (
+          <DroppableFolder
+            id={ARCHIVE_DROP_ID}
+            selected={selectedFolderId === "archive"}
             onClick={() => onSelectFolder("archive")}
-            className={`${ROW} ${selectedFolderId === "archive" ? ROW_SELECTED : ROW_IDLE}`}
+            count={archivedCount}
           >
             <RowLabel icon="archive" selected={selectedFolderId === "archive"}>
               Archive
             </RowLabel>
-            <span className={`${COUNT} text-fg-subtle`}>{archivedCount}</span>
-          </button>
+          </DroppableFolder>
         )}
       </div>
 

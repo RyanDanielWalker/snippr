@@ -386,6 +386,26 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(archiveRow).toBeHidden();
   await expect(card("Long code")).toBeVisible();
 
+  // Dropping a card on the row archives it too (ADR 0065). The row is hidden
+  // while the archive is empty, so it has to come up for the drag, and a
+  // cancelled drag puts it away again.
+  await pickUp("Long code");
+  await expect(archiveRow).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(archiveRow).toBeHidden();
+  await page.mouse.up();
+  await pickUp("Long code");
+  await dropOn(archiveRow);
+  await expect(page.getByText("Archived.", { exact: true })).toBeVisible();
+  await expect(card("Long code")).toBeHidden();
+  await expect(archiveRow).toContainText("1");
+  await archiveRow.click();
+  await card("Long code")
+    .getByRole("button", { name: "Unarchive", exact: true })
+    .click();
+  await expect(archiveRow).toBeHidden();
+  await expect(card("Long code")).toBeVisible();
+
   // Deleting a folder touches its archived snippets too, so the armed
   // Delete counts them, though the folder's own count leaves them out
   // (ADR 0065). Closing the menu backs out without deleting.

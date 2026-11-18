@@ -45,7 +45,7 @@ flowchart LR
 | Prisma 5 + Supabase Postgres | Stores users, sessions, snippets, folders | [0003](./adr/0003-supabase-postgres-with-prisma-5.md) |
 | NextAuth v4 | GitHub and Google sign-in, database sessions | [0004](./adr/0004-nextauth-database-sessions-and-account-linking.md) |
 | Anthropic API | AI search and AI descriptions | [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md) |
-| dnd-kit | Drag snippets onto folders | [0007](./adr/0007-dnd-kit-for-drag-and-drop.md) |
+| dnd-kit | Drag snippets onto folders, Unorganized, and Archive | [0007](./adr/0007-dnd-kit-for-drag-and-drop.md) |
 | Demo mode | Expiring guest users, no sign-in needed | [0012](./adr/0012-demo-mode-as-expiring-guest-users.md) |
 | Shiki | Syntax highlighting: cards on the server, the preview modal in the browser | [0022](./adr/0022-highlight-cards-on-the-server.md) |
 | zod | Checks every API request body | [0014](./adr/0014-validate-request-bodies-with-zod.md) |
@@ -62,6 +62,8 @@ flowchart LR
 5. `DashboardClient` is rendered to HTML on the server too, so the snippets arrive with the page, and then **hydrates** in the browser: React attaches its event handlers to that HTML instead of drawing it again. That only works if both renders produce the same markup, which is why `DndContext` has a fixed `id` ([0007](./adr/0007-dnd-kit-for-drag-and-drop.md)). So a remembered choice the first frame depends on lives in a cookie the server can read, not in `localStorage`: the theme ([0029](./adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)), the collapsed sidebar (`src/lib/sidebar.ts`, read by the dashboard page), and a demo guest's checklist ([0049](./adr/0049-a-things-to-try-checklist-for-demo-guests-kept-in-a-cookie.md)). A snippet's created date has the opposite problem: it depends on the reader's time zone, which the server can't know. So `CreatedDate` renders it in UTC on the server and during hydration, and `useTimeZone` (built on `useSyncExternalStore`) renders it again in the browser's zone straight after. The markup matches, and a snippet saved at 9pm in New York still says the 15th, not the 16th.
 
 Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded, and keyword search stays inside the open folder. The page loads archived snippets too, and `DashboardClient` keeps them out of every view except Archive, which sits in the sidebar's Library group under All snippets and Unorganized ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md), [0058](./adr/0058-group-the-archive-with-the-library-and-give-sidebar-rows-icons.md)). Only AI search makes a network call, and it always searches the whole library: you reach for it when you don't remember where something is, and the MCP server's search works the same way. While its results are up the heading reads "Whole library" instead of the folder's name, and picking a folder clears them. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
+
+Dragging a card is the other way to change where a snippet lives. A **drop target** is a place on the page that accepts a dragged item, registered with dnd-kit's `useDroppable`. The sidebar has one for each folder, one for Unorganized, and one for Archive. When a card is let go over one, `DashboardClient` asks `dropAction` (`src/lib/card-drop.ts`) what that means, and gets back one of three answers. For example, a card in Frontend dropped on Shell is `move` to Shell's id, dropped on Unorganized is `move` to no folder, and dropped on Archive is `archive`. Dropped back on Frontend, it's `none`, and nothing is sent. A move or an archive is one `PATCH` with only the field that changes, then a toast ("Moved to Shell." or "Archived."). Unorganized and Archive hide while they're empty, so the sidebar shows them while a card is being dragged, and keeps them up until the dropped card has landed. Without that, the first drop on either would have nowhere to go.
 
 ### Changing data (write path)
 
@@ -197,7 +199,7 @@ erDiagram
 
 - **Deleting a user** cascades to everything they own.
 - **Deleting a folder** sets `folderId` to null on its snippets. Code is never deleted as a side effect. Active snippets land in Unorganized. Archived ones stay archived, now without a folder, so unarchiving one puts it in Unorganized. The armed Delete in the folder's menu names both counts, for example "Its 3 snippets move to Unorganized. Its 2 archived snippets stay archived, without a folder." The folder's count in the sidebar is active snippets only, so `DashboardClient` counts the archived ones per folder from the snippets it already has and passes them to `FolderSidebar` (`archivedCountsByFolder` in `src/lib/folder-delete.ts`, [0065](./adr/0065-close-1-2-1-and-scope-1-3-to-finishing-the-archive.md)).
-- **Archiving a snippet** sets `archivedAt` to the time it happened, and unarchiving sets it back to null. An archived snippet keeps its folder, still counts toward the snippet cap, and is left out of the library views, folder counts, and AI search ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md)).
+- **Archiving a snippet** sets `archivedAt` to the time it happened, and unarchiving sets it back to null. An archived snippet keeps its folder, still counts toward the snippet cap, and is left out of the library views, folder counts, and AI search ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md)). There are two ways to archive: the Archive button on a card or in the preview, and dropping a card on the sidebar's Archive row ([0065](./adr/0065-close-1-2-1-and-scope-1-3-to-finishing-the-archive.md)). Both send the same `PATCH` with `archived: true`. Unarchive is a button only, since an archived card can't be dragged.
 - `AiUsage` counts AI calls per user, endpoint, and hour for rate limiting ([0011](./adr/0011-rate-limit-ai-endpoints-in-postgres.md)).
 - `GuestAiDay` counts the AI calls of all demo guests together, one row per UTC day. It isn't linked to any user, so deleting an expired guest can't lower the count ([0046](./adr/0046-a-shared-daily-ceiling-on-demo-ai-calls.md)). Its rows are kept, as a record of demo use.
 - `GuestAiAddressDay` counts demo guests' AI calls per hashed IP and UTC day. Rows from earlier days are deleted whenever a demo starts ([0047](./adr/0047-give-each-address-a-share-of-the-demo-ai-ceiling.md)).
@@ -317,7 +319,7 @@ docker-compose.yml              Local Postgres for development and tests
 docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 docs/releases/                  Release notes, one file per GitHub Release (v1.1.md), published with gh release create
 e2e/
-├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
+├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
 ├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, Things to try's Edit wording and its tick, delete from preview and form
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
@@ -360,7 +362,7 @@ src/
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders give the cards the same ids)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
-│   ├── FolderSidebar.tsx       The Library panel (a drawer on phones): All snippets, Unorganized, Archive, then folders indented under them; collapses to an icon rail whose rows are still drop targets (tested: when Unorganized and Archive show, the count's color under a drag, the rail's names and letters)
+│   ├── FolderSidebar.tsx       The Library panel (a drawer on phones): All snippets, Unorganized, Archive, then folders indented under them; collapses to an icon rail whose rows are still drop targets (tested: when Unorganized and Archive show, including mid-drag, the count's color under a drag, the rail's names and letters)
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; Enter or Space opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── CreatedDate.tsx         A snippet's created date on the card and preview, in the reader's time zone
@@ -389,6 +391,7 @@ src/
 │   ├── api-tokens.ts           MCP tokens: make, hash, revoke, sign in by Bearer header (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
 │   ├── auth.ts                 NextAuth config, verified-email check, currentUser()
+│   ├── card-drop.ts            What dropping a card on a folder, Unorganized, or Archive does (tested)
 │   ├── card-keys.ts            Which keys open a card, and what screen readers hear on one (tested)
 │   ├── create-lock.ts          withUserLock: the per-user advisory lock every capped create runs under (docs/adr/0025)
 │   ├── contrast.ts             WCAG contrast ratio between two colors (tested)
