@@ -96,5 +96,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0062](./0062-clear-the-production-audit-before-tagging-1-2.md) | Clear the production audit before tagging 1.2 | Accepted |
 | [0063](./0063-close-1-2-and-scope-1-2-1-to-dependency-housekeeping.md) | Close 1.2, and scope 1.2.1 to dependency housekeeping | Accepted |
 | [0064](./0064-run-on-node-24-named-once-in-package-json-engines.md) | Run on Node 24, named once in `package.json` `engines` | Accepted |
+| [0065](./0065-close-1-2-1-and-scope-1-3-to-finishing-the-archive.md) | Close 1.2.1, and scope 1.3 to finishing the archive | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
