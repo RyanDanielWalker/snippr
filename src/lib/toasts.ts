@@ -9,7 +9,18 @@
 
 export type ToastTone = "info" | "error";
 
-export type Toast = { id: number; message: string; tone: ToastTone };
+/**
+ * A button inside a toast, like "Undo" (docs/adr/0070). Pressing it closes
+ * the toast and calls `run`.
+ */
+export type ToastAction = { label: string; run: () => void };
+
+export type Toast = {
+  id: number;
+  message: string;
+  tone: ToastTone;
+  action?: ToastAction;
+};
 
 /** More than this and the oldest goes, so a burst can't cover the page. */
 export const MAX_TOASTS = 3;
@@ -18,17 +29,29 @@ export const MAX_TOASTS = 3;
 export const INFO_TOAST_MS = 4000;
 
 /**
+ * How long a toast with a button stays: long enough to read it and then
+ * reach the button. The timer also pauses while it's hovered or focused
+ * (`src/components/Toaster.tsx`).
+ */
+export const ACTION_TOAST_MS = 8000;
+
+/**
  * Adds a toast at the end. The same message showing already is taken out
  * first, so dragging into a full folder five times shows one toast, not five.
+ * A toast with a button is never merged: two deletes in a row each keep
+ * their own Undo (docs/adr/0070).
  */
 export function addToast(
   toasts: Toast[],
   toast: Toast,
   max = MAX_TOASTS,
 ): Toast[] {
-  const others = toasts.filter(
-    (t) => !(t.message === toast.message && t.tone === toast.tone),
-  );
+  const others = toast.action
+    ? toasts
+    : toasts.filter(
+        (t) =>
+          t.action || !(t.message === toast.message && t.tone === toast.tone),
+      );
   return [...others, toast].slice(-max);
 }
 
@@ -40,6 +63,10 @@ export function dismissToast(toasts: Toast[], id: number): Toast[] {
  * Milliseconds before a toast goes on its own, or `null` to stay. An error
  * that vanishes before it's read is worse than none, so errors stay.
  */
-export function toastDuration(tone: ToastTone): number | null {
-  return tone === "info" ? INFO_TOAST_MS : null;
+export function toastDuration(
+  tone: ToastTone,
+  hasAction = false,
+): number | null {
+  if (tone === "error") return null;
+  return hasAction ? ACTION_TOAST_MS : INFO_TOAST_MS;
 }

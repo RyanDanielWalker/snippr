@@ -160,6 +160,8 @@ Pages follow the same idea. A page or Server Action that throws shows `src/app/e
 
 In the browser, components call the API through `callApi` (`src/lib/api-client.ts`), which returns the data or a message to show. Errors you can fix show next to whatever was being done. Things that happen out of sight, like a drag to a folder or a finished delete, show a toast instead ([0021](./adr/0021-hand-rolled-toasts-for-what-happens-out-of-sight.md)).
 
+A toast can carry one button, called an *action*. The only one so far is Undo after a delete ([0070](./adr/0070-one-press-delete-with-undo-and-an-empty-button.md)). For example, `toast("Moved to Recently deleted.", "info", { label: "Undo", run })` shows the message with an Undo button, and pressing it closes the toast and calls `run`. The rules for it live in `src/lib/toasts.ts`, with tests. A plain info toast stays 4 seconds. One with a button stays 8, since there has to be time to read it and then reach the button. Its timer also pauses while the pointer is over it or focus is inside it, and starts again from the top when both leave. Toasts with the same text are normally merged into one, so five failed drags show one toast. Toasts with a button never are, because merging two Undo toasts would lose the first one's Undo. Focus doesn't move to a toast, so a keyboard user may not reach Undo in time. Restore in Recently deleted is the way back that doesn't depend on timing.
+
 ## Data model
 
 ```mermaid
@@ -258,6 +260,7 @@ Deleting a snippet moves it to Recently deleted for 30 days ([0067](./adr/0067-r
 
 What happens to a deleted snippet:
 
+- **Deleting takes one press,** from the card, the preview, or the edit form (`useDeleteSnippet`). The toast says "Moved to Recently deleted." and offers Undo, which sends the same request as Restore, below. If Undo fails, for example because a snippet was added meanwhile and the library is full, the error is a toast too, because the card it came from is gone. Delete forever and Empty keep a two-step confirm, since neither can be undone ([0070](./adr/0070-one-press-delete-with-undo-and-an-empty-button.md)).
 - **It's out of everything else.** Every query in `snippetStore` adds `deletedAt: null`, except the five about the trash and `findOwner`. `findOwner` only says who owns a row, for the ownership check, and the write after it does filter, so a deleted snippet still gets a `403`. So it isn't in the cap's count, AI search, folder counts, `GET /api/snippets`, or MCP's `get_snippet`, and `PATCH` can't edit, move, or archive it. Only the dashboard page loads it, for the Recently deleted view.
 - **Restoring** (`PATCH` with `{ id, deleted: false }`) clears `deletedAt`. Deleting doesn't touch `archivedAt` or `folderId`, so the snippet goes back where it was: the archive, its folder, or Unorganized if its folder was deleted meanwhile. It's refused while the library is full, and for a snippet deleted over 30 days ago, even if it hasn't been purged yet. A restore comes on its own: a `PATCH` that also changes a field gets a `400` ("Restore a snippet on its own, then change it."), since a deleted snippet can't be edited.
 - **Delete forever** (`DELETE` with `{ id, forever: true }`) purges it, but only if it's already in Recently deleted. A plain `DELETE` on a snippet that's already there is "not found", so its 30 days don't restart.
@@ -376,7 +379,7 @@ docs/images/                    The README's screenshots and GIF, made by e2e/re
 docs/releases/                  Release notes, one file per GitHub Release (v1.1.md), published with gh release create
 e2e/
 ├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
-├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, Things to try's Edit wording and its tick, delete from card, preview, and form, then restore one from Recently deleted, delete one forever, and empty the rest
+├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, Things to try's Edit wording and its tick, delete from card, preview, and form in one press each, undo one from the toast, then restore one from Recently deleted, delete one forever, and empty the rest
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
 playwright.config.ts            Runs it against a production build on port 3100
@@ -427,11 +430,11 @@ src/
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails
 │   ├── useCopy.ts              Copy button shared by the card, the preview, and the Connect page, toast if it fails
 │   ├── useArchiveSnippet.ts    One-press archive and unarchive, shared by the card and preview
-│   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form: to Recently deleted, or forever from there
+│   ├── useDeleteSnippet.ts     Delete shared by the card, preview, and edit form: one press to Recently deleted with Undo in the toast, or two-step forever from there
 │   ├── useRestoreSnippet.ts    Restore from Recently deleted, shared by the card and preview
 │   ├── EmptyTrashButton.tsx    Two-step Empty beside the Recently deleted heading
 │   ├── useDialogFocus.ts       Focus into the preview and form, the page behind inert while open, focus back on close
-│   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page
+│   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page; a toast's button, and its timer pausing on hover or focus
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing
 │   ├── accessible-names.test.ts  Fields and buttons on the snippet forms, preview, and dashboard have names, except the folder name inputs, which only appear after a click
@@ -494,7 +497,7 @@ src/
 │   ├── things-to-try.ts        The demo checklist's items and its cookie: read, tick, close, write (tested)
 │   ├── theme-tokens.ts         The default theme's colors for the generated images (tested: match globals.css, WCAG AA in both themes, no palette classes)
 │   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
-│   ├── toasts.ts               Toast queue: limit, duplicates, how long each stays (tested)
+│   ├── toasts.ts               Toast queue: limit, duplicates (never merging one with a button), how long each stays (tested)
 │   ├── trash.ts                Recently deleted's 30 days, its limit, and a card's countdown (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id and user.isGuest to the Session type, and guestExpiresAt to the adapter's user

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ACTION_TOAST_MS,
   INFO_TOAST_MS,
   MAX_TOASTS,
   addToast,
@@ -35,6 +36,17 @@ describe("addToast", () => {
     expect(toasts.map((t) => t.id)).toEqual([2, 3]);
   });
 
+  // Merging would lose the first delete's Undo.
+  it("never merges a toast with a button, coming or already there", () => {
+    const undo = { label: "Undo", run: () => {} };
+    const first: Toast = { ...info(1, "Moved."), action: undo };
+    const second: Toast = { ...info(2, "Moved."), action: undo };
+    expect(addToast([first], second).map((t) => t.id)).toEqual([1, 2]);
+    expect(addToast([first], info(3, "Moved.")).map((t) => t.id)).toEqual([
+      1, 3,
+    ]);
+  });
+
   it("keeps an error and an info toast that happen to say the same thing", () => {
     const error: Toast = { id: 2, message: "Same words.", tone: "error" };
     expect(addToast([info(1, "Same words.")], error)).toHaveLength(2);
@@ -56,5 +68,11 @@ describe("toastDuration", () => {
   it("lets info toasts go and keeps errors until dismissed", () => {
     expect(toastDuration("info")).toBe(INFO_TOAST_MS);
     expect(toastDuration("error")).toBeNull();
+  });
+
+  it("gives a toast with a button longer, and still keeps an error", () => {
+    expect(toastDuration("info", true)).toBe(ACTION_TOAST_MS);
+    expect(ACTION_TOAST_MS).toBeGreaterThan(INFO_TOAST_MS);
+    expect(toastDuration("error", true)).toBeNull();
   });
 });

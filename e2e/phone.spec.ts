@@ -72,10 +72,11 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   await expect(moveLine).toContainText("Done:");
 });
 
-// Delete is on the card, in the preview, and in the edit form. A delete goes
-// to Recently deleted, where a snippet can be restored or deleted for good
-// (ADR 0067), or the whole trash emptied at once (ADR 0070).
-test("a snippet can be deleted from its card, preview, or edit form, then restored, deleted forever, or emptied", async ({
+// Delete is on the card, in the preview, and in the edit form, and takes one
+// press, with Undo in the toast (ADR 0070). A delete goes to Recently
+// deleted, where a snippet can be restored or deleted for good (ADR 0067), or
+// the whole trash emptied at once (ADR 0070).
+test("a snippet can be deleted from its card, preview, or edit form, undone, then restored, deleted forever, or emptied", async ({
   page,
 }) => {
   await page.goto("/");
@@ -88,13 +89,22 @@ test("a snippet can be deleted from its card, preview, or edit form, then restor
       has: page.getByRole("heading", { name: title, exact: true }),
     });
 
-  // From the preview: the first tap only arms it.
+  // From the preview, in one tap. Undo in the toast brings it straight back.
+  const moved = page.getByText("Moved to Recently deleted.");
   await card("Debounce").getByRole("heading").click();
   const preview = page.getByRole("dialog", { name: "Debounce" });
   await preview.getByRole("button", { name: "Delete", exact: true }).click();
+  await expect(moved).toBeVisible();
+  await expect(preview).toBeHidden();
+  await expect(card("Debounce")).toBeHidden();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByText("Back in your library.")).toBeVisible();
+  await expect(moved).toBeHidden();
   await expect(card("Debounce")).toBeVisible();
-  await preview.getByRole("button", { name: "Confirm delete" }).click();
-  await expect(page.getByText("Moved to Recently deleted.")).toBeVisible();
+
+  // Then for real this time.
+  await card("Debounce").getByRole("heading").click();
+  await preview.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(preview).toBeHidden();
   await expect(card("Debounce")).toBeHidden();
 
@@ -106,14 +116,12 @@ test("a snippet can be deleted from its card, preview, or edit form, then restor
     .click();
   const form = page.getByRole("dialog", { name: "Edit snippet" });
   await form.getByRole("button", { name: "Delete", exact: true }).click();
-  await form.getByRole("button", { name: "Confirm delete" }).click();
   await expect(form).toBeHidden();
   await expect(card("Retry with backoff")).toBeHidden();
 
   // From the card itself.
   const port = card("Free up a port");
   await port.getByRole("button", { name: "Delete", exact: true }).click();
-  await port.getByRole("button", { name: "Confirm delete" }).click();
   await expect(port).toBeHidden();
 
   // All three wait in Recently deleted, newest first, with their 30 days.
