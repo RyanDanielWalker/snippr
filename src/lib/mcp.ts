@@ -95,7 +95,7 @@ async function runTool(
 
 export function mcpServer(deps: McpDeps, user: SignedIn): McpServer {
   const server = new McpServer(
-    { name: "snippr", version: "1.3.0" },
+    { name: "snippr", version: "1.4.0" },
     { instructions: INSTRUCTIONS },
   );
 
