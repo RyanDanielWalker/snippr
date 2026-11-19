@@ -101,5 +101,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0067](./0067-recently-deleted-a-30-day-trash-emptied-when-the-library-loads.md) | Recently deleted: a 30-day trash, emptied when the library loads | Accepted |
 | [0068](./0068-audit-the-code-before-tagging-1-3.md) | Audit the code before tagging 1.3 | Accepted |
 | [0069](./0069-close-1-3-and-scope-1-4-to-finishing-the-trash.md) | Close 1.3, and scope 1.4 to finishing the trash | Accepted |
+| [0070](./0070-one-press-delete-with-undo-and-an-empty-button.md) | One-press delete with Undo, and an Empty button | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
