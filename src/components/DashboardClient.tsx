@@ -15,6 +15,7 @@ import {
 } from "@dnd-kit/core";
 import SnippetCard from "@/components/SnippetCard";
 import SnippetFormModal from "@/components/SnippetFormModal";
+import EmptyTrashButton from "@/components/EmptyTrashButton";
 import FolderSidebar from "@/components/FolderSidebar";
 import { Wordmark } from "@/components/LogoMark";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -298,6 +299,7 @@ export default function DashboardClient({
         pickByIds(aiResultIds, active)
       : filtered;
 
+  const showingAiSearch = aiMode && (aiLoading || aiResultIds !== null);
   const heading = resultsHeading(
     selectedFolderId === null
       ? null
@@ -308,7 +310,7 @@ export default function DashboardClient({
           : selectedFolderId === "trash"
             ? "Recently deleted"
             : (folders.find((f) => f.id === selectedFolderId)?.name ?? null),
-    aiMode && (aiLoading || aiResultIds !== null),
+    showingAiSearch,
   );
 
   const empty =
@@ -500,9 +502,16 @@ export default function DashboardClient({
               )}
 
               {heading && (
-                <h2 className="text-lg font-medium mb-4 text-fg-muted">
-                  {heading}
-                </h2>
+                <div className="flex items-baseline justify-between gap-4 mb-4">
+                  <h2 className="text-lg font-medium text-fg-muted">
+                    {heading}
+                  </h2>
+                  {/* Only over Recently deleted itself, not over AI search
+                      results while that view is picked (docs/adr/0070). */}
+                  {selectedFolderId === "trash" &&
+                    !showingAiSearch &&
+                    deleted.length > 0 && <EmptyTrashButton />}
+                </div>
               )}
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-8">

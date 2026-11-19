@@ -83,6 +83,7 @@ function fakeDeps(extra: Snippet[] = []) {
     deleteForever: vi.fn(),
     restore: vi.fn(),
     purgeExpiredTrash: vi.fn(),
+    emptyTrash: vi.fn(),
     withCreateLock: (_userId, work) => work(store),
   };
 

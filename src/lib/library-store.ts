@@ -134,6 +134,16 @@ export const snippetStore: SnippetStore = {
     });
     return count;
   },
+
+  // The Empty button (docs/adr/0070). Scoped like the purge above: this
+  // user, and only rows with a deletedAt, so nothing outside Recently
+  // deleted can match.
+  async emptyTrash(userId) {
+    const { count } = await prisma.snippet.deleteMany({
+      where: { userId, deletedAt: { not: null } },
+    });
+    return count;
+  },
 };
 
 function folderCreateStore(db: Prisma.TransactionClient): FolderCreateStore {

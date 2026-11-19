@@ -290,6 +290,30 @@ describe("snippetStore and Recently deleted", () => {
       "Recent",
     ]);
   });
+  it("empties only the user's Recently deleted, whatever the dates", async () => {
+    for (const user of [ana, ben]) {
+      await makeSnippet(user.id, "Old", { deletedAt: day(1) });
+      await makeSnippet(user.id, "New", { deletedAt: day(9) });
+      await makeSnippet(user.id, "Archived and deleted", {
+        archivedAt: day(1),
+        deletedAt: day(2),
+      });
+      await makeSnippet(user.id, "Archived", { archivedAt: day(1) });
+      await makeSnippet(user.id, "Active");
+    }
+
+    expect(await snippetStore.emptyTrash(ana.id)).toBe(3);
+    expect(await snippetStore.emptyTrash(ana.id)).toBe(0);
+
+    expect(await titles(ana.id)).toEqual(["Active", "Archived"]);
+    expect(await titles(ben.id)).toEqual([
+      "Active",
+      "Archived",
+      "Archived and deleted",
+      "New",
+      "Old",
+    ]);
+  });
 });
 
 describe("folderStore", () => {

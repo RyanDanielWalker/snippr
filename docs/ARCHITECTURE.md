@@ -17,7 +17,7 @@ flowchart LR
 
     subgraph Vercel["Vercel: snippr.dev"]
         Pages["Server Components<br/>/, /login, /dashboard<br/>+ start-demo Server Action"]
-        API["Route Handlers<br/>/api/snippets, /api/folders, /api/tokens,<br/>/api/snippets/search, /api/snippets/describe"]
+        API["Route Handlers<br/>/api/snippets, /api/folders, /api/tokens, /api/trash,<br/>/api/snippets/search, /api/snippets/describe"]
         MCP["MCP server<br/>/api/mcp"]
         Auth["NextAuth<br/>/api/auth/*"]
     end
@@ -95,7 +95,7 @@ PATCH is a partial update: fields the request leaves out stay as they are, and `
 
 ### The second `startTransition`
 
-Nine places in `src/components/` call `startTransition` twice: once around the whole save, and again around the last few updates after the `await`. Each of them points here. They are `SnippetFormModal`, `useDeleteSnippet`, `useArchiveSnippet`, `useRestoreSnippet`, `DashboardClient`'s drag-and-drop move, two in `FolderSidebar` (saving a folder and deleting one), and two in `ConnectClient` (making a token and revoking one).
+Ten places in `src/components/` call `startTransition` twice: once around the whole save, and again around the last few updates after the `await`. Each of them points here. They are `SnippetFormModal`, `useDeleteSnippet`, `useArchiveSnippet`, `useRestoreSnippet`, `EmptyTrashButton`, `DashboardClient`'s drag-and-drop move, two in `FolderSidebar` (saving a folder and deleting one), and two in `ConnectClient` (making a token and revoking one).
 
 A *transition* is React's way to mark an update as one that can wait. `useTransition` gives back a function to start one and a flag that is `true` while it runs. Snippr uses the flag for pending labels. For example, the Delete button reads "Deleting..." while `deleting` is `true`. When the function you pass to `startTransition` is `async`, the flag stays up until the function finishes and the updates it made have rendered.
 
@@ -123,7 +123,7 @@ startSaving(() => {
 });
 ```
 
-Updates *before* the `await` don't need it, and neither does a failure. An error message or an error toast should show at once, and there's no refresh for it to wait for. That's why each of the nine handles a failed request before the second wrap, outside it.
+Updates *before* the `await` don't need it, and neither does a failure. An error message or an error toast should show at once, and there's no refresh for it to wait for. That's why each of the ten handles a failed request before the second wrap, outside it.
 
 When React learns to carry a transition across an `await`, the second wraps can go. Until then, a new save that ends in `router.refresh()` should do the same and point here.
 
@@ -258,9 +258,10 @@ Deleting a snippet moves it to Recently deleted for 30 days ([0067](./adr/0067-r
 
 What happens to a deleted snippet:
 
-- **It's out of everything else.** Every query in `snippetStore` adds `deletedAt: null`, except the four about the trash and `findOwner`. `findOwner` only says who owns a row, for the ownership check, and the write after it does filter, so a deleted snippet still gets a `403`. So it isn't in the cap's count, AI search, folder counts, `GET /api/snippets`, or MCP's `get_snippet`, and `PATCH` can't edit, move, or archive it. Only the dashboard page loads it, for the Recently deleted view.
+- **It's out of everything else.** Every query in `snippetStore` adds `deletedAt: null`, except the five about the trash and `findOwner`. `findOwner` only says who owns a row, for the ownership check, and the write after it does filter, so a deleted snippet still gets a `403`. So it isn't in the cap's count, AI search, folder counts, `GET /api/snippets`, or MCP's `get_snippet`, and `PATCH` can't edit, move, or archive it. Only the dashboard page loads it, for the Recently deleted view.
 - **Restoring** (`PATCH` with `{ id, deleted: false }`) clears `deletedAt`. Deleting doesn't touch `archivedAt` or `folderId`, so the snippet goes back where it was: the archive, its folder, or Unorganized if its folder was deleted meanwhile. It's refused while the library is full, and for a snippet deleted over 30 days ago, even if it hasn't been purged yet. A restore comes on its own: a `PATCH` that also changes a field gets a `400` ("Restore a snippet on its own, then change it."), since a deleted snippet can't be edited.
 - **Delete forever** (`DELETE` with `{ id, forever: true }`) purges it, but only if it's already in Recently deleted. A plain `DELETE` on a snippet that's already there is "not found", so its 30 days don't restart.
+- **Empty** (`DELETE /api/trash`, no body) purges everything the user has in Recently deleted, whatever its dates, and answers `{ deleted: n }` ([0070](./adr/0070-one-press-delete-with-undo-and-an-empty-button.md)). Its query is `snippetStore.emptyTrash(userId)`: one `DELETE` where `userId` matches and `deletedAt` is set, so nothing outside Recently deleted, and nobody else's, can match. `library-store.db.test.ts` gives two users deleted, archived, and active snippets, empties one user's trash, and checks that only those rows went. The button sits beside the Recently deleted heading (`EmptyTrashButton`) and takes two presses, like Delete forever, since neither can be undone. An empty trash answers `{ deleted: 0 }`, not an error.
 - **The trash has a limit**: as many as the library, so 50 for members and 10 for guests (`trashLimit` in `src/lib/trash.ts`). The delete that goes over it also purges the oldest deleted snippets, in the same transaction. With the cap, that keeps an account to twice its cap in rows.
 
 **Emptying the trash** has no scheduled job. The dashboard page calls `snippetStore.purgeExpiredTrash(userId, cutoff)` before reading anything. The cutoff is 30 days before now (`trashCutoff`). It's the only delete in Snippr that nobody clicks, so it's scoped twice: `userId` in the `WHERE`, and a `deletedAt` that has to be set and older than the cutoff. `library-store.db.test.ts` gives two users an expired, a borderline, a recent, an archived, and an active snippet each, purges one user, and checks that exactly one row went. Someone who never comes back keeps their expired rows. Nobody can see them, and deleting the account removes them.
@@ -375,7 +376,7 @@ docs/images/                    The README's screenshots and GIF, made by e2e/re
 docs/releases/                  Release notes, one file per GitHub Release (v1.1.md), published with gh release create
 e2e/
 ├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
-├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, Things to try's Edit wording and its tick, delete from preview and form, then restore one from Recently deleted and delete the other forever
+├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, Things to try's Edit wording and its tick, delete from card, preview, and form, then restore one from Recently deleted, delete one forever, and empty the rest
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
 playwright.config.ts            Runs it against a production build on port 3100
@@ -410,6 +411,7 @@ src/
 │       ├── folders/            Folder CRUD (logic in lib/folders.ts)
 │       ├── mcp/                MCP server, signed in by token (logic in lib/mcp.ts)
 │       ├── tokens/             Make, list, and revoke MCP tokens (logic in lib/api-tokens.ts)
+│       ├── trash/              Empty Recently deleted (logic in lib/snippets.ts)
 │       └── snippets/
 │           ├── route.ts        Snippet CRUD, restore, and delete forever (logic in lib/snippets.ts)
 │           ├── search/         AI search (logic in lib/ai-search.ts)
@@ -427,6 +429,7 @@ src/
 │   ├── useArchiveSnippet.ts    One-press archive and unarchive, shared by the card and preview
 │   ├── useDeleteSnippet.ts     Two-step delete shared by the card, preview, and edit form: to Recently deleted, or forever from there
 │   ├── useRestoreSnippet.ts    Restore from Recently deleted, shared by the card and preview
+│   ├── EmptyTrashButton.tsx    Two-step Empty beside the Recently deleted heading
 │   ├── useDialogFocus.ts       Focus into the preview and form, the page behind inert while open, focus back on close
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
@@ -483,7 +486,7 @@ src/
 │   ├── snippet-form.ts         The snippet form's starting fields, change check, request body, and whether to say "code" or "prompt" (tested)
 │   ├── snippet-date.ts         "Nov 16", or "Nov 16, 2025" in an earlier year, in a given time zone (tested)
 │   ├── snippet-cap.ts          Snippet cap: 50 per member, 10 per guest (tested)
-│   ├── snippets.ts             /api/snippets: sign-in, validation, then the cap or ownership; restore and delete forever (tested)
+│   ├── snippets.ts             /api/snippets: sign-in, validation, then the cap or ownership; restore, delete forever, and /api/trash's empty (tested)
 │   ├── schemas.ts              zod schemas for every request body (tested)
 │   ├── shiki-8bit.ts           The 8-bit theme's syntax colors (tested: AA on the code background)
 │   ├── theme.ts                The theme list and its cookie (tested)

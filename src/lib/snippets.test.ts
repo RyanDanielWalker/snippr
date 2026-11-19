@@ -3,6 +3,7 @@ import type { Folder, Snippet } from "@prisma/client";
 import {
   createSnippet,
   deleteSnippet,
+  emptyTrash,
   getSnippet,
   listSnippets,
   updateSnippet,
@@ -124,6 +125,16 @@ function fakeStore(extraSnippets: Snippet[] = []) {
       return restored;
     }),
     purgeExpiredTrash: vi.fn(async () => 0),
+    emptyTrash: vi.fn(async (userId: string) => {
+      let count = 0;
+      for (const s of [...snippets.values()]) {
+        if (s.userId === userId && s.deletedAt) {
+          snippets.delete(s.id);
+          count++;
+        }
+      }
+      return count;
+    }),
     // vi.fn drops the type parameter, so give it back.
     withCreateLock: vi.fn(withCreateLock) as SnippetStore["withCreateLock"],
   } satisfies SnippetStore;
@@ -170,6 +181,7 @@ describe("without a session", () => {
       await deleteSnippet(store, null, request({ id: "snippet-mine" })),
       401,
     );
+    await expectError(await emptyTrash(store, null), 401);
     untouched(store);
   });
 });
@@ -607,6 +619,33 @@ describe("deleteSnippet with forever: true", () => {
       "Snippet not found.",
     );
     expect(snippets.has("snippet-mine")).toBe(true);
+  });
+});
+
+describe("emptyTrash", () => {
+  it("purges every snippet the user has in Recently deleted, and says how many", async () => {
+    const { store, snippets } = fakeStore([
+      deleted("old", daysAgo(20)),
+      deleted("archived-too", daysAgo(1), { archivedAt: daysAgo(5) }),
+      { ...deleted("theirs-deleted", daysAgo(1)), userId: "user-other" },
+    ]);
+    const res = await emptyTrash(store, me);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ deleted: 2 });
+    expect([...snippets.keys()].sort()).toEqual([
+      "snippet-mine",
+      "snippet-theirs",
+      "theirs-deleted",
+    ]);
+    expect(store.emptyTrash).toHaveBeenCalledWith("user-me");
+  });
+
+  it("answers 0, not an error, when there's nothing to empty", async () => {
+    const { store, snippets } = fakeStore();
+    const res = await emptyTrash(store, me);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ deleted: 0 });
+    expect(snippets.size).toBe(2);
   });
 });
 

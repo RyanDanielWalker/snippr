@@ -54,8 +54,8 @@ export type CreateStore = Pick<
 >;
 
 // "Deleted" below means in Recently deleted: `deletedAt` is set. Every read
-// and write here skips those rows, except the four that are about them
-// (docs/adr/0067).
+// and write here skips those rows, except the five that are about them
+// (docs/adr/0067, docs/adr/0070).
 export type SnippetStore = {
   /** The user's snippets, newest first, archived ones included, deleted ones not. */
   list(userId: string): Promise<Snippet[]>;
@@ -97,6 +97,11 @@ export type SnippetStore = {
    * Returns how many went. Only ever this user's rows.
    */
   purgeExpiredTrash(userId: string, cutoff: Date): Promise<number>;
+  /**
+   * Purges every snippet the user has in Recently deleted: the Empty button.
+   * Returns how many went. Only ever this user's rows.
+   */
+  emptyTrash(userId: string): Promise<number>;
   /**
    * Runs `work` with the user's other creates held until it finishes, and
    * hands it a store that reads and writes inside that lock. Without it, two
@@ -271,4 +276,19 @@ export async function deleteSnippet(
     : await store.trash(id, user.id, now(), trashLimit(user.isGuest));
   if (!done) return snippetNotFound();
   return Response.json({ success: true });
+}
+
+/**
+ * Empties the user's Recently deleted: every snippet in it is purged
+ * (docs/adr/0070). Behind `DELETE /api/trash`, which has no body, so there's
+ * nothing to validate. An empty trash is `{ deleted: 0 }`, not an error,
+ * since it ends up empty either way.
+ */
+export async function emptyTrash(
+  store: SnippetStore,
+  user: ApiUser,
+): Promise<Response> {
+  if (!user) return unauthorized();
+  const deleted = await store.emptyTrash(user.id);
+  return Response.json({ deleted });
 }

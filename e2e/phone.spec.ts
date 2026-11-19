@@ -72,10 +72,10 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   await expect(moveLine).toContainText("Done:");
 });
 
-// Delete is in the preview and the edit form too, not only on the card. A
-// delete goes to Recently deleted, where a snippet can be restored or
-// deleted for good (ADR 0067).
-test("a snippet can be deleted from its preview or its edit form, then restored or deleted forever", async ({
+// Delete is on the card, in the preview, and in the edit form. A delete goes
+// to Recently deleted, where a snippet can be restored or deleted for good
+// (ADR 0067), or the whole trash emptied at once (ADR 0070).
+test("a snippet can be deleted from its card, preview, or edit form, then restored, deleted forever, or emptied", async ({
   page,
 }) => {
   await page.goto("/");
@@ -110,17 +110,23 @@ test("a snippet can be deleted from its preview or its edit form, then restored 
   await expect(form).toBeHidden();
   await expect(card("Retry with backoff")).toBeHidden();
 
-  // Both wait in Recently deleted, newest first, with their 30 days.
+  // From the card itself.
+  const port = card("Free up a port");
+  await port.getByRole("button", { name: "Delete", exact: true }).click();
+  await port.getByRole("button", { name: "Confirm delete" }).click();
+  await expect(port).toBeHidden();
+
+  // All three wait in Recently deleted, newest first, with their 30 days.
   const sidebar = page.locator("aside");
   const trashRow = sidebar.getByRole("button", { name: /^Recently deleted/ });
   await page.getByRole("button", { name: "Folders", exact: true }).click();
-  await expect(trashRow).toContainText("2");
+  await expect(trashRow).toContainText("3");
   await trashRow.click();
   await expect(
     page.getByRole("heading", { name: "Recently deleted", level: 2 }),
   ).toBeVisible();
-  await expect(cards).toHaveCount(2);
-  await expect(cards.first()).toContainText("Retry with backoff");
+  await expect(cards).toHaveCount(3);
+  await expect(cards.first()).toContainText("Free up a port");
   await expect(card("Debounce")).toContainText("Gone in 30 days");
   // A deleted snippet can't be edited or archived, here or in its preview.
   await expect(
@@ -142,17 +148,27 @@ test("a snippet can be deleted from its preview or its edit form, then restored 
   await expect(page.getByText("Back in your library.")).toBeVisible();
   await expect(deletedPreview).toBeHidden();
   await expect(card("Debounce")).toBeHidden();
+  await expect(cards).toHaveCount(2);
+
+  // Delete forever takes two presses, and then it's gone.
+  const retry = card("Retry with backoff");
+  await retry.getByRole("button", { name: "Delete forever" }).click();
+  await expect(retry).toBeVisible();
+  await retry.getByRole("button", { name: "Confirm delete" }).click();
+  await expect(page.getByText("Deleted for good.")).toBeVisible();
+  await expect(retry).toBeHidden();
   await expect(cards).toHaveCount(1);
 
-  // Delete forever takes two presses, like Delete, and then it's gone. With
-  // nothing left, the row goes and the view falls back to All snippets.
-  const last = card("Retry with backoff");
-  await last.getByRole("button", { name: "Delete forever" }).click();
-  await expect(last).toBeVisible();
-  await last.getByRole("button", { name: "Confirm delete" }).click();
-  await expect(page.getByText("Deleted for good.")).toBeVisible();
+  // Empty takes two presses too. With nothing left, the row goes and the
+  // view falls back to All snippets.
+  const empty = page.getByRole("button", { name: "Empty", exact: true });
+  await empty.click();
+  await expect(port).toBeVisible();
+  await page.getByRole("button", { name: "Confirm empty" }).click();
+  await expect(page.getByText("Recently deleted is empty.")).toBeVisible();
   await expect(card("Debounce")).toBeVisible();
-  await expect(card("Retry with backoff")).toBeHidden();
+  await expect(port).toBeHidden();
+  await expect(empty).toBeHidden();
   await page.getByRole("button", { name: "Folders", exact: true }).click();
   await expect(trashRow).toBeHidden();
 });
