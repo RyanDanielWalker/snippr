@@ -67,6 +67,8 @@ Dragging a card is the other way to change where a snippet lives. A **drop targe
 
 The sidebar can collapse to an *icon rail*, a 56px strip of squares, one per row, with each folder shown as its first letter ([0059](./adr/0059-collapse-the-sidebar-to-an-icon-rail.md)). For example, a folder named Shell becomes an "S" square whose tooltip says "Shell (2)". The squares are still drop targets, so dragging works the same with the sidebar collapsed. Renaming, deleting, and making folders wait for the full sidebar.
 
+The open row is marked twice, once for the eye and once for a screen reader. The accent background is a CSS class, and a screen reader can't see a class. So the same button also carries `aria-current="true"`, an attribute that makes a screen reader say "current" after the button's name. For example, with Shell open, tabbing down the sidebar reads something like "All snippets 9, button", then "Shell 2, current, button". The exact words vary by screen reader. That matters most on All snippets, which has no heading above the cards to say where you are. It's on every row in the full sidebar, the phone drawer, and the rail. The value is `"true"` rather than `"page"`, because picking a row changes what the dashboard shows, not the URL.
+
 ### Changing data (write path)
 
 ```mermaid
@@ -415,7 +417,7 @@ src/
 ├── components/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders give the cards the same ids)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
-│   ├── FolderSidebar.tsx       The Library panel (a drawer on phones): All snippets, Unorganized, Archive, Recently deleted, then folders indented under them; collapses to an icon rail whose rows are still drop targets (tested: when Unorganized and Archive show, including mid-drag, the count's color under a drag, the rail's names and letters)
+│   ├── FolderSidebar.tsx       The Library panel (a drawer on phones): All snippets, Unorganized, Archive, Recently deleted, then folders indented under them; collapses to an icon rail whose rows are still drop targets (tested: when Unorganized and Archive show, including mid-drag, the count's color under a drag, the rail's names and letters, and that only the open row is `aria-current`)
 │   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; in Recently deleted, restore, copy, and delete forever; Enter or Space opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
 │   ├── CreatedDate.tsx         A snippet's created date on the card and preview, in the reader's time zone

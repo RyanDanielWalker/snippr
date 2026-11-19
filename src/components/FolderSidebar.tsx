@@ -103,6 +103,12 @@ function RowLabel({
 const ROW =
   "w-full text-left px-3 py-1.5 rounded-box text-sm flex items-center justify-between gap-2 transition";
 const ROW_IDLE = "text-fg-muted hover:text-fg hover:bg-surface-raised";
+// The open row is marked twice. This class shows it, but a screen reader
+// can't see a class, so the same button also gets aria-current="true", which
+// makes a screen reader say "current" after its name. It matters most on All
+// snippets, which has no heading above the cards to say where you are.
+// "true" rather than "page", since picking a row changes the view, not the
+// URL.
 const ROW_SELECTED = "bg-accent-soft text-fg font-medium";
 const HEADING = "font-title text-xs text-fg-subtle uppercase tracking-wider";
 
@@ -153,6 +159,7 @@ function DroppableFolder({
         onClick={onClick}
         title={`${rail} (${count})`}
         aria-label={rail}
+        aria-current={selected ? "true" : undefined}
         className={`${RAIL_BUTTON} ${
           isOver
             ? "bg-accent text-accent-fg ring-2 ring-focus"
@@ -170,6 +177,7 @@ function DroppableFolder({
     <button
       ref={setNodeRef}
       onClick={onClick}
+      aria-current={selected ? "true" : undefined}
       className={`${ROW} ${
         isOver
           ? "bg-accent text-accent-fg ring-2 ring-focus"
@@ -405,6 +413,7 @@ export default function FolderSidebar({
           onClick={() => onSelectFolder(null)}
           title={`All snippets (${totalSnippets})`}
           aria-label="All snippets"
+          aria-current={selectedFolderId === null ? "true" : undefined}
           className={railRow(selectedFolderId === null)}
         >
           <Icon
@@ -449,6 +458,7 @@ export default function FolderSidebar({
             onClick={() => onSelectFolder("trash")}
             title={`Recently deleted (${deletedCount})`}
             aria-label="Recently deleted"
+            aria-current={selectedFolderId === "trash" ? "true" : undefined}
             className={railRow(selectedFolderId === "trash")}
           >
             <Icon
@@ -518,6 +528,7 @@ export default function FolderSidebar({
       <div className="space-y-0.5">
         <button
           onClick={() => onSelectFolder(null)}
+          aria-current={selectedFolderId === null ? "true" : undefined}
           className={`${ROW} ${selectedFolderId === null ? ROW_SELECTED : ROW_IDLE}`}
         >
           <RowLabel icon="all" selected={selectedFolderId === null}>
@@ -567,6 +578,7 @@ export default function FolderSidebar({
         {deletedCount > 0 && (
           <button
             onClick={() => onSelectFolder("trash")}
+            aria-current={selectedFolderId === "trash" ? "true" : undefined}
             className={`${ROW} ${selectedFolderId === "trash" ? ROW_SELECTED : ROW_IDLE}`}
           >
             <RowLabel icon="trash" selected={selectedFolderId === "trash"}>

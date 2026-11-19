@@ -21,12 +21,14 @@ function sidebar({
   archivedCount = 0,
   collapsed = false,
   deletedCount = 0,
+  selectedFolderId = null,
 }: {
   unorganizedCount?: number;
   moving?: boolean;
   archivedCount?: number;
   collapsed?: boolean;
   deletedCount?: number;
+  selectedFolderId?: string | null;
 } = {}) {
   return renderToString(
     createElement(
@@ -39,7 +41,7 @@ function sidebar({
         archivedCount,
         deletedCount,
         moving,
-        selectedFolderId: null,
+        selectedFolderId,
         onSelectFolder: () => {},
         collapsed,
         onToggleCollapse: () => {},
@@ -166,6 +168,43 @@ describe("the collapsed rail", () => {
   it("leaves out the folder menu and New folder", () => {
     expect(rail()).not.toContain("Rename or delete");
     expect(rail()).not.toContain("New folder");
+  });
+});
+
+describe("the open row", () => {
+  // Every row shows, so each one can be the open one.
+  const everyRow = { unorganizedCount: 2, archivedCount: 1, deletedCount: 1 };
+
+  // Each button's opening tag and the text inside it. The rail's buttons
+  // hold only an icon or a letter, so their name is in the tag's aria-label.
+  function currentButtons(html: string) {
+    return [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/g)].filter(
+      ([, tag]) => tag.includes("aria-current"),
+    );
+  }
+
+  // The class shows which row is open, and says nothing to a screen reader.
+  // aria-current is what makes it say "current" (audit 2026-11-18, #5).
+  describe.each([
+    ["the full sidebar", false],
+    ["the collapsed rail", true],
+  ])("in %s", (_, collapsed) => {
+    it.each([
+      [null, "All snippets"],
+      ["unorganized", "Unorganized"],
+      ["archive", "Archive"],
+      ["trash", "Recently deleted"],
+      ["f1", "Frontend"],
+    ])("marks only %j as current, the %s row", (selectedFolderId, name) => {
+      const current = currentButtons(
+        sidebar({ ...everyRow, collapsed, selectedFolderId }),
+      );
+      expect(current).toHaveLength(1);
+      const [button, tag] = current[0];
+      expect(tag).toContain('aria-current="true"');
+      if (collapsed) expect(tag).toContain(`aria-label="${name}"`);
+      else expect(button).toContain(`>${name}</span>`);
+    });
   });
 });
 
