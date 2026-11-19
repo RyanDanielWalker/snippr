@@ -14,9 +14,12 @@ import { searchSchema } from "@/lib/schemas";
  */
 
 export type AiSearchDeps = AiLimitDeps & {
-  /** How many snippets the user can search: the ones not archived. */
+  /** How many snippets the user can search: the ones not archived or deleted. */
   countSnippets(userId: string): Promise<number>;
-  /** The snippets to search: the user's, minus the archive (docs/adr/0056). */
+  /**
+   * The snippets to search: the user's, minus archived and deleted ones
+   * (docs/adr/0056, docs/adr/0067).
+   */
   listSnippets(userId: string): Promise<Snippet[]>;
   ask: AskClaude;
   log?: (...args: unknown[]) => void;

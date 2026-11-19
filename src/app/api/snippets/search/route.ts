@@ -11,7 +11,8 @@ export const POST = withErrors(async (req: Request) =>
   searchSnippets(
     {
       ...aiLimitStore(req),
-      // Not the archive (docs/adr/0056).
+      // Only snippets that aren't archived or deleted (docs/adr/0056,
+      // docs/adr/0067).
       countSnippets: snippetStore.countActive,
       listSnippets: snippetStore.listActive,
       ask: askClaude,
