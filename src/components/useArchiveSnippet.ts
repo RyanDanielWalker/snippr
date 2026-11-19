@@ -36,6 +36,8 @@ export function useArchiveSnippet(
         return;
       }
       // The toast and the card leaving land in the same render.
+      // Second startTransition: see "The second startTransition" in
+      // docs/ARCHITECTURE.md.
       startTransition(() => {
         onDone?.();
         toast(

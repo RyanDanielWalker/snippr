@@ -54,6 +54,8 @@ export function useDeleteSnippet(
         return;
       }
       // The toast and the snippet's removal land in the same render.
+      // Second startTransition: see "The second startTransition" in
+      // docs/ARCHITECTURE.md.
       startDeleting(() => {
         onDeleted?.();
         toast(forever ? "Deleted for good." : "Moved to Recently deleted.");

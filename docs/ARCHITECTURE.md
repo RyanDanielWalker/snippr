@@ -91,6 +91,40 @@ PATCH is a partial update: fields the request leaves out stay as they are, and `
 
 `router.refresh()` asks Next.js to re-run the Server Components for the current page and send down fresh data, without a full page reload and without losing client state like the open sidebar. That's how the dashboard picks up changes: the client never edits its own copy of the list.
 
+### The second `startTransition`
+
+Nine places in `src/components/` call `startTransition` twice: once around the whole save, and again around the last few updates after the `await`. Each of them points here. They are `SnippetFormModal`, `useDeleteSnippet`, `useArchiveSnippet`, `useRestoreSnippet`, `DashboardClient`'s drag-and-drop move, two in `FolderSidebar` (saving a folder and deleting one), and two in `ConnectClient` (making a token and revoking one).
+
+A *transition* is React's way to mark an update as one that can wait. `useTransition` gives back a function to start one and a flag that is `true` while it runs. Snippr uses the flag for pending labels. For example, the Delete button reads "Deleting..." while `deleting` is `true`. When the function you pass to `startTransition` is `async`, the flag stays up until the function finishes and the updates it made have rendered.
+
+The catch is that React can only tell which updates belong to the transition up to the first `await`. Anything after the `await` runs later, from a resolved promise, and by then React has lost track of the transition it came from. So those updates count as ordinary ones, and React renders them right away. React documents this as a known limitation, with the second wrap as the workaround ([React's `useTransition` troubleshooting](https://react.dev/reference/react/useTransition#react-doesnt-treat-my-state-update-after-await-as-a-transition), and Next's own guide in `node_modules/next/dist/docs/01-app/02-guides/interactive-apps.md`).
+
+Here is what that does to a save, without the second wrap:
+
+```ts
+startSaving(async () => {
+  const result = await callApi("/api/snippets", "POST", body);
+  if (!result.ok) return setError(result.error);
+  onClose();         // ordinary update: the modal closes now
+  router.refresh();  // a transition: the new list arrives a moment later
+});
+```
+
+`router.refresh()` is a transition already, because Next wraps it in one (`refresh` in `node_modules/next/dist/client/components/sequential-router-queue.js`). Our own updates beside it are the problem. `onClose()` renders first, so the modal and its "Saving..." label disappear, and the list still shows without the new snippet. A moment later the refreshed list arrives. It's the same with a toast: "Moved to Recently deleted." would show while the card is still on screen.
+
+Wrapping those last lines in a second `startTransition` makes them part of a transition again. They wait and render with the refreshed list, as one change:
+
+```ts
+startSaving(() => {
+  onClose();
+  router.refresh();
+});
+```
+
+Updates *before* the `await` don't need it, and neither does a failure. An error message or an error toast should show at once, and there's no refresh for it to wait for. That's why each of the nine handles a failed request before the second wrap, outside it.
+
+When React learns to carry a transition across an `await`, the second wraps can go. Until then, a new save that ends in `router.refresh()` should do the same and point here.
+
 ### Authorization model
 
 Every Route Handler follows the same pattern. For snippets and folders it lives in `src/lib/snippets.ts` and `src/lib/folders.ts`, which get the database passed in as a store, so each step is tested against an in-memory one with two users; the route files only connect them to NextAuth and Prisma ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)). The AI handlers work the same way, in `src/lib/ai-search.ts` and `src/lib/ai-describe.ts` ([0023](./adr/0023-one-ai-module-on-claude-haiku.md)). The steps:

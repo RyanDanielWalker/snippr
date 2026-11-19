@@ -280,6 +280,8 @@ export default function DashboardClient({
         return;
       }
       // The card stops looking busy as it shows up where it went.
+      // Second startTransition: see "The second startTransition" in
+      // docs/ARCHITECTURE.md.
       startMoving(() => {
         doneMoving();
         // The checklist's line is about filing a snippet in a folder.

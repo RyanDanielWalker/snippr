@@ -310,6 +310,9 @@ export default function FolderSidebar({
         setFailedName(name);
         return;
       }
+      // The input closes as the list shows the new or renamed folder.
+      // Second startTransition: see "The second startTransition" in
+      // docs/ARCHITECTURE.md.
       startSaving(() => {
         done();
         router.refresh();
@@ -361,6 +364,9 @@ export default function FolderSidebar({
         folders.find((f) => f.id === id)?._count.snippets ?? 0,
         archivedByFolder[id] ?? 0,
       );
+      // The toast and the folder leaving land in the same render.
+      // Second startTransition: see "The second startTransition" in
+      // docs/ARCHITECTURE.md.
       startDeleting(() => {
         setDeletingId(null);
         if (selectedFolderId === id) onSelectFolder(null);

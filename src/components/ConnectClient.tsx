@@ -102,6 +102,9 @@ function CreateToken({ onCreated }: { onCreated: (token: string) => void }) {
         setError(result.error);
         return;
       }
+      // The new token shows as the list gains its row.
+      // Second startTransition: see "The second startTransition" in
+      // docs/ARCHITECTURE.md.
       startSaving(() => {
         setName("");
         onCreated(result.data.token);
@@ -236,6 +239,9 @@ function TokenItem({ token }: { token: TokenRow }) {
         setError(result.error);
         return;
       }
+      // The toast and the token leaving land in the same render.
+      // Second startTransition: see "The second startTransition" in
+      // docs/ARCHITECTURE.md.
       startRevoking(() => {
         toast("Token revoked. Anything using it is signed out.");
         router.refresh();

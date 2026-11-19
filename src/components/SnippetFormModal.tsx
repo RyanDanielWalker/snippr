@@ -85,6 +85,8 @@ export default function SnippetFormModal({
 
       // Close in the same render as the refreshed list, so "Saving..." lasts
       // until the snippet is on screen.
+      // Second startTransition: see "The second startTransition" in
+      // docs/ARCHITECTURE.md.
       startSaving(() => {
         onClose();
         router.refresh();
