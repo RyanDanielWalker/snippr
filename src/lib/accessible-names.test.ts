@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { unnamedControls } from "./accessible-names";
+import { controlsInsideControls, unnamedControls } from "./accessible-names";
 
 describe("unnamedControls", () => {
   it("passes a field with a label pointing at it", () => {
@@ -59,5 +59,55 @@ describe("unnamedControls", () => {
     expect(unnamedControls('<button aria-label="Close">✕</button>')).toEqual(
       [],
     );
+  });
+});
+
+describe("controlsInsideControls", () => {
+  it("finds buttons inside a role=button, like the old snippet card", () => {
+    expect(
+      controlsInsideControls(
+        '<div role="button" tabindex="0"><h3>Debounce</h3><div><button>Edit</button><button>Copy</button></div></div>',
+      ),
+    ).toEqual(["div[role=button] > button", "div[role=button] > button"]);
+  });
+
+  it("passes buttons beside each other in an article, like the card now", () => {
+    expect(
+      controlsInsideControls(
+        '<article aria-label="Debounce"><h3><button>Debounce</button></h3><div><button>Edit</button></div></article>',
+      ),
+    ).toEqual([]);
+  });
+
+  it("finds a link or a field inside a button", () => {
+    expect(
+      controlsInsideControls(
+        '<button><a href="/x">x</a><input aria-label="y"/></button>',
+      ),
+    ).toEqual(["button > a", "button > input"]);
+  });
+
+  it("stops counting once the outer control closes", () => {
+    expect(
+      controlsInsideControls(
+        "<div><button><span>One</span></button><button>Two</button></div>",
+      ),
+    ).toEqual([]);
+  });
+
+  it("ignores roles that aren't controls, and links without an href", () => {
+    expect(
+      controlsInsideControls(
+        '<div role="dialog"><button>Close</button></div><a><button>Go</button></a>',
+      ),
+    ).toEqual([]);
+  });
+
+  it("treats self-closing and void tags as holding nothing", () => {
+    expect(
+      controlsInsideControls(
+        '<svg><path d="M0 0"/></svg><input aria-label="a"/><img alt=""/><button>Ok</button>',
+      ),
+    ).toEqual([]);
   });
 });
