@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { ARCHIVE_DROP_ID, UNORGANIZED_DROP_ID, dropAction } from "./card-drop";
+import {
+  ARCHIVE_DROP_ID,
+  UNORGANIZED_DROP_ID,
+  dragAnnouncements,
+  dropAction,
+  placeName,
+} from "./card-drop";
 
 const folders = [
   { id: "f1", name: "Frontend" },
@@ -86,4 +92,54 @@ describe("dropAction", () => {
       ).toEqual({ kind: "none" });
     },
   );
+});
+
+describe("placeName", () => {
+  it("names Unorganized, Archive, and folders", () => {
+    expect(placeName(UNORGANIZED_DROP_ID, folders)).toBe("Unorganized");
+    expect(placeName(ARCHIVE_DROP_ID, folders)).toBe("Archive");
+    expect(placeName("f2", folders)).toBe("Shell");
+  });
+
+  it("never reads out an id it doesn't know", () => {
+    expect(placeName("cm2abc", folders)).toBe("a folder");
+  });
+});
+
+describe("dragAnnouncements", () => {
+  const titles: Record<string, string> = { s1: "Debounce" };
+  const say = dragAnnouncements((id) => titles[id], folders);
+
+  it("names the snippet and the row, never an id", () => {
+    expect(say.onDragStart({ active: { id: "s1" } })).toBe(
+      "Picked up Debounce.",
+    );
+    expect(say.onDragOver({ active: { id: "s1" }, over: { id: "f2" } })).toBe(
+      "Over Shell.",
+    );
+    expect(say.onDragEnd({ active: { id: "s1" }, over: { id: "f2" } })).toBe(
+      "Dropped Debounce on Shell.",
+    );
+  });
+
+  it("says when the card is over nothing, or put down nowhere", () => {
+    expect(say.onDragOver({ active: { id: "s1" }, over: null })).toBe(
+      "Not over a folder.",
+    );
+    expect(say.onDragEnd({ active: { id: "s1" }, over: null })).toBe(
+      "Debounce didn't move.",
+    );
+    expect(say.onDragCancel({ active: { id: "s1" }, over: null })).toBe(
+      "Debounce didn't move.",
+    );
+  });
+
+  it("falls back to words for a snippet it can't find", () => {
+    expect(say.onDragStart({ active: { id: "cm2xyz" } })).toBe(
+      "Picked up the snippet.",
+    );
+    expect(say.onDragCancel({ active: { id: "cm2xyz" }, over: null })).toBe(
+      "The snippet didn't move.",
+    );
+  });
 });

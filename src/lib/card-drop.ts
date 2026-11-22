@@ -45,3 +45,48 @@ export function dropAction(
       : (folders.find((f) => f.id === folderId)?.name ?? "the folder");
   return { kind: "move", folderId, toast: `Moved to ${destination}.` };
 }
+
+/**
+ * What a drop target is called, for a screen reader: "Unorganized",
+ * "Archive", or the folder's name.
+ */
+export function placeName(
+  targetId: string,
+  folders: { id: string; name: string }[],
+): string {
+  if (targetId === UNORGANIZED_DROP_ID) return "Unorganized";
+  if (targetId === ARCHIVE_DROP_ID) return "Archive";
+  return folders.find((f) => f.id === targetId)?.name ?? "a folder";
+}
+
+/**
+ * What a screen reader hears during a mouse drag. dnd-kit's defaults read
+ * out ids ("Picked up draggable item cm2…"), and a card's id is its database
+ * id. These say the snippet's title and the row's name instead
+ * (docs/adr/0073). `titleOf` looks a snippet up by its id.
+ *
+ * The result after a drop ("Moved to Shell.") is the toast's to say, since
+ * the move can still fail. So the drop itself only says where it landed.
+ */
+export function dragAnnouncements(
+  titleOf: (snippetId: string) => string | undefined,
+  folders: { id: string; name: string }[],
+) {
+  // In the middle of a sentence, or starting one.
+  const title = (id: string | number) => titleOf(String(id)) ?? "the snippet";
+  const Title = (id: string | number) => titleOf(String(id)) ?? "The snippet";
+  const place = (id: string | number) => placeName(String(id), folders);
+  type Item = { id: string | number };
+  return {
+    onDragStart: ({ active }: { active: Item }) =>
+      `Picked up ${title(active.id)}.`,
+    onDragOver: ({ over }: { active: Item; over: Item | null }) =>
+      over ? `Over ${place(over.id)}.` : "Not over a folder.",
+    onDragEnd: ({ active, over }: { active: Item; over: Item | null }) =>
+      over
+        ? `Dropped ${title(active.id)} on ${place(over.id)}.`
+        : `${Title(active.id)} didn't move.`,
+    onDragCancel: ({ active }: { active: Item; over: Item | null }) =>
+      `${Title(active.id)} didn't move.`,
+  };
+}

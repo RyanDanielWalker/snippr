@@ -41,7 +41,7 @@ import { latestOnly } from "@/lib/latest-only";
 import { sidebarCookie } from "@/lib/sidebar";
 import { setClosed } from "@/lib/things-to-try";
 import { archivedCountsByFolder } from "@/lib/folder-delete";
-import { dropAction } from "@/lib/card-drop";
+import { dragAnnouncements, dropAction } from "@/lib/card-drop";
 import type { Snippet, Folder } from "@/lib/library-types";
 
 type Props = {
@@ -451,6 +451,11 @@ export default function DashboardClient({
           sensors={sensors}
           accessibility={{
             screenReaderInstructions: { draggable: CARD_INSTRUCTIONS },
+            // Titles and folder names, not database ids (docs/adr/0073).
+            announcements: dragAnnouncements(
+              (id) => snippets.find((s) => s.id === id)?.title,
+              folders,
+            ),
           }}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
