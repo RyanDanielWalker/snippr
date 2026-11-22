@@ -238,12 +238,19 @@ test("demo.gif: AI search, a new folder, drag and drop", async ({
   const from = await card(page, "Retry with backoff")
     .getByRole("heading")
     .boundingBox();
-  const to = await python.boundingBox();
-  if (!from || !to) throw new Error("The card or the folder isn't on screen");
+  if (!from) throw new Error("The card isn't on screen");
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2, {
     steps: 25,
   });
   await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2 - 20, from.y, { steps: 5 });
+  // Measured once the drag has started: the sidebar shows the Archive row
+  // during a drag, which moves every folder down a row.
+  await expect(
+    page.locator("aside").getByRole("button", { name: /^Archive/ }),
+  ).toBeVisible();
+  const to = await python.boundingBox();
+  if (!to) throw new Error("The folder isn't on screen");
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, {
     steps: 40,
   });
