@@ -77,6 +77,13 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
     await card("Debounce").evaluate((el) => el.closest("[inert]") !== null),
   ).toBe(false);
 
+  // A tap on the dimmed backdrop, right of the 256px drawer, still closes
+  // it. The rest of the page is inert, and the backdrop is spared.
+  await foldersButton.click();
+  await expect(drawer).toBeVisible();
+  await page.mouse.click(340, 400);
+  await expect(drawer).toBeHidden();
+
   // A touch screen can't drag a card, so the checklist's first line points
   // at the folder field in Edit instead (ADR 0049), and moving a snippet
   // that way ticks it.
