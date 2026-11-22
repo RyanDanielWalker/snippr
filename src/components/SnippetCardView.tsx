@@ -1,4 +1,8 @@
-import type { ComponentPropsWithRef, ReactNode } from "react";
+import type {
+  ComponentPropsWithRef,
+  ComponentPropsWithoutRef,
+  ReactNode,
+} from "react";
 import { lineWrapClass } from "@/lib/highlight";
 import CreatedDate from "@/components/CreatedDate";
 
@@ -18,27 +22,51 @@ type Props = {
   snippet: SnippetCardData;
   folderName?: string;
   footer?: ReactNode;
-} & ComponentPropsWithRef<"div">;
+  /**
+   * Makes the title a button, for a card that opens. Its click bubbles up to
+   * the card's own `onClick`, so a click anywhere and Enter or Space on the
+   * title take the same path (docs/adr/0072).
+   */
+  titleButton?: ComponentPropsWithoutRef<"button">;
+} & ComponentPropsWithRef<"article">;
 
 // What a snippet card looks like, with no behavior attached. The dashboard
 // wraps it with drag, edit, and delete; the landing page renders it as is.
+//
+// It's an <article>, a self-contained piece of the page, named by its title,
+// so a screen reader can say "Debounce, article" and jump between cards.
+// It holds its buttons instead of being one (docs/adr/0072).
 export default function SnippetCardView({
   snippet,
   folderName,
   footer,
+  titleButton,
   className = "",
-  ...divProps
+  ...articleProps
 }: Props) {
   return (
-    <div
-      {...divProps}
+    <article
+      aria-label={snippet.title}
+      {...articleProps}
       className={`bg-surface rounded-panel p-5 flex flex-col gap-3 border border-line ${className}`}
     >
       {/* The chips drop under the title when a narrow card can't fit both. */}
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-[1_1_12rem]">
           <h3 className="font-title text-fg font-medium break-words">
-            {snippet.title}
+            {titleButton ? (
+              // The card's cursor, not a button's arrow: a press on the
+              // title can still start a drag.
+              <button
+                type="button"
+                {...titleButton}
+                className="text-left break-words cursor-[inherit]"
+              >
+                {snippet.title}
+              </button>
+            ) : (
+              snippet.title
+            )}
           </h3>
           {snippet.description && (
             <p className="text-fg-subtle text-sm mt-0.5">
@@ -97,6 +125,6 @@ export default function SnippetCardView({
       )}
 
       {footer}
-    </div>
+    </article>
   );
 }

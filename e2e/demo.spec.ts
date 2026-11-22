@@ -38,12 +38,13 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText("This is a demo.")).toBeVisible();
 
-  // Cards are dnd-kit draggables, which is the most specific thing about them.
-  const cards = page.locator('[aria-roledescription="draggable"]');
+  // Each card is an article named by its title, and the title is the button
+  // that opens it (ADR 0072).
+  const cards = page.getByRole("article");
   const card = (title: string) =>
-    cards.filter({
-      has: page.getByRole("heading", { name: title, exact: true }),
-    });
+    page.getByRole("article", { name: title, exact: true });
+  const cardTitle = (title: string) =>
+    card(title).getByRole("button", { name: title, exact: true });
 
   // The seeded library.
   await expect(card("Debounce")).toBeVisible();
@@ -61,22 +62,26 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(tryList.getByText(/^Drag a card onto a folder/)).toBeVisible();
   await expect(tryList.getByText(/^Move a snippet to a folder/)).toBeHidden();
 
-  // A card opens from the keyboard, and says so instead of dnd-kit's
-  // "press the space bar" to pick it up. phone.spec.ts opens one by tapping.
-  await expect(card("Debounce")).toHaveAccessibleDescription(
+  // A card opens from the keyboard through its title button, which says so
+  // instead of dnd-kit's "press the space bar" to pick it up. The card itself
+  // isn't a button, so Edit, Copy, and Delete aren't inside one.
+  // phone.spec.ts opens one by tapping.
+  await expect(cardTitle("Debounce")).toHaveAccessibleDescription(
     /Press Enter to open/,
   );
-  await card("Debounce").focus();
+  await expect(card("Debounce")).not.toHaveAttribute("role");
+  await expect(card("Debounce")).not.toHaveAttribute("tabindex");
+  await cardTitle("Debounce").focus();
   await page.keyboard.press("Enter");
   const preview = page.getByRole("dialog", { name: "Debounce" });
   await expect(preview).toBeFocused();
 
   // Tab stays in the preview while it's open, and closing it puts focus back
-  // on the card, which only works once the page behind is live again.
+  // on the title, which only works once the page behind is live again.
   await expectTabToStayIn(page, preview);
   await page.keyboard.press("Escape");
   await expect(preview).toBeHidden();
-  await expect(card("Debounce")).toBeFocused();
+  await expect(cardTitle("Debounce")).toBeFocused();
 
   // Space too, like any button.
   await page.keyboard.press(" ");
@@ -84,8 +89,8 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(preview).toBeHidden();
 
-  // Enter on Edit inside the card bubbles up to the card, and opens the
-  // form without the preview.
+  // Enter on Edit opens the form without the preview, though a click on the
+  // card would open the preview.
   await card("Debounce")
     .getByRole("button", { name: "Edit", exact: true })
     .focus();
@@ -268,7 +273,7 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
     expect(await scrollsSideways(card(title).locator("pre"))).toBe(sideways);
 
     // The preview highlights in the browser, so wait for Shiki's <pre>.
-    await card(title).focus();
+    await cardTitle(title).focus();
     await page.keyboard.press("Enter");
     const longPreview = page.getByRole("dialog", { name: title });
     const pre = longPreview.locator(".shiki-wrapper pre");

@@ -6,7 +6,10 @@ import FolderSidebar from "@/components/FolderSidebar";
 import SnippetFormModal from "@/components/SnippetFormModal";
 import SnippetModal from "@/components/SnippetModal";
 import { ToastProvider } from "@/components/Toaster";
-import { unnamedControls } from "@/lib/accessible-names";
+import {
+  controlsInsideControls,
+  unnamedControls,
+} from "@/lib/accessible-names";
 import type { Folder, Snippet } from "@/lib/library-types";
 
 vi.mock("next/navigation", () => ({
@@ -90,6 +93,38 @@ describe("accessible names", () => {
       }),
     );
     expect(unnamedControls(html)).toEqual([]);
+  });
+
+  it("puts no control inside another anywhere on the dashboard", () => {
+    // Snippet cards were dnd-kit buttons with Edit, Copy, and Delete inside
+    // (docs/adr/0072). The folder rows and their ⋯ menus are in here too.
+    const html = render(
+      createElement(DashboardClient, {
+        now: Date.UTC(2026, 10, 18),
+        snippets: [snippet],
+        folders,
+        user: { email: "me@example.com", image: "", isGuest: false },
+      }),
+    );
+    expect(controlsInsideControls(html)).toEqual([]);
+  });
+
+  it("makes a card an article named by its title, opened by a title button", () => {
+    const html = render(
+      createElement(DashboardClient, {
+        now: Date.UTC(2026, 10, 18),
+        snippets: [snippet],
+        folders,
+        user: { email: "me@example.com", image: "", isGuest: false },
+      }),
+    );
+    const card = html.match(/<article[^>]*>/)?.[0] ?? "";
+    expect(card).toContain('aria-label="Debounce"');
+    expect(card).not.toMatch(/\srole=|\stabindex=/);
+    // The title button carries the instructions dnd-kit put on the card.
+    expect(html).toMatch(
+      /<h3[^>]*><button type="button" aria-describedby="[^"]+"[^>]*>Debounce<\/button><\/h3>/,
+    );
   });
 
   it("names the collapsed sidebar's expand button", () => {

@@ -63,6 +63,8 @@ flowchart LR
 
 Filtering by folder and keyword search both happen **in the browser** over the snippets already loaded, and keyword search stays inside the open folder. The page loads archived snippets too, and `DashboardClient` keeps them out of every view except Archive, which sits in the sidebar's Library group under All snippets and Unorganized ([0056](./adr/0056-archive-snippets-with-an-archivedat-column.md), [0058](./adr/0058-group-the-archive-with-the-library-and-give-sidebar-rows-icons.md)). Deleted snippets work the same way, under a Recently deleted row below Archive ([0067](./adr/0067-recently-deleted-a-30-day-trash-emptied-when-the-library-loads.md)). Like Archive, that row shows only while it holds something. Before it reads anything, the page empties the trash: it purges this user's snippets deleted over 30 days ago (see "Recently deleted" under the data model). Only AI search makes a network call, and it always searches the whole library: you reach for it when you don't remember where something is, and the MCP server's search works the same way. While its results are up the heading reads "Whole library" instead of the folder's name, and picking a folder clears them. Its results are kept as ids and looked up in the loaded snippets, so they follow edits, moves, and deletes like the rest of the grid.
 
+Each snippet is a card, and a card is an `<article>` named by its title ([0072](./adr/0072-snippet-cards-are-articles-opened-by-a-title-button.md)). An article is an HTML element for a self-contained piece of a page, like a post in a feed. A screen reader announces it ("Debounce, article") and can jump from one card to the next. The title inside the card's heading is a button, and it opens the preview. Edit, Copy, Archive, and Delete are buttons beside it. A click anywhere on the card opens the preview too: Enter or Space on the title fires a click, which bubbles up to the card's own `onClick`, so the keyboard and the mouse take the same path. The card used to be a button itself, because dnd-kit's `useDraggable` hands back `role="button"` and `tabIndex=0` for whatever you drag, which put the card's buttons inside a button. Now only the drag's pointer `listeners` go on the card, and dnd-kit's instructions for screen readers (`CARD_INSTRUCTIONS`) are attached to the title button. A test walks the dashboard's server-rendered HTML with `controlsInsideControls` and fails on any control inside another.
+
 Dragging a card is the other way to change where a snippet lives. A **drop target** is a place on the page that accepts a dragged item, registered with dnd-kit's `useDroppable`. The sidebar has one for each folder, one for Unorganized, and one for Archive. When a card is let go over one, `DashboardClient` asks `dropAction` (`src/lib/card-drop.ts`) what that means, and gets back one of three answers. For example, a card in Frontend dropped on Shell is `move` to Shell's id, dropped on Unorganized is `move` to no folder, and dropped on Archive is `archive`. Dropped back on Frontend, it's `none`, and nothing is sent. A move or an archive is one `PATCH` with only the field that changes, then a toast ("Moved to Shell." or "Archived."). Unorganized and Archive hide while they're empty, so the sidebar shows them while a card is being dragged, and keeps them up until the dropped card has landed. Without that, the first drop on either would have nowhere to go. Recently deleted isn't a drop target, because a drop would delete without the two-step confirm ([0067](./adr/0067-recently-deleted-a-30-day-trash-emptied-when-the-library-loads.md)).
 
 The sidebar can collapse to an *icon rail*, a 56px strip of squares, one per row, with each folder shown as its first letter ([0059](./adr/0059-collapse-the-sidebar-to-an-icon-rail.md)). For example, a folder named Shell becomes an "S" square whose tooltip says "Shell (2)". The squares are still drop targets, so dragging works the same with the sidebar collapsed. Renaming, deleting, and making folders wait for the full sidebar.
@@ -388,7 +390,7 @@ docker-compose.yml              Local Postgres for development and tests
 docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 docs/releases/                  Release notes, one file per GitHub Release (v1.1.md), published with gh release create
 e2e/
-├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
+├── demo.spec.ts                End-to-end test: demo, open a card from its title button and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
 ├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer as a dialog (focus in and back, the page inert, Escape in a rename leaves it open, a backdrop tap closes it), Things to try's Edit wording and its tick, delete from card, preview, and form in one press each, undo one from the toast, then restore one from Recently deleted, delete one forever, and empty the rest
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
@@ -433,8 +435,8 @@ src/
 │   ├── DashboardClient.tsx     Interactive dashboard, DnD context (tested: two server renders give the cards the same ids)
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
 │   ├── FolderSidebar.tsx       The Library panel (a drawer on phones): All snippets, Unorganized, Archive, Recently deleted, then folders indented under them; collapses to an icon rail whose rows are still drop targets (tested: when Unorganized and Archive show, including mid-drag, the count's color under a drag, the rail's names and letters, and that only the open row is `aria-current`)
-│   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; in Recently deleted, restore, copy, and delete forever; Enter or Space opens the preview
-│   ├── SnippetCardView.tsx     Card markup only, shared with the landing page
+│   ├── SnippetCard.tsx         Draggable card with edit, delete, copy; in Recently deleted, restore, copy, and delete forever; a click or its title button opens the preview
+│   ├── SnippetCardView.tsx     Card markup only, an <article> named by its title, shared with the landing page; the title is a button where the card opens
 │   ├── CreatedDate.tsx         A snippet's created date on the card and preview, in the reader's time zone
 │   ├── useTimeZone.ts          The browser's time zone, or UTC on the server and during hydration
 │   ├── SnippetModal.tsx        Preview, highlighted in the browser, plain code if that fails
@@ -447,7 +449,7 @@ src/
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page; a toast's button, and its timer pausing on hover or focus
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing
-│   ├── accessible-names.test.ts  Fields and buttons on the snippet forms, preview, and dashboard have names, except the folder name inputs, which only appear after a click
+│   ├── accessible-names.test.ts  Fields and buttons on the snippet forms, preview, and dashboard have names, except the folder name inputs, which only appear after a click; no control on the dashboard is inside another, and a card is an article opened by its title
 │   ├── LogoMark.tsx            The logo, colors passed in, and the Wordmark for page headers
 │   ├── ThemeToggle.tsx         ThemeProvider and the 8-bit toggle: cookie and data-theme, in the browser
 │   ├── ThingsToTry.tsx         The demo's checklist, TryProvider, and markTried(), which ticks a line in the cookie
@@ -457,14 +459,14 @@ src/
 │   ├── ai-describe.ts          /api/snippets/describe: sign-in, validation, rate limit, in order (tested)
 │   ├── ai-results.ts           AI search results as ids, looked up in the current snippets (tested)
 │   ├── ai-search.ts            /api/snippets/search and the MCP search tool (tested)
-│   ├── accessible-names.ts     unnamedControls: fields and buttons with no name in rendered HTML (tested)
+│   ├── accessible-names.ts     unnamedControls: fields and buttons with no name in rendered HTML; controlsInsideControls: a control inside another (tested)
 │   ├── ai-usage.ts             Atomic AI usage counters: per user, per guest address and day, all guests per day (SQL, tested against Postgres)
 │   ├── api-client.ts           callApi: how components call the API and read its errors (tested)
 │   ├── api-tokens.ts           MCP tokens: make, hash, revoke, sign in by Bearer header (tested)
 │   ├── api-errors.ts           The error shape, 401 and 429 responses, the withErrors wrapper (tested)
 │   ├── auth.ts                 NextAuth config, verified-email check, currentUser()
 │   ├── card-drop.ts            What dropping a card on a folder, Unorganized, or Archive does (tested)
-│   ├── card-keys.ts            Which keys open a card, and what screen readers hear on one (tested)
+│   ├── card-keys.ts            What screen readers hear on a card's title button (tested)
 │   ├── create-lock.ts          withUserLock: the per-user advisory lock every capped create runs under (docs/adr/0025)
 │   ├── contrast.ts             WCAG contrast ratio between two colors (tested)
 │   ├── clipboard.ts            copyText: whether a copy actually landed (tested)

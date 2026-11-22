@@ -22,9 +22,7 @@ const DESKTOP = { width: 1280, height: 800 };
 const PHONE = { width: 375, height: 667 };
 
 function card(page: Page, title: string) {
-  return page.locator('[aria-roledescription="draggable"]').filter({
-    has: page.getByRole("heading", { name: title, exact: true }),
-  });
+  return page.getByRole("article", { name: title, exact: true });
 }
 
 async function startDemo(page: Page) {

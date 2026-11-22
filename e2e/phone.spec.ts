@@ -15,11 +15,9 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   await page.getByRole("button", { name: "Try the demo" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  const cards = page.locator('[aria-roledescription="draggable"]');
+  // Each card is an article named by its title (ADR 0072).
   const card = (title: string) =>
-    cards.filter({
-      has: page.getByRole("heading", { name: title, exact: true }),
-    });
+    page.getByRole("article", { name: title, exact: true });
   await expect(card("Debounce")).toBeVisible();
 
   // Wider than the screen is what the old fixed sidebar did.
@@ -119,11 +117,10 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await page.getByRole("button", { name: "Try the demo" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  const cards = page.locator('[aria-roledescription="draggable"]');
+  // Each card is an article named by its title (ADR 0072).
+  const cards = page.getByRole("article");
   const card = (title: string) =>
-    cards.filter({
-      has: page.getByRole("heading", { name: title, exact: true }),
-    });
+    page.getByRole("article", { name: title, exact: true });
 
   // From the preview, in one tap. Undo in the toast brings it straight back.
   const moved = page.getByText("Moved to Recently deleted.");

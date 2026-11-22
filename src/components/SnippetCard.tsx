@@ -10,7 +10,6 @@ import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useArchiveSnippet } from "@/components/useArchiveSnippet";
 import { useRestoreSnippet } from "@/components/useRestoreSnippet";
-import { opensPreview } from "@/lib/card-keys";
 import { goneIn } from "@/lib/trash";
 import type { Snippet, Folder } from "@/lib/library-types";
 
@@ -42,6 +41,9 @@ export default function SnippetCard({
   const [showEdit, setShowEdit] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
+  // `attributes` would make the whole card a button (role, tabIndex), which
+  // put Edit, Copy, and Delete inside a button. Only its description is
+  // used, on the title (docs/adr/0072).
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: snippet.id,
@@ -106,19 +108,15 @@ export default function SnippetCard({
       <SnippetCardView
         ref={setNodeRef}
         style={style}
-        {...attributes}
-        // dnd-kit says aria-disabled whenever dragging is off, but an
-        // archived or deleted card still opens its preview, so it isn't disabled.
-        aria-disabled={fixed ? undefined : attributes["aria-disabled"]}
+        // A mouse drag starts anywhere on the card, the title included.
         {...listeners}
+        // A click anywhere opens the preview. So does Enter or Space on the
+        // title button, whose click bubbles up to here. Edit, Copy, and the
+        // rest stop theirs, so they never open it.
         onClick={() => !isDragging && setShowPreview(true)}
-        // After {...listeners}, so it would replace a KeyboardSensor's own
-        // onKeyDown. There isn't one yet (docs/adr/0007).
-        onKeyDown={(e) => {
-          if (!opensPreview(e.key, e.target === e.currentTarget)) return;
-          // Space would scroll the page too.
-          e.preventDefault();
-          setShowPreview(true);
+        titleButton={{
+          // "Press Enter to open the snippet...", from DndContext.
+          "aria-describedby": attributes["aria-describedby"],
         }}
         snippet={snippet}
         folderName={folderName}
