@@ -83,8 +83,8 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   await expect(drawer).toBeHidden();
 
   // A touch screen can't drag a card, so the checklist's first line points
-  // at the folder field in Edit instead (ADR 0049), and moving a snippet
-  // that way ticks it.
+  // at the card's Move button instead (ADR 0049, ADR 0073), and moving a
+  // snippet that way ticks it.
   const moveLine = page
     .getByRole("region", { name: "Things to try" })
     .getByRole("listitem")
@@ -94,15 +94,17 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   await expect(moveLine).not.toContainText("Done:");
   await page.getByRole("button", { name: "Folders", exact: true }).click();
   await sidebar.getByRole("button", { name: /^All snippets/ }).click();
-  await card("Retry with backoff").getByRole("heading").click();
-  await page
-    .getByRole("dialog", { name: "Retry with backoff" })
-    .getByRole("button", { name: "Edit", exact: true })
+  await card("Retry with backoff")
+    .getByRole("button", { name: "Move", exact: true })
     .click();
-  const form = page.getByRole("dialog", { name: "Edit snippet" });
-  await form.getByLabel("Folder", { exact: true }).selectOption("Frontend");
-  await form.getByRole("button", { name: /^Save/ }).click();
-  await expect(form).toBeHidden();
+  await card("Retry with backoff")
+    .getByRole("group", { name: "Move to" })
+    .getByRole("button", { name: "Frontend" })
+    .click();
+  await expect(page.getByText("Moved to Frontend.")).toBeVisible();
+  await expect(
+    card("Retry with backoff").getByText("Frontend", { exact: true }),
+  ).toBeVisible();
   await expect(moveLine).toContainText("Done:");
 });
 

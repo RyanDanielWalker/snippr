@@ -59,6 +59,26 @@ export function placeName(
   return folders.find((f) => f.id === targetId)?.name ?? "a folder";
 }
 
+export type MoveChoice = { id: string; name: string; current: boolean };
+
+/**
+ * The places a card's Move menu offers, in the sidebar's order: Unorganized,
+ * then each folder (docs/adr/0073). Each id is the drop id a drag onto that
+ * row would give, so a pick goes through `dropAction` like a drop does. The
+ * place the snippet is in now is marked `current`, and picking it does
+ * nothing. Archive isn't offered: the card has its own Archive button.
+ */
+export function moveChoices(
+  folders: { id: string; name: string }[],
+  folderId: string | null | undefined,
+): MoveChoice[] {
+  const here = folderId ?? null;
+  return [
+    { id: UNORGANIZED_DROP_ID, name: "Unorganized", current: here === null },
+    ...folders.map((f) => ({ id: f.id, name: f.name, current: here === f.id })),
+  ];
+}
+
 /**
  * What a screen reader hears during a mouse drag. dnd-kit's defaults read
  * out ids ("Picked up draggable item cm2…"), and a card's id is its database

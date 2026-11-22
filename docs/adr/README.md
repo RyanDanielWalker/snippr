@@ -104,5 +104,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0070](./0070-one-press-delete-with-undo-and-an-empty-button.md) | One-press delete with Undo, and an Empty button | Accepted |
 | [0071](./0071-close-1-4-and-scope-1-5-to-accessibility.md) | Close 1.4, and scope 1.5 to accessibility | Accepted |
 | [0072](./0072-snippet-cards-are-articles-opened-by-a-title-button.md) | Snippet cards are articles, opened by a title button | Accepted |
+| [0073](./0073-move-a-snippet-from-a-move-menu-not-a-keyboard-drag.md) | Move a snippet from a Move menu, not a keyboard drag | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

@@ -194,6 +194,46 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(card("Debounce")).toBeVisible();
   await expect(cards).toHaveCount(2);
 
+  // The keyboard's way to move a snippet: Move on the card opens a list of
+  // places, with focus on the first (ADR 0073). Escape closes it and puts
+  // focus back on Move.
+  const move = card("Debounce").getByRole("button", {
+    name: "Move",
+    exact: true,
+  });
+  const moveTo = card("Debounce").getByRole("group", { name: "Move to" });
+  await move.focus();
+  await page.keyboard.press("Enter");
+  await expect(move).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    moveTo.getByRole("button", { name: "Unorganized" }),
+  ).toBeFocused();
+  await expect(
+    moveTo.getByRole("button", { name: "Frontend" }),
+  ).toHaveAttribute("aria-current", "true");
+  await page.keyboard.press("Escape");
+  await expect(moveTo).toBeHidden();
+  await expect(move).toBeFocused();
+
+  // Up from the first place wraps to the last, and Enter moves it there.
+  // The card leaves Frontend, so it leaves this view.
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("ArrowUp");
+  await expect(moveTo.getByRole("button", { name: "Shell" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("Moved to Shell.")).toBeVisible();
+  await expect(card("Debounce")).toBeHidden();
+  await expect(cards).toHaveCount(1);
+
+  // And back, with the mouse this time.
+  await sidebar.getByRole("button", { name: /^Shell/ }).click();
+  await move.click();
+  await moveTo.getByRole("button", { name: "Frontend" }).click();
+  await expect(page.getByText("Moved to Frontend.")).toBeVisible();
+  await expect(card("Debounce")).toBeHidden();
+  await frontend.click();
+  await expect(cards).toHaveCount(2);
+
   // Picks a card up and carries it far enough for dnd-kit to count it as a drag.
   async function pickUp(title: string) {
     // A drop animates for a moment, and while that overlay covers the card

@@ -4,6 +4,7 @@ import {
   UNORGANIZED_DROP_ID,
   dragAnnouncements,
   dropAction,
+  moveChoices,
   placeName,
 } from "./card-drop";
 
@@ -103,6 +104,41 @@ describe("placeName", () => {
 
   it("never reads out an id it doesn't know", () => {
     expect(placeName("cm2abc", folders)).toBe("a folder");
+  });
+});
+
+describe("moveChoices", () => {
+  it("offers Unorganized, then each folder, marking where the snippet is", () => {
+    expect(moveChoices(folders, "f1")).toEqual([
+      { id: UNORGANIZED_DROP_ID, name: "Unorganized", current: false },
+      { id: "f1", name: "Frontend", current: true },
+      { id: "f2", name: "Shell", current: false },
+    ]);
+  });
+
+  it("marks Unorganized for a snippet in no folder", () => {
+    for (const folderId of [null, undefined]) {
+      expect(moveChoices(folders, folderId)[0].current).toBe(true);
+    }
+  });
+
+  it("gives ids a drop understands, so a pick moves like a drag", () => {
+    const [unorganized, frontend] = moveChoices(folders, "f2");
+    expect(dropAction({ folderId: "f2" }, unorganized.id, folders)).toEqual({
+      kind: "move",
+      folderId: null,
+      toast: "Moved to Unorganized.",
+    });
+    expect(dropAction({ folderId: "f2" }, frontend.id, folders)).toMatchObject({
+      kind: "move",
+      folderId: "f1",
+    });
+  });
+
+  it("doesn't offer Archive, which has its own button", () => {
+    expect(moveChoices(folders, null).map((c) => c.id)).not.toContain(
+      ARCHIVE_DROP_ID,
+    );
   });
 });
 

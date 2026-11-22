@@ -145,13 +145,13 @@ export default function ThingsToTry({
       <ul className="grid gap-x-6 gap-y-2 lg:grid-cols-2">
         <Line done={done("drag")}>
           {/* Touch screens can't drag a card (DashboardClient's sensors), so
-              they get the other way to move one. */}
+              they get the other way to move one (docs/adr/0073). */}
           <span className="pointer-coarse:hidden">
             Drag a card onto a folder in the sidebar. Nothing on it says it
             moves, but it does.
           </span>
           <span className="hidden pointer-coarse:inline">
-            Move a snippet to a folder: open it, press Edit, and pick one.
+            Move a snippet to a folder: press Move on its card and pick one.
           </span>
         </Line>
         <Line done={done("search")}>

@@ -10,6 +10,6 @@ describe("CARD_INSTRUCTIONS", () => {
 
   it("says how to open a card and how to move one", () => {
     expect(CARD_INSTRUCTIONS).toMatch(/Enter/);
-    expect(CARD_INSTRUCTIONS).toMatch(/folder field in Edit/);
+    expect(CARD_INSTRUCTIONS).toMatch(/use Move/);
   });
 });

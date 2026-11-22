@@ -131,7 +131,7 @@ export default function DashboardClient({
 
   // Mouse drags only, in practice. On a touch screen the browser takes the same
   // gesture as a scroll and cancels the pointer, so dragging never starts and
-  // the page still scrolls. A phone moves snippets with the folder field in Edit.
+  // the page still scrolls. A phone moves snippets with the card's Move button.
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -248,12 +248,14 @@ export default function DashboardClient({
     const { active, over } = event;
     if (!over) return;
 
-    const snippetId = active.id as string;
-    const dropTargetId = over.id as string;
+    const snippet = snippets.find((s) => s.id === active.id);
+    if (snippet) moveSnippet(snippet, over.id as string);
+  }
 
-    const snippet = snippets.find((s) => s.id === snippetId);
-    if (!snippet) return;
-
+  // A drop on a sidebar row, or a pick in a card's Move menu: both give the
+  // id of the row, and both move the snippet the same way (docs/adr/0073).
+  function moveSnippet(snippet: Snippet, dropTargetId: string) {
+    if (movingIds.has(snippet.id)) return;
     const action = dropAction(snippet, dropTargetId, folders);
     if (action.kind === "none") return;
 
@@ -630,6 +632,7 @@ export default function DashboardClient({
                       folders={folders}
                       moving={movingIds.has(snippet.id)}
                       now={now}
+                      onMove={(targetId) => moveSnippet(snippet, targetId)}
                     />
                   ))}
                 </div>

@@ -15,7 +15,7 @@ Snippr is a portfolio project, so the reasoning is part of what's on show. Every
 - **AI search.** Turn on ✦ AI search, describe the code, and press Enter. Claude reads your library and returns what matches, even when none of your words are in the snippet. With it off, the box filters by title, tag, and language as you type.
 - **AI descriptions.** Paste code, press ✦ Generate, and Claude writes one sentence about what it does.
 - **Prompts too.** Save one under the `prompt` language. It stays plain text, long lines wrap, and Claude describes it without following it.
-- **Folders.** Drag a card onto a folder. On a phone, where a finger drag scrolls, the folder field in Edit does the same job.
+- **Folders.** Drag a card onto a folder, or press Move on the card and pick one. Move works from the keyboard and on a phone, where a finger drag scrolls.
 - **An MCP server.** Claude Code, Cursor, and other MCP clients can search, read, and save snippets in your library.
 - **Two themes.** A dark default and an 8-bit one, remembered between visits.
 - **Highlighted code** on every card and in the preview, by Shiki.

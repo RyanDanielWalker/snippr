@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import SnippetFormModal from "@/components/SnippetFormModal";
 import SnippetModal from "@/components/SnippetModal";
 import SnippetCardView from "@/components/SnippetCardView";
+import MoveMenu from "@/components/MoveMenu";
 import { useCopy } from "@/components/useCopy";
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useArchiveSnippet } from "@/components/useArchiveSnippet";
@@ -18,6 +19,7 @@ export default function SnippetCard({
   folders,
   moving = false,
   now,
+  onMove,
 }: {
   snippet: Snippet;
   folders: Folder[];
@@ -28,6 +30,11 @@ export default function SnippetCard({
    * browser's clock, so the server's HTML and the first render agree.
    */
   now: number;
+  /**
+   * Moves the snippet to a drop target's id, the way a drag does. Without
+   * it, or with no folders, the card has no Move button.
+   */
+  onMove?: (targetId: string) => void;
 }) {
   const { copy, copied } = useCopy(snippet.code);
   const isArchived = Boolean(snippet.archivedAt);
@@ -180,6 +187,16 @@ export default function SnippetCard({
                   >
                     Edit
                   </button>
+                  {/* Archived cards can't move, as they can't be dragged.
+                      With no folders, Unorganized is the only place. */}
+                  {onMove && !isArchived && folders.length > 0 && (
+                    <MoveMenu
+                      folders={folders}
+                      folderId={snippet.folderId}
+                      onMove={onMove}
+                      disabled={moving}
+                    />
+                  )}
                   <button
                     onClick={handleCopy}
                     onPointerDown={(e) => e.stopPropagation()}
