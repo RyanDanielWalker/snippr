@@ -624,7 +624,11 @@ export default function FolderSidebar({
                   onBlur={() => handleRename(folder, "blur")}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleRename(folder, "enter");
-                    if (e.key === "Escape" && !saving) cancelEdit();
+                    if (e.key === "Escape") {
+                      // Handled here, so the phone drawer doesn't close too.
+                      e.preventDefault();
+                      if (!saving) cancelEdit();
+                    }
                   }}
                   readOnly={saving}
                   aria-busy={saving}
@@ -703,7 +707,11 @@ export default function FolderSidebar({
               onBlur={() => handleCreate("blur")}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleCreate("enter");
-                if (e.key === "Escape" && !saving) cancelCreate();
+                if (e.key === "Escape") {
+                  // Handled here, so the phone drawer doesn't close too.
+                  e.preventDefault();
+                  if (!saving) cancelCreate();
+                }
               }}
               readOnly={saving}
               aria-busy={saving}

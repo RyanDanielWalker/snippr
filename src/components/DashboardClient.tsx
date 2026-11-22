@@ -136,7 +136,9 @@ export default function DashboardClient({
   useEffect(() => {
     if (!foldersOpen) return;
     function handleEsc(e: KeyboardEvent) {
-      if (e.key === "Escape") setFoldersOpen(false);
+      // A folder name being typed in the drawer takes Escape to cancel
+      // itself, and marks it handled so the drawer stays open.
+      if (e.key === "Escape" && !e.defaultPrevented) setFoldersOpen(false);
     }
     // Past md the sidebar is back in the page. Close the drawer rather than
     // leave it floating over the desktop layout, say after rotating a tablet.
