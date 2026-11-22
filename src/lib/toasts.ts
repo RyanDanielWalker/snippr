@@ -70,3 +70,16 @@ export function toastDuration(
   if (tone === "error") return null;
   return hasAction ? ACTION_TOAST_MS : INFO_TOAST_MS;
 }
+
+/**
+ * Room a dialog leaves at the bottom of a phone's screen, so a toast lands
+ * in it instead of on the dialog's buttons (docs/adr/0074).
+ *
+ * Below the `sm` width (640px), toasts sit 1rem above the bottom of the
+ * screen and span its width (`src/components/Toaster.tsx`). One toast is
+ * about 3rem tall, so 6rem (`pb-24`) clears it with a gap. A Tailwind class
+ * rather than a number, so the preview, the form, and the folder drawer
+ * share one value. `max-sm:` applies it only below 640px, where toasts are
+ * full width.
+ */
+export const TOAST_ROOM = "max-sm:pb-24";

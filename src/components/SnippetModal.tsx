@@ -11,6 +11,7 @@ import CreatedDate from "@/components/CreatedDate";
 import { highlightCode, lineWrapClass } from "@/lib/highlight";
 import type { Snippet } from "@/lib/library-types";
 import { bodyWording } from "@/lib/snippet-form";
+import { TOAST_ROOM } from "@/lib/toasts";
 
 export default function SnippetModal({
   snippet,
@@ -61,7 +62,9 @@ export default function SnippetModal({
 
   return (
     <div
-      className="fixed inset-0 bg-overlay flex items-center justify-center z-50 p-4"
+      // On a phone it ends above the toasts, and can be as tall as what's
+      // left; a toast would cover Edit and Delete otherwise (docs/adr/0074).
+      className={`fixed inset-0 bg-overlay flex items-center justify-center z-50 p-4 ${TOAST_ROOM}`}
       onClick={onClose}
     >
       <div
@@ -70,7 +73,7 @@ export default function SnippetModal({
         aria-modal="true"
         aria-label={snippet.title}
         tabIndex={-1}
-        className="outline-none bg-surface rounded-panel w-full max-w-4xl max-h-[85vh] flex flex-col border border-line"
+        className="outline-none bg-surface rounded-panel w-full max-w-4xl max-h-full sm:max-h-[85vh] flex flex-col border border-line"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 p-4 sm:p-6 border-b border-line">

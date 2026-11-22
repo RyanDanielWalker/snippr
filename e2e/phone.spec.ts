@@ -1,4 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
+
+// On a phone, a toast spans the bottom of the screen, so a dialog ends above
+// it and its buttons stay tappable while one shows (ADR 0074). `toastText`
+// is the toast's message; the toast is the box around it.
+async function expectAboveToast(button: Locator, toastText: Locator) {
+  const buttonBox = await button.boundingBox();
+  const toastBox = await toastText.locator("..").boundingBox();
+  if (!buttonBox || !toastBox) throw new Error("Button or toast not on screen");
+  expect(buttonBox.y + buttonBox.height).toBeLessThanOrEqual(toastBox.y);
+}
 
 // The dashboard on a phone: nothing scrolls sideways, and the folders open in
 // a drawer instead of sitting beside the cards.
@@ -143,14 +153,27 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await expect(preview).toBeHidden();
   await expect(card("Debounce")).toBeHidden();
 
-  // From the edit form, reached through the preview.
+  // From the edit form, reached through the preview. The delete's toast is
+  // still up, and the buttons of both dialogs sit above it.
   await card("Retry with backoff").getByRole("heading").click();
-  await page
+  const edit = page
     .getByRole("dialog", { name: "Retry with backoff" })
-    .getByRole("button", { name: "Edit", exact: true })
-    .click();
+    .getByRole("button", { name: "Edit", exact: true });
+  await expect(moved).toBeVisible();
+  await expectAboveToast(edit, moved);
+  await edit.click();
   const form = page.getByRole("dialog", { name: "Edit snippet" });
-  await form.getByRole("button", { name: "Delete", exact: true }).click();
+  const formDelete = form.getByRole("button", { name: "Delete", exact: true });
+  // The form is taller than a phone, so it scrolls. Scrolled to its end, the
+  // room below it lifts Delete clear of the toast. Before, it couldn't go
+  // any higher than the bottom of the screen.
+  await form.evaluate((dialog) => {
+    const overlay = dialog.parentElement!;
+    overlay.scrollTop = overlay.scrollHeight;
+  });
+  await expect(moved).toBeVisible();
+  await expectAboveToast(formDelete, moved);
+  await formDelete.click();
   await expect(form).toBeHidden();
   await expect(card("Retry with backoff")).toBeHidden();
 

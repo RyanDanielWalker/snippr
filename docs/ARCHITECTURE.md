@@ -178,6 +178,8 @@ In the browser, components call the API through `callApi` (`src/lib/api-client.t
 
 A toast can carry one button, called an *action*. The only one so far is Undo after a delete ([0070](./adr/0070-one-press-delete-with-undo-and-an-empty-button.md)). For example, `toast("Moved to Recently deleted.", "info", { label: "Undo", run })` shows the message with an Undo button, and pressing it closes the toast and calls `run`. The rules for it live in `src/lib/toasts.ts`, with tests. A plain info toast stays 4 seconds. One with a button stays 8, since there has to be time to read it and then reach the button. Its timer also pauses while the pointer is over it or focus is inside it, and starts again from the top when both leave. Toasts with the same text are normally merged into one, so five failed drags show one toast. Toasts with a button never are, because merging two Undo toasts would lose the first one's Undo. Focus doesn't move to a toast, so a keyboard user may not reach Undo in time. Restore in Recently deleted is the way back that doesn't depend on timing.
 
+On a phone, toasts span the bottom of the screen, which is where the preview and the edit form keep their buttons. So below 640px those dialogs, and the folder drawer, leave 6rem of room at the bottom, and a toast lands there instead of on a button ([0074](./adr/0074-leave-room-for-toasts-at-the-bottom-of-phone-dialogs.md)). The room is one Tailwind class, `TOAST_ROOM` in `src/lib/toasts.ts`: `max-sm:pb-24`, meaning 6rem of bottom padding only below the `sm` width. For example, right after deleting a snippet from its preview, the "Moved to Recently deleted." toast shows for 8 seconds. If you open another snippet in that time, its Edit and Delete sit above the toast and can be tapped at once. The edit form is taller than a phone screen and scrolls, so its buttons clear the toast once it's scrolled to the end.
+
 ## Data model
 
 ```mermaid
@@ -395,7 +397,7 @@ docs/images/                    The README's screenshots and GIF, made by e2e/re
 docs/releases/                  Release notes, one file per GitHub Release (v1.1.md), published with gh release create
 e2e/
 ├── demo.spec.ts                End-to-end test: demo, open a card from its title button and reach a folder's ⋯ from the keyboard, create, search, drag into a folder, move a card with Move from the keyboard and back with the mouse, drag back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
-├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer as a dialog (focus in and back, the page inert, Escape in a rename leaves it open, a backdrop tap closes it), Things to try's Move wording, and its tick from Move, delete from card, preview, and form in one press each, undo one from the toast, then restore one from Recently deleted, delete one forever, and empty the rest
+├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer as a dialog (focus in and back, the page inert, Escape in a rename leaves it open, a backdrop tap closes it), Things to try's Move wording, and its tick from Move, delete from card, preview, and form in one press each, undo one from the toast, the next dialog's buttons sitting above that toast, then restore one from Recently deleted, delete one forever, and empty the rest
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
 playwright.config.ts            Runs it against a production build on port 3100
@@ -514,7 +516,7 @@ src/
 │   ├── things-to-try.ts        The demo checklist's items and its cookie: read, tick, close, write (tested)
 │   ├── theme-tokens.ts         The default theme's colors for the generated images (tested: match globals.css, WCAG AA in both themes, no palette classes)
 │   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
-│   ├── toasts.ts               Toast queue: limit, duplicates (never merging one with a button), how long each stays (tested)
+│   ├── toasts.ts               Toast queue: limit, duplicates (never merging one with a button), how long each stays (tested); TOAST_ROOM, the room phone dialogs leave for toasts
 │   ├── trash.ts                Recently deleted's 30 days, its limit, and a card's countdown (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id and user.isGuest to the Session type, and guestExpiresAt to the adapter's user

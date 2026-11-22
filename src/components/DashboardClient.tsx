@@ -25,6 +25,7 @@ import ThingsToTry, {
   useTryState,
 } from "@/components/ThingsToTry";
 import { useToast } from "@/components/Toaster";
+import { TOAST_ROOM } from "@/lib/toasts";
 import { useDialogFocus } from "@/components/useDialogFocus";
 import {
   snippetCap,
@@ -485,7 +486,8 @@ export default function DashboardClient({
               tabIndex={foldersOpen ? -1 : undefined}
               className={
                 foldersOpen
-                  ? "fixed inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-page border-r border-line p-4 outline-none"
+                  ? // The last folder scrolls clear of the toasts (docs/adr/0074).
+                    `fixed inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-page border-r border-line p-4 outline-none ${TOAST_ROOM}`
                   : "hidden md:block"
               }
             >

@@ -15,6 +15,7 @@ import {
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
 import { useMarkTried } from "@/components/ThingsToTry";
+import { TOAST_ROOM } from "@/lib/toasts";
 
 /**
  * The form for a new snippet and for editing one. Pass `snippet` to edit it;
@@ -115,9 +116,10 @@ export default function SnippetFormModal({
 
   // m-auto rather than centering the overlay: a form taller than the screen
   // (a phone with its keyboard up) then scrolls instead of losing its top.
+  // On a phone it scrolls clear of the toasts too (docs/adr/0074).
   return (
     <div
-      className="fixed inset-0 bg-overlay flex overflow-y-auto z-50 p-4"
+      className={`fixed inset-0 bg-overlay flex overflow-y-auto z-50 p-4 ${TOAST_ROOM}`}
       onClick={() => {
         if (!dirty) onClose();
       }}
