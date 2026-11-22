@@ -25,6 +25,7 @@ import ThingsToTry, {
   useTryState,
 } from "@/components/ThingsToTry";
 import { useToast } from "@/components/Toaster";
+import { useDialogFocus } from "@/components/useDialogFocus";
 import {
   snippetCap,
   snippetCapMessage,
@@ -104,6 +105,10 @@ export default function DashboardClient({
   );
   // Below md the sidebar is a drawer instead (see the wrapper around it).
   const [foldersOpen, setFoldersOpen] = useState(false);
+  // While it's open, the drawer is a dialog like the preview: focus moves in,
+  // Tab and a screen reader stay inside, and focus goes back to the Folders
+  // button when it closes (docs/adr/0071).
+  const drawerRef = useDialogFocus<HTMLDivElement>(foldersOpen);
   const [draggedSnippet, setDraggedSnippet] = useState<Snippet | null>(null);
   const [movingIds, setMovingIds] = useState<ReadonlySet<string>>(new Set());
   const [, startMoving] = useTransition();
@@ -364,6 +369,7 @@ export default function DashboardClient({
             <button
               onClick={() => setFoldersOpen(true)}
               aria-expanded={foldersOpen}
+              aria-haspopup="dialog"
               className="md:hidden text-sm case-control text-fg-muted hover:text-fg bg-surface border border-line rounded-box px-3 py-1.5"
             >
               Folders
@@ -452,17 +458,27 @@ export default function DashboardClient({
         >
           <div className="flex gap-8">
             {foldersOpen && (
+              // Beside the drawer, not around it, so it's marked to stay
+              // clickable while the rest of the page is inert.
               <div
+                data-backdrop
                 className="fixed inset-0 z-40 bg-overlay"
                 onClick={() => setFoldersOpen(false)}
               />
             )}
             {/* One sidebar for every width: rendering a second copy for the
-                drawer would register each folder as a drop target twice. */}
+                drawer would register each folder as a drop target twice.
+                So the same element becomes a dialog only while it's the
+                drawer, and is a plain part of the page otherwise. */}
             <div
+              ref={drawerRef}
+              role={foldersOpen ? "dialog" : undefined}
+              aria-modal={foldersOpen ? true : undefined}
+              aria-label={foldersOpen ? "Folders" : undefined}
+              tabIndex={foldersOpen ? -1 : undefined}
               className={
                 foldersOpen
-                  ? "fixed inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-page border-r border-line p-4"
+                  ? "fixed inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-page border-r border-line p-4 outline-none"
                   : "hidden md:block"
               }
             >

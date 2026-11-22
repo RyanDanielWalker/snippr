@@ -39,10 +39,16 @@ export interface InertTarget {
  *
  * It walks from the dialog up to `root` and marks the siblings at each level,
  * which leaves the dialog where it is in the DOM instead of moving it to a
- * portal. Two kinds of sibling are left alone: live regions, so a toast
- * shown while the dialog is open is still announced, and anything already
- * inert, which belongs to whoever made it so (an outer dialog, say) and stays
- * that way after this one closes.
+ * portal. Three kinds of sibling are left alone: live regions, so a toast
+ * shown while the dialog is open is still announced; the dialog's backdrop,
+ * marked `data-backdrop`, so a tap on it can still close the dialog; and
+ * anything already inert, which belongs to whoever made it so (an outer
+ * dialog, say) and stays that way after this one closes.
+ *
+ * The backdrop only needs marking when it sits beside the dialog. The phone
+ * folder drawer's does, because the drawer is the sidebar itself and can't be
+ * moved inside one. The preview's backdrop is the dialog's parent, so it's
+ * never a sibling and never made inert.
  *
  * Only the page as it is when the dialog opens: something added beside it
  * later isn't marked.
@@ -59,7 +65,8 @@ export function inertOutside(
       if (
         sibling === node ||
         sibling.hasAttribute("inert") ||
-        sibling.hasAttribute("aria-live")
+        sibling.hasAttribute("aria-live") ||
+        sibling.hasAttribute("data-backdrop")
       )
         continue;
       sibling.setAttribute("inert", "");

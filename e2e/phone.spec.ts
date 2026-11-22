@@ -42,11 +42,40 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   ).toBeVisible();
   await expect(card("Debounce")).toBeVisible();
 
-  // Escape closes it too.
-  await page.getByRole("button", { name: "Folders", exact: true }).click();
-  await expect(sidebar).toBeVisible();
+  // The open drawer is a dialog: focus moves into it, and the page behind
+  // it is inert, so a screen reader can't wander past the last folder into
+  // the cards (ADR 0071).
+  const foldersButton = page.getByRole("button", {
+    name: "Folders",
+    exact: true,
+  });
+  const drawer = page.getByRole("dialog", { name: "Folders" });
+  await foldersButton.click();
+  await expect(drawer).toBeVisible();
+  await expect(drawer).toBeFocused();
+  expect(
+    await card("Debounce").evaluate((el) => el.closest("[inert]") !== null),
+  ).toBe(true);
+
+  // Escape while renaming a folder cancels the rename, not the drawer.
+  await drawer
+    .getByRole("button", { name: "Rename or delete Frontend" })
+    .click();
+  await drawer.getByRole("button", { name: "Rename", exact: true }).click();
+  const rename = drawer.getByRole("textbox", { name: "New name for Frontend" });
+  await expect(rename).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(rename).toBeHidden();
+  await expect(drawer).toBeVisible();
+
+  // Then Escape closes it, focus goes back to the Folders button, and the
+  // page is usable again.
   await page.keyboard.press("Escape");
   await expect(sidebar).toBeHidden();
+  await expect(foldersButton).toBeFocused();
+  expect(
+    await card("Debounce").evaluate((el) => el.closest("[inert]") !== null),
+  ).toBe(false);
 
   // A touch screen can't drag a card, so the checklist's first line points
   // at the folder field in Edit instead (ADR 0049), and moving a snippet

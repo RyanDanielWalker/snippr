@@ -10,13 +10,17 @@ import { focusDialog, inertOutside } from "@/lib/dialog-focus";
  * the page outside the dialog is inert, so Tab stays inside.
  *
  * The ref goes on the `role="dialog"` element or something inside it.
+ *
+ * `open` is for an element that stays mounted while closed, like the phone
+ * folder drawer, which is the sidebar itself at every width. A dialog that
+ * mounts when it opens, like the preview, leaves it out.
  */
-export function useDialogFocus<T extends HTMLElement>() {
+export function useDialogFocus<T extends HTMLElement>(open = true) {
   const ref = useRef<T>(null);
 
   useEffect(() => {
     const target = ref.current;
-    if (!target) return;
+    if (!open || !target) return;
     const opener =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
@@ -31,7 +35,7 @@ export function useDialogFocus<T extends HTMLElement>() {
       restorePage();
       restoreFocus();
     };
-  }, []);
+  }, [open]);
 
   return ref;
 }

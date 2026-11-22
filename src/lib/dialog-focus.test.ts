@@ -123,6 +123,18 @@ describe("inertOutside", () => {
     expect(inertNames([page.toasts, status])).toEqual([]);
   });
 
+  it("leaves a backdrop beside the dialog clickable, like the folder drawer's", () => {
+    const page = dashboard();
+    const backdrop = element("backdrop", { "data-backdrop": "" });
+    const drawer = element("drawer");
+    append(page.grid, backdrop, drawer);
+    inertOutside(drawer, page.body);
+    expect(inertNames([backdrop, page.card, page.overlay])).toEqual([
+      "card",
+      "overlay",
+    ]);
+  });
+
   it("gives the page back when the dialog closes", () => {
     const page = dashboard();
     inertOutside(page.dialog, page.body)();

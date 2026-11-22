@@ -69,6 +69,16 @@ The sidebar can collapse to an *icon rail*, a 56px strip of squares, one per row
 
 The open row is marked twice, once for the eye and once for a screen reader. The accent background is a CSS class, and a screen reader can't see a class. So the same button also carries `aria-current="true"`, an attribute that makes a screen reader say "current" after the button's name. For example, with Shell open, tabbing down the sidebar reads something like "All snippets 9, button", then "Shell 2, current, button". The exact words vary by screen reader. That matters most on All snippets, which has no heading above the cards to say where you are. It's on every row in the full sidebar, the phone drawer, and the rail. The value is `"true"` rather than `"page"`, because picking a row changes what the dashboard shows, not the URL.
 
+Below the `md` width (768px) the sidebar is a drawer that slides over the cards, opened by the Folders button. While it's open it's a **dialog**, the same way the preview and the edit form are ([0071](./adr/0071-close-1-4-and-scope-1-5-to-accessibility.md)). For a screen reader, a dialog is a part of the page that has taken over until it closes. Three things make it one:
+
+- **The role.** The drawer gets `role="dialog"`, `aria-modal="true"`, and the name "Folders", so VoiceOver says something like "Folders, dialog" as it opens.
+- **Focus.** `useDialogFocus` moves focus onto the drawer when it opens and back to the Folders button when it closes.
+- **An inert page.** `inertOutside` (`src/lib/dialog-focus.ts`) sets the HTML `inert` attribute on everything outside the drawer. An inert element can't be clicked, focused, or read by a screen reader. For example, before this a VoiceOver user could swipe past the last folder and land on the cards behind the dimmed backdrop. Now the swipe stops at the drawer's edge.
+
+Two details differ from the preview. First, the drawer is the sidebar itself, one element at every width, because a second copy would register every folder as a drop target twice. So the dialog attributes are only set while it's open, and `useDialogFocus` takes an `open` flag instead of acting when the component mounts. Second, the dimmed backdrop sits beside the drawer instead of around it, so `inertOutside` would make it inert too, and a tap on it would stop closing the drawer. It carries a `data-backdrop` attribute, and `inertOutside` skips anything with one.
+
+Escape closes the drawer, except while a folder name is being typed in it. There, Escape cancels the rename or the new folder, and marks the key press handled (`preventDefault`), so the drawer's Escape listener leaves it open. Before, one press did both.
+
 ### Changing data (write path)
 
 ```mermaid
@@ -379,7 +389,7 @@ docs/images/                    The README's screenshots and GIF, made by e2e/re
 docs/releases/                  Release notes, one file per GitHub Release (v1.1.md), published with gh release create
 e2e/
 ├── demo.spec.ts                End-to-end test: demo, open a card and reach a folder's ⋯ from the keyboard, create, search, drag into a folder and back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
-├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer, Things to try's Edit wording and its tick, delete from card, preview, and form in one press each, undo one from the toast, then restore one from Recently deleted, delete one forever, and empty the rest
+├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer as a dialog (focus in and back, the page inert, Escape in a rename leaves it open), Things to try's Edit wording and its tick, delete from card, preview, and form in one press each, undo one from the toast, then restore one from Recently deleted, delete one forever, and empty the rest
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
 playwright.config.ts            Runs it against a production build on port 3100
@@ -433,7 +443,7 @@ src/
 │   ├── useDeleteSnippet.ts     Delete shared by the card, preview, and edit form: one press to Recently deleted with Undo in the toast, or two-step forever from there
 │   ├── useRestoreSnippet.ts    Restore from Recently deleted, shared by the card and preview
 │   ├── EmptyTrashButton.tsx    Two-step Empty beside the Recently deleted heading
-│   ├── useDialogFocus.ts       Focus into the preview and form, the page behind inert while open, focus back on close
+│   ├── useDialogFocus.ts       Focus into the preview, the form, and the phone folder drawer, the page behind inert while open, focus back on close
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page; a toast's button, and its timer pausing on hover or focus
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing
@@ -460,7 +470,7 @@ src/
 │   ├── clipboard.ts            copyText: whether a copy actually landed (tested)
 │   ├── demo.ts                 Starting a demo: seed, IP limit, cookie name (tested)
 │   ├── demo-store.ts           Database side of starting a demo, and its cleanup (cleanup tested against Postgres)
-│   ├── dialog-focus.ts         focusDialog: focus in and back to an opener still on the page; inertOutside (tested)
+│   ├── dialog-focus.ts         focusDialog: focus in and back to an opener still on the page; inertOutside, which spares live regions and a `data-backdrop` (tested)
 │   ├── email-case.ts           Lowercases emails in the NextAuth adapter (tested)
 │   ├── email-verification.ts   Provider email verification (tested)
 │   ├── empty-state.ts          What the dashboard says when there are no cards to show (tested)
