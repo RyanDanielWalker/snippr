@@ -15,7 +15,7 @@ import {
 import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
 import { useMarkTried } from "@/components/ThingsToTry";
-import { TOAST_ROOM } from "@/lib/toasts";
+import { TOAST_ROOM_EDGE } from "@/lib/toasts";
 
 /**
  * The form for a new snippet and for editing one. Pass `snippet` to edit it;
@@ -114,173 +114,202 @@ export default function SnippetFormModal({
     setForm((f) => ({ ...f, description: result.data.description }));
   }
 
-  // m-auto rather than centering the overlay: a form taller than the screen
-  // (a phone with its keyboard up) then scrolls instead of losing its top.
-  // On a phone it scrolls clear of the toasts too (docs/adr/0074).
+  // Three layers (docs/adr/0074, docs/adr/0077):
+  // - The overlay dims the page and closes the form on a tap, unless edited.
+  // - The scroll area scrolls a form taller than the screen (a phone, or a
+  //   phone with its keyboard up). On a phone it ends 6rem up, so toasts
+  //   land below it. It has no bottom padding on purpose: Chromium sticks a
+  //   sticky box above a scroller's padding, and the button bar must stick
+  //   at the very edge, or fields would show through the gap below it.
+  //   scroll-pb keeps a field you tab to from stopping behind the bar.
+  // - The frame centers the form with m-auto, so a tall one scrolls instead
+  //   of losing its top, and its py-4 is the gap around it.
   return (
     <div
-      className={`fixed inset-0 bg-overlay flex overflow-y-auto z-50 p-4 ${TOAST_ROOM}`}
+      className="fixed inset-0 bg-overlay z-50"
       onClick={() => {
         if (!dirty) onClose();
       }}
     >
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={heading}
-        className="m-auto bg-surface rounded-panel w-full max-w-3xl p-4 sm:p-6 space-y-4"
-        onClick={(e) => e.stopPropagation()}
+        className={`absolute inset-x-0 top-0 bottom-0 ${TOAST_ROOM_EDGE} flex overflow-y-auto px-4 scroll-pb-20`}
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-fg font-semibold text-lg">{heading}</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="text-fg-subtle hover:text-fg"
+        <div className="m-auto w-full max-w-3xl py-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={heading}
+            className="bg-surface rounded-panel p-4 pb-1 sm:p-6 sm:pb-3 space-y-4"
+            onClick={(e) => e.stopPropagation()}
           >
-            ✕
-          </button>
-        </div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-fg font-semibold text-lg">{heading}</h2>
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="text-fg-subtle hover:text-fg"
+              >
+                ✕
+              </button>
+            </div>
 
-        <div>
-          <Label htmlFor={`${id}-title`}>Title</Label>
-          <input
-            ref={titleRef}
-            id={`${id}-title`}
-            type="text"
-            placeholder="Debounce a function"
-            maxLength={SNIPPET_LIMITS.title}
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-focus"
-          />
-        </div>
+            <div>
+              <Label htmlFor={`${id}-title`}>Title</Label>
+              <input
+                ref={titleRef}
+                id={`${id}-title`}
+                type="text"
+                placeholder="Debounce a function"
+                maxLength={SNIPPET_LIMITS.title}
+                value={form.title}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, title: e.target.value }))
+                }
+                className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-focus"
+              />
+            </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor={`${id}-language`}>Language</Label>
-            <Select
-              id={`${id}-language`}
-              value={form.language}
-              onChange={(language) => setForm((f) => ({ ...f, language }))}
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor={`${id}-language`}>Language</Label>
+                <Select
+                  id={`${id}-language`}
+                  value={form.language}
+                  onChange={(language) => setForm((f) => ({ ...f, language }))}
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor={`${id}-folder`}>Folder</Label>
+                <Select
+                  id={`${id}-folder`}
+                  value={form.folderId}
+                  onChange={(folderId) => setForm((f) => ({ ...f, folderId }))}
+                >
+                  <option value="">No folder</option>
+                  {folders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor={`${id}-code`}>
+                {bodyWording(form.language).label}
+              </Label>
+              <textarea
+                id={`${id}-code`}
+                placeholder={bodyWording(form.language).placeholder}
+                value={form.code}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, code: e.target.value }))
+                }
+                rows={8}
+                className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm font-mono outline-none focus:ring-1 focus:ring-focus resize-none"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor={`${id}-description`}>
+                Description (optional)
+              </Label>
+              <div className="relative">
+                <input
+                  id={`${id}-description`}
+                  type="text"
+                  placeholder="Or let Claude write one"
+                  maxLength={SNIPPET_LIMITS.description}
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
+                  className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 pr-28 text-sm outline-none focus:ring-1 focus:ring-focus"
+                />
+                <button
+                  onClick={handleGenerateDescription}
+                  disabled={!form.code || generating}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-accent-text hover:text-fg px-2 py-1 disabled:opacity-40"
+                >
+                  {generating ? "Writing..." : "✦ Generate"}
+                </button>
+              </div>
+              {describeError && (
+                <p role="alert" className="mt-2 text-xs text-danger-text">
+                  {describeError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor={`${id}-tags`}>Tags, separated by commas</Label>
+              <input
+                id={`${id}-tags`}
+                type="text"
+                placeholder="react, hooks, auth"
+                value={form.tags}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, tags: e.target.value }))
+                }
+                className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-focus"
+              />
+            </div>
+
+            {(error ?? del.error) && (
+              <p
+                role="alert"
+                className="text-sm text-danger-text bg-danger-soft/60 border border-danger-line rounded-box px-4 py-3"
+              >
+                {error ?? del.error}
+              </p>
+            )}
+
+            {/* Deleting throws away unsaved edits too, which is what you'd want.
+            The bar sticks to the bottom of the scroll area while the form
+            scrolls under it, so Save and Delete are always in reach
+            (docs/adr/0077). The negative margins take its background and
+            its line to the form's edges. */}
+            <div className="sticky bottom-0 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 bg-surface border-t border-line flex items-center justify-end gap-3">
+              {editing && (
+                <button
+                  onClick={del.press}
+                  disabled={del.deleting || saving}
+                  className={`mr-auto px-2 py-2 text-sm transition ${
+                    del.armed
+                      ? "text-danger-text"
+                      : "text-fg-subtle hover:text-danger-text"
+                  }`}
+                >
+                  {del.label}
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-sm text-fg-subtle hover:text-fg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={!canSave}
+                className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving
+                  ? "Saving..."
+                  : editing
+                    ? "Save changes"
+                    : "Save snippet"}
+              </button>
+            </div>
           </div>
-
-          <div>
-            <Label htmlFor={`${id}-folder`}>Folder</Label>
-            <Select
-              id={`${id}-folder`}
-              value={form.folderId}
-              onChange={(folderId) => setForm((f) => ({ ...f, folderId }))}
-            >
-              <option value="">No folder</option>
-              {folders.map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {folder.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor={`${id}-code`}>
-            {bodyWording(form.language).label}
-          </Label>
-          <textarea
-            id={`${id}-code`}
-            placeholder={bodyWording(form.language).placeholder}
-            value={form.code}
-            onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-            rows={8}
-            className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm font-mono outline-none focus:ring-1 focus:ring-focus resize-none"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor={`${id}-description`}>Description (optional)</Label>
-          <div className="relative">
-            <input
-              id={`${id}-description`}
-              type="text"
-              placeholder="Or let Claude write one"
-              maxLength={SNIPPET_LIMITS.description}
-              value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
-              }
-              className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 pr-28 text-sm outline-none focus:ring-1 focus:ring-focus"
-            />
-            <button
-              onClick={handleGenerateDescription}
-              disabled={!form.code || generating}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-accent-text hover:text-fg px-2 py-1 disabled:opacity-40"
-            >
-              {generating ? "Writing..." : "✦ Generate"}
-            </button>
-          </div>
-          {describeError && (
-            <p role="alert" className="mt-2 text-xs text-danger-text">
-              {describeError}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor={`${id}-tags`}>Tags, separated by commas</Label>
-          <input
-            id={`${id}-tags`}
-            type="text"
-            placeholder="react, hooks, auth"
-            value={form.tags}
-            onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
-            className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-focus"
-          />
-        </div>
-
-        {(error ?? del.error) && (
-          <p
-            role="alert"
-            className="text-sm text-danger-text bg-danger-soft/60 border border-danger-line rounded-box px-4 py-3"
-          >
-            {error ?? del.error}
-          </p>
-        )}
-
-        {/* Deleting throws away unsaved edits too, which is what you'd want. */}
-        <div className="flex items-center justify-end gap-3 pt-2">
-          {editing && (
-            <button
-              onClick={del.press}
-              disabled={del.deleting || saving}
-              className={`mr-auto px-2 py-2 text-sm transition ${
-                del.armed
-                  ? "text-danger-text"
-                  : "text-fg-subtle hover:text-danger-text"
-              }`}
-            >
-              {del.label}
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-fg-subtle hover:text-fg transition"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!canSave}
-            className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? "Saving..." : editing ? "Save changes" : "Save snippet"}
-          </button>
         </div>
       </div>
     </div>

@@ -108,5 +108,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0074](./0074-leave-room-for-toasts-at-the-bottom-of-phone-dialogs.md) | Leave room for toasts at the bottom of phone dialogs | Accepted |
 | [0075](./0075-close-1-5-and-scope-1-6-to-things-a-visitor-sees.md) | Close 1.5, and scope 1.6 to things a visitor sees | Accepted |
 | [0076](./0076-add-a-phone-theme-picker-and-a-readme-shot-per-theme-to-1-6.md) | Add a phone theme picker and a README shot per theme to 1.6 | Accepted |
+| [0077](./0077-a-sticky-button-bar-on-the-snippet-form.md) | A sticky button bar on the snippet form | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

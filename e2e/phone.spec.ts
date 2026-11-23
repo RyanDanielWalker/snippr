@@ -164,14 +164,24 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await edit.click();
   const form = page.getByRole("dialog", { name: "Edit snippet" });
   const formDelete = form.getByRole("button", { name: "Delete", exact: true });
-  // The form is taller than a phone, so it scrolls. Scrolled to its end, the
-  // room below it lifts Delete clear of the toast. Before, it couldn't go
-  // any higher than the bottom of the screen.
-  await form.evaluate((dialog) => {
-    const overlay = dialog.parentElement!;
-    overlay.scrollTop = overlay.scrollHeight;
-  });
+  const formSave = form.getByRole("button", { name: "Save changes" });
+  // The form is taller than a phone, so it scrolls, but its buttons sit in
+  // a bar that sticks above the toast area (ADR 0077). They're tappable the
+  // moment it opens, with no scrolling. Before, they started under the toast.
   await expect(moved).toBeVisible();
+  const scrollArea = form.locator("xpath=../..");
+  expect(
+    await scrollArea.evaluate((area) => area.scrollHeight > area.clientHeight),
+  ).toBe(true);
+  await expectAboveToast(formDelete, moved);
+  await expectAboveToast(formSave, moved);
+  // A field you move to stops above the bar, not behind it (scroll-pb).
+  const tags = form.getByLabel("Tags, separated by commas");
+  await tags.focus();
+  const tagsBox = await tags.boundingBox();
+  const barBox = await formSave.locator("..").boundingBox();
+  if (!tagsBox || !barBox) throw new Error("Tags or the bar not on screen");
+  expect(tagsBox.y + tagsBox.height).toBeLessThanOrEqual(barBox.y);
   await expectAboveToast(formDelete, moved);
   await formDelete.click();
   await expect(form).toBeHidden();

@@ -83,3 +83,12 @@ export function toastDuration(
  * full width.
  */
 export const TOAST_ROOM = "max-sm:pb-24";
+
+/**
+ * The same 6rem of room, for a scroll area placed with `top`/`bottom`
+ * instead of padded: below 640px its bottom edge stops 6rem above the
+ * screen's (`max-sm:bottom-24`). The edit form uses it so its sticky button
+ * bar sticks above the toasts rather than under them (docs/adr/0077). Keep
+ * the number in step with TOAST_ROOM.
+ */
+export const TOAST_ROOM_EDGE = "max-sm:bottom-24";
