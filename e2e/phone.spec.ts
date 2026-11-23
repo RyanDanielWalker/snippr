@@ -179,9 +179,37 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   const tags = form.getByLabel("Tags, separated by commas");
   await tags.focus();
   const tagsBox = await tags.boundingBox();
-  const barBox = await formSave.locator("..").boundingBox();
+  const barBox = await formSave.locator("../..").boundingBox();
   if (!tagsBox || !barBox) throw new Error("Tags or the bar not on screen");
   expect(tagsBox.y + tagsBox.height).toBeLessThanOrEqual(barBox.y);
+  // Save is tappable without scrolling, so its error has to show up where
+  // you are: in the bar, not at the end of the form behind it.
+  await page.route("**/api/snippets", (route) =>
+    route.request().method() === "PATCH"
+      ? route.fulfill({ status: 500, json: { error: "Couldn't save that." } })
+      : route.fallback(),
+  );
+  await form.getByLabel("Title").fill("Retry with backoff, edited");
+  // From the top of the form, the way you'd tap it right after opening.
+  await scrollArea.evaluate((area) => {
+    area.scrollTop = 0;
+  });
+  await formSave.click();
+  const saveError = form.getByRole("alert");
+  await expect(saveError).toHaveText("Couldn't save that.");
+  await expect(saveError).toBeInViewport({ ratio: 1 });
+  // And not under the bar: the middle of the message is the message.
+  expect(
+    await saveError.evaluate((message) => {
+      const box = message.getBoundingClientRect();
+      const hit = document.elementFromPoint(
+        box.left + box.width / 2,
+        box.top + box.height / 2,
+      );
+      return message.contains(hit);
+    }),
+  ).toBe(true);
+  await page.unroute("**/api/snippets");
   await expectAboveToast(formDelete, moved);
   await formDelete.click();
   await expect(form).toBeHidden();

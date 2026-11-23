@@ -263,51 +263,56 @@ export default function SnippetFormModal({
               />
             </div>
 
-            {(error ?? del.error) && (
-              <p
-                role="alert"
-                className="text-sm text-danger-text bg-danger-soft/60 border border-danger-line rounded-box px-4 py-3"
-              >
-                {error ?? del.error}
-              </p>
-            )}
-
-            {/* Deleting throws away unsaved edits too, which is what you'd want.
-            The bar sticks to the bottom of the scroll area while the form
+            {/* The bar sticks to the bottom of the scroll area while the form
             scrolls under it, so Save and Delete are always in reach
             (docs/adr/0077). The negative margins take its background and
-            its line to the form's edges. */}
-            <div className="sticky bottom-0 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 bg-surface border-t border-line flex items-center justify-end gap-3">
-              {editing && (
-                <button
-                  onClick={del.press}
-                  disabled={del.deleting || saving}
-                  className={`mr-auto px-2 py-2 text-sm transition ${
-                    del.armed
-                      ? "text-danger-text"
-                      : "text-fg-subtle hover:text-danger-text"
-                  }`}
+            its line to the form's edges. A failed save or delete shows its
+            error in the bar, above the buttons: you can press them without
+            scrolling, so an error at the end of the form would be out of
+            sight, behind the bar. */}
+            <div className="sticky bottom-0 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 bg-surface border-t border-line space-y-3">
+              {(error ?? del.error) && (
+                <p
+                  role="alert"
+                  className="text-sm text-danger-text bg-danger-soft/60 border border-danger-line rounded-box px-4 py-3"
                 >
-                  {del.label}
-                </button>
+                  {error ?? del.error}
+                </p>
               )}
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-sm text-fg-subtle hover:text-fg transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={!canSave}
-                className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving
-                  ? "Saving..."
-                  : editing
-                    ? "Save changes"
-                    : "Save snippet"}
-              </button>
+
+              {/* Deleting throws away unsaved edits too, which is what you'd want. */}
+              <div className="flex items-center justify-end gap-3">
+                {editing && (
+                  <button
+                    onClick={del.press}
+                    disabled={del.deleting || saving}
+                    className={`mr-auto px-2 py-2 text-sm transition ${
+                      del.armed
+                        ? "text-danger-text"
+                        : "text-fg-subtle hover:text-danger-text"
+                    }`}
+                  >
+                    {del.label}
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 text-sm text-fg-subtle hover:text-fg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!canSave}
+                  className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving
+                    ? "Saving..."
+                    : editing
+                      ? "Save changes"
+                      : "Save snippet"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
