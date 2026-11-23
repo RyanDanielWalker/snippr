@@ -6,8 +6,9 @@ import { hashSessionToken } from "../src/lib/session-tokens";
 import { e2eDatabase } from "../scripts/e2e-guard.mjs";
 
 // The themes at phone width, where the pixel fonts are most likely to push
-// something off the side, and where the picker is tightest. Unit tests cover the cookie and the contrast
-// (src/lib/theme.test.ts, src/lib/contrast.test.ts); this covers the page.
+// something off the side, and where the picker is tightest. Unit tests cover
+// the cookie and the contrast (src/lib/theme.test.ts,
+// src/lib/theme-tokens.test.ts); this covers the page.
 test.use({
   viewport: { width: 375, height: 667 },
   isMobile: true,
@@ -127,7 +128,9 @@ test("a member's dashboard header fits a phone in every theme", async ({
     await prisma.user.create({
       data: {
         name: "Phone",
-        email: "phone-header@example.com",
+        // Unique, so CI's retry of a failed test doesn't trip on the first
+        // attempt's user.
+        email: `phone-${sessionToken.slice(0, 8)}@example.com`,
         emailVerified: new Date(),
         sessions: {
           create: {
