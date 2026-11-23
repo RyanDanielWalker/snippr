@@ -364,11 +364,15 @@ export default function DashboardClient({
       )}
 
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
-        <div className="flex items-center justify-between gap-4 mb-8">
+        {/* On a phone, a member's buttons don't fit beside the wordmark,
+            least of all in 8-bit's wide type. They wrap to a second row,
+            kept to the right, and no label breaks across two lines
+            (ADR 0078). */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 mb-8">
           <h1 className="text-2xl">
             <Wordmark />
           </h1>
-          <div className="flex items-center gap-4 min-w-0">
+          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 ml-auto min-w-0 *:whitespace-nowrap">
             <button
               onClick={() => setFoldersOpen(true)}
               aria-expanded={foldersOpen}

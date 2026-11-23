@@ -1,4 +1,9 @@
+import { randomBytes } from "node:crypto";
+import { PrismaClient } from "@prisma/client";
 import { expect, test, type Page } from "@playwright/test";
+import { THEMES, themeAttribute } from "../src/lib/theme";
+import { hashSessionToken } from "../src/lib/session-tokens";
+import { e2eDatabase } from "../scripts/e2e-guard.mjs";
 
 // The 8-bit theme at phone width, where the pixel fonts are most likely to
 // push something off the side. Unit tests cover the cookie and the contrast
@@ -53,4 +58,61 @@ test("the 8-bit theme survives a reload and fits a phone", async ({ page }) => {
   await page.getByRole("button", { name: "+ New snippet" }).click();
   await expect(page.getByRole("dialog", { name: "New snippet" })).toBeVisible();
   expect(await sidewaysOverflow(page)).toBe(0);
+});
+
+// A member's header holds more than a guest's: the avatar, Connect, and Sign
+// out. In 8-bit it once ran off the right edge on a phone. Now it wraps to a
+// second row instead (ADR 0078). The member is signed in the way NextAuth
+// would leave them after OAuth: a user, a session row holding the token's
+// hash, and the session cookie holding the token (docs/adr/0061).
+test("a member's dashboard header fits a phone in every theme", async ({
+  page,
+  baseURL,
+}) => {
+  const database = e2eDatabase(process.env);
+  if (!database.ok) throw new Error(database.message);
+  const prisma = new PrismaClient({
+    datasources: { db: { url: database.url } },
+  });
+  const sessionToken = randomBytes(32).toString("hex");
+  try {
+    await prisma.user.create({
+      data: {
+        name: "Phone",
+        email: "phone-header@example.com",
+        emailVerified: new Date(),
+        sessions: {
+          create: {
+            sessionToken: hashSessionToken(sessionToken),
+            expires: new Date(Date.now() + 60 * 60 * 1000),
+          },
+        },
+      },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+  await page
+    .context()
+    .addCookies([
+      { name: "next-auth.session-token", value: sessionToken, url: baseURL },
+    ]);
+
+  for (const theme of THEMES) {
+    await page.context().addCookies([
+      {
+        name: "snippr-theme",
+        value: themeAttribute(theme) ?? "",
+        url: baseURL,
+      },
+    ]);
+    await page.goto("/dashboard");
+    await expect(page.getByRole("link", { name: "Connect" })).toBeInViewport({
+      ratio: 1,
+    });
+    await expect(page.getByRole("button", { name: "Sign out" })).toBeInViewport(
+      { ratio: 1 },
+    );
+    expect(await sidewaysOverflow(page)).toBe(0);
+  }
 });
