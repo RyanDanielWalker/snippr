@@ -4,8 +4,16 @@
    utilities @theme makes from them (bg-surface, text-fg-muted, rounded-box),
    and never name a palette color. A theme is a block that overrides them.
    The color values are mirrored in src/lib/theme-tokens.ts for the Open Graph
-   image, which can't read CSS; a test keeps the two the same. */
-:root {
+   image, which can't read CSS; a test keeps the two the same.
+   [data-theme="default"] is for the theme picker's swatches, which draw a
+   theme by setting its data-theme on a small span (ADR 0078). <html> never
+   carries it: the default is no attribute at all. */
+:root,
+[data-theme="default"] {
+  /* Native parts the page doesn't style, like scrollbars and the list a
+     <select> opens, follow this. */
+  color-scheme: dark;
+
   /* Surfaces, darkest to lightest */
   --page: #0b1020;
   --surface: #121829;
@@ -141,6 +149,57 @@
   --border-width: 3px;
 }
 
+/* The light theme (ADR 0078): the default identity turned over. Paper page,
+   ink text, and the tangerine accent kept for buttons but darkened for text.
+   Shape and type are the default's. It overrides every color token, which
+   theme-tokens.test.ts checks, along with the contrast of every pairing. */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* On paper, "raised" reads as a tint, not as brighter: cards and dialogs
+     are near white, and the fields, chips, and menus on them are a shade of
+     the page, so they show against the card. */
+  --page: #f3efe6;
+  --surface: #fcfbf8;
+  --surface-raised: #efe9de;
+  --surface-hover: #e5ddcd;
+  --overlay: rgb(11 16 32 / 0.45);
+  --code: #f0ebe0;
+
+  --line: #e2dccf;
+  --line-strong: #c9c1b0;
+
+  --fg: #0b1020;
+  --fg-muted: #323a4f;
+  --fg-subtle: #575f73;
+
+  --accent: #ff7a3d;
+  --accent-hover: #ff9361;
+  --accent-fg: #0b1020;
+  --accent-text: #a83a06;
+  --accent-soft: #ffe3d3;
+  --accent-line: #f0a27c;
+  --focus: #c94e14;
+
+  /* The ink-colored call-to-action buttons */
+  --inverse: #0b1020;
+  --inverse-hover: #263049;
+  --inverse-fg: #f5f2ea;
+
+  --danger: #c81e1e;
+  --danger-hover: #a51717;
+  --danger-fg: #ffffff;
+  --danger-text: #b01c2a;
+  --danger-soft: #fde2e2;
+  --danger-line: #f1a5a5;
+  --warning-text: #6e5200;
+  --warning-soft: #f8ecc4;
+
+  /* Bright tangerine is faint on paper, so the logo's cut uses the focus
+     shade. */
+  --mark-cut: #c94e14;
+}
+
 /* Drop Tailwind's palette, so bg-gray-800 and friends don't exist. */
 @theme {
   --color-*: initial;
@@ -249,8 +308,13 @@ code,
   font-size-adjust: none;
 }
 
-/* Shiki writes ayu-dark's colors inline and the 8-bit palette as variables
-   beside them (ADR 0029). */
+/* Shiki writes ayu-dark's colors inline and every other theme's palette as
+   variables beside them (ADR 0029, 0078). */
+[data-theme="light"] .shiki,
+[data-theme="light"] .shiki span {
+  color: var(--shiki-light) !important;
+}
+
 [data-theme="8bit"] .shiki,
 [data-theme="8bit"] .shiki span {
   color: var(--shiki-8bit) !important;

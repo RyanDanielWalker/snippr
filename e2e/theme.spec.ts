@@ -5,8 +5,8 @@ import { THEMES, themeAttribute } from "../src/lib/theme";
 import { hashSessionToken } from "../src/lib/session-tokens";
 import { e2eDatabase } from "../scripts/e2e-guard.mjs";
 
-// The 8-bit theme at phone width, where the pixel fonts are most likely to
-// push something off the side. Unit tests cover the cookie and the contrast
+// The themes at phone width, where the pixel fonts are most likely to push
+// something off the side, and where the picker is tightest. Unit tests cover the cookie and the contrast
 // (src/lib/theme.test.ts, src/lib/contrast.test.ts); this covers the page.
 test.use({
   viewport: { width: 375, height: 667 },
@@ -26,15 +26,26 @@ async function sidewaysOverflow(page: Page) {
   });
 }
 
+// Opens the header's Theme menu and picks one (ADR 0078).
+async function pickTheme(page: Page, name: string) {
+  await page.getByRole("button", { name: "Theme", exact: true }).click();
+  await page
+    .getByRole("group", { name: "Theme" })
+    .getByRole("button", { name })
+    .click();
+}
+
 test("the 8-bit theme survives a reload and fits a phone", async ({ page }) => {
   const html = page.locator("html");
   await page.goto("/");
   await expect(html).not.toHaveAttribute("data-theme");
 
-  const toggle = page.getByRole("button", { name: "8-bit" });
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await pickTheme(page, "8-bit");
   await expect(html).toHaveAttribute("data-theme", "8bit");
+  // Picking closes the menu and puts focus back on its button.
+  const themeButton = page.getByRole("button", { name: "Theme", exact: true });
+  await expect(themeButton).toHaveAttribute("aria-expanded", "false");
+  await expect(themeButton).toBeFocused();
 
   // The server sends it, so the page never flashes the default first.
   const served = await page.request.get("/");
@@ -42,7 +53,13 @@ test("the 8-bit theme survives a reload and fits a phone", async ({ page }) => {
 
   await page.reload();
   await expect(html).toHaveAttribute("data-theme", "8bit");
-  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await themeButton.click();
+  await expect(
+    page.getByRole("group", { name: "Theme" }).getByRole("button", {
+      name: "8-bit",
+    }),
+  ).toHaveAttribute("aria-current", "true");
+  await page.keyboard.press("Escape");
   expect(await sidewaysOverflow(page)).toBe(0);
 
   // The dashboard too, which has more to fit across the top.
@@ -58,6 +75,37 @@ test("the 8-bit theme survives a reload and fits a phone", async ({ page }) => {
   await page.getByRole("button", { name: "+ New snippet" }).click();
   await expect(page.getByRole("dialog", { name: "New snippet" })).toBeVisible();
   expect(await sidewaysOverflow(page)).toBe(0);
+  await page.getByRole("button", { name: "Cancel" }).click();
+
+  // A phone can change the theme from the dashboard's header: the picker is
+  // there at every width, and its list stays on screen. Closing the form put
+  // focus back on "+ New snippet", which scrolled the header away.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(themeButton).toBeInViewport({ ratio: 1 });
+  await themeButton.click();
+  await expect(page.getByRole("group", { name: "Theme" })).toBeInViewport({
+    ratio: 1,
+  });
+  expect(await sidewaysOverflow(page)).toBe(0);
+  await page
+    .getByRole("group", { name: "Theme" })
+    .getByRole("button", { name: "Light" })
+    .click();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  expect(await sidewaysOverflow(page)).toBe(0);
+
+  // Code recolors in place, from the palette Shiki wrote beside ayu-dark.
+  const codeColor = await page
+    .locator(".snippet-code .shiki")
+    .first()
+    .evaluate((el) => getComputedStyle(el).color);
+  expect(codeColor).toBe("rgb(11, 16, 32)");
+
+  // Back to the default: no attribute, and no cookie left behind.
+  await pickTheme(page, "Default");
+  await expect(html).not.toHaveAttribute("data-theme");
+  const cookies = await page.context().cookies();
+  expect(cookies.find((c) => c.name === "snippr-theme")).toBeUndefined();
 });
 
 // A member's header holds more than a guest's: the avatar, Connect, and Sign

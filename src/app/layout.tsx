@@ -9,7 +9,7 @@ import {
 import { cookies } from "next/headers";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
 import { THEME_COOKIE, parseTheme, themeAttribute } from "@/lib/theme";
-import { ThemeProvider } from "@/components/ThemeToggle";
+import { ThemeProvider } from "@/components/ThemePicker";
 import "./globals.css";
 
 const geistSans = Geist({

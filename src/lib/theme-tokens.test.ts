@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { AA_NON_TEXT, AA_TEXT, contrastRatio } from "./contrast";
+import { THEMES } from "./theme";
 import { defaultTheme } from "./theme-tokens";
 
 const css = readFileSync(join(__dirname, "../app/globals.css"), "utf8");
@@ -29,7 +30,7 @@ const colorTokens = [...declarations(block("@theme inline")).keys()]
   .map((name) => name.slice("color-".length));
 
 describe("defaultTheme", () => {
-  const root = declarations(block(":root"));
+  const root = declarations(block(':root,\n[data-theme="default"]'));
 
   it("has every color token globals.css has, and no others", () => {
     expect(Object.keys(defaultTheme).sort()).toEqual(
@@ -46,24 +47,30 @@ describe("defaultTheme", () => {
 
 type Token = keyof typeof defaultTheme;
 
-// The 8-bit theme has no TypeScript copy, since nothing outside CSS draws
-// it. Its values come straight from its block.
-const eightBit = declarations(block('[data-theme="8bit"]'));
+// The other themes have no TypeScript copy, since nothing outside CSS draws
+// them. Their values come straight from their blocks. THEMES drives the list,
+// so a new theme is checked as soon as it's added there.
+const otherThemes = THEMES.filter((theme) => theme !== "default").map(
+  (theme): [string, Map<string, string>] => [
+    theme,
+    declarations(block(`[data-theme="${theme}"]`)),
+  ],
+);
 
-describe("the 8-bit theme", () => {
+describe.each(otherThemes)("the %s theme", (_, values) => {
   it.each(colorTokens)("overrides --%s", (name) => {
-    expect(eightBit.has(name)).toBe(true);
+    expect(values.has(name)).toBe(true);
   });
 });
 
 const themes: [name: string, values: Record<Token, string>][] = [
   ["default", defaultTheme],
-  [
-    "8bit",
+  ...otherThemes.map(([theme, values]): [string, Record<Token, string>] => [
+    theme,
     Object.fromEntries(
-      colorTokens.map((name) => [camel(name), eightBit.get(name) ?? ""]),
+      colorTokens.map((name) => [camel(name), values.get(name) ?? ""]),
     ) as Record<Token, string>,
-  ],
+  ]),
 ];
 
 const surfaces: Token[] = [

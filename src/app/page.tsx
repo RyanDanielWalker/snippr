@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import SnippetCardView from "@/components/SnippetCardView";
 import DemoButton from "@/components/DemoButton";
 import { Wordmark } from "@/components/LogoMark";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemePicker } from "@/components/ThemePicker";
 import {
   landingSamples,
   mcpExample,
@@ -49,7 +49,7 @@ export default async function Home({
         {/* Top right, like the dashboard's, so leaving a demo in the 8-bit
             theme doesn't send you looking for the way out of it. */}
         <div className="flex items-center gap-6">
-          <ThemeToggle className="text-sm case-control" />
+          <ThemePicker className="text-sm case-control" />
           <Link
             href="/login"
             className="text-sm case-control text-fg-subtle hover:text-fg transition"

@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   THEME_COOKIE,
+  THEME_NAMES,
   THEMES,
-  nextTheme,
   parseTheme,
   themeAttribute,
   themeCookie,
-  type Theme,
 } from "./theme";
 
 describe("parseTheme", () => {
@@ -26,20 +25,16 @@ describe("parseTheme", () => {
 describe("themeAttribute", () => {
   it("leaves the default to :root", () => {
     expect(themeAttribute("default")).toBeUndefined();
+    expect(themeAttribute("light")).toBe("light");
     expect(themeAttribute("8bit")).toBe("8bit");
   });
 });
 
-describe("nextTheme", () => {
-  it("cycles through every theme and back", () => {
-    let theme: Theme = THEMES[0];
-    const seen: Theme[] = [];
-    for (let i = 0; i < THEMES.length; i++) {
-      seen.push(theme);
-      theme = nextTheme(theme);
-    }
-    expect(seen).toEqual([...THEMES]);
-    expect(theme).toBe(THEMES[0]);
+describe("THEME_NAMES", () => {
+  it("names every theme, each differently", () => {
+    const names = THEMES.map((theme) => THEME_NAMES[theme]);
+    expect(names.every(Boolean)).toBe(true);
+    expect(new Set(names).size).toBe(THEMES.length);
   });
 });
 

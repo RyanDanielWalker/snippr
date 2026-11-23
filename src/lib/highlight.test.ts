@@ -128,13 +128,15 @@ describe("withCardHtml", () => {
     expect(result.codeHtml).not.toContain("<script>");
   });
 
-  // ayu-dark inline, the 8-bit palette beside it for globals.css to switch to.
+  // ayu-dark inline, the other palettes beside it for globals.css to switch to.
   it("colors the code for every theme with the real Shiki", async () => {
     const [result] = await withCardHtml(
       [snippet('const a = "x";')],
       codeToHtml,
     );
 
-    expect(result.codeHtml).toMatch(/style="color:#[0-9A-F]{6};--shiki-8bit:/i);
+    expect(result.codeHtml).toMatch(
+      /style="color:#[0-9A-F]{6};--shiki-light:#[0-9A-F]{6};--shiki-8bit:/i,
+    );
   });
 });

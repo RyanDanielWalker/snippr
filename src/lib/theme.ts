@@ -1,11 +1,19 @@
 /**
  * Which theme a visitor picked, and the cookie that remembers it (ADR 0029).
  * The root layout reads the cookie on the server and sets `data-theme` on
- * <html>; ThemeToggle writes both in the browser.
+ * <html>; ThemePicker writes both in the browser (ADR 0078).
  */
 
-export const THEMES = ["default", "8bit"] as const;
+/** In the order the picker lists them. */
+export const THEMES = ["default", "light", "8bit"] as const;
 export type Theme = (typeof THEMES)[number];
+
+/** What the picker calls each theme. */
+export const THEME_NAMES: Record<Theme, string> = {
+  default: "Default",
+  light: "Light",
+  "8bit": "8-bit",
+};
 
 export const THEME_COOKIE = "snippr-theme";
 
@@ -22,11 +30,6 @@ export function parseTheme(value: string | undefined): Theme {
  */
 export function themeAttribute(theme: Theme): string | undefined {
   return theme === "default" ? undefined : theme;
-}
-
-/** The theme the toggle switches to. */
-export function nextTheme(theme: Theme): Theme {
-  return THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
 }
 
 /**

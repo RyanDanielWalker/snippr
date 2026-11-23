@@ -18,7 +18,7 @@ import SnippetFormModal from "@/components/SnippetFormModal";
 import EmptyTrashButton from "@/components/EmptyTrashButton";
 import FolderSidebar from "@/components/FolderSidebar";
 import { Wordmark } from "@/components/LogoMark";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemePicker } from "@/components/ThemePicker";
 import ThingsToTry, {
   saveTryState,
   useMarkTried,
@@ -395,8 +395,7 @@ export default function DashboardClient({
                 className="w-8 h-8 rounded-full"
               />
             )}
-            {/* No room on a phone; the landing page's header has one. */}
-            <ThemeToggle className="hidden sm:inline text-xs case-control" />
+            <ThemePicker className="text-xs case-control" />
             {!user.isGuest && (
               <Link
                 href="/connect"

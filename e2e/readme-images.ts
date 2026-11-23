@@ -68,7 +68,11 @@ test("desktop: dashboard, AI search, 8-bit", async ({ browser }) => {
   await shoot(page, "ai-search.png");
   await page.getByRole("button", { name: "✦ AI search" }).click();
 
-  await page.getByRole("button", { name: "8-bit" }).click();
+  await page.getByRole("button", { name: "Theme", exact: true }).click();
+  await page
+    .getByRole("group", { name: "Theme" })
+    .getByRole("button", { name: "8-bit" })
+    .click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "8bit");
   await shoot(page, "8bit.png");
 
@@ -86,7 +90,8 @@ test("phone: both themes", async ({ browser, baseURL }) => {
   await startDemo(page);
   await shoot(page, "phone.png");
 
-  // The dashboard hides the theme toggle below `sm`, so set its cookie.
+  // Set the cookie rather than go through the picker. Whether to switch is
+  // left to the README item in 1.6 (ADR 0076).
   await context.addCookies([
     { name: "snippr-theme", value: "8bit", url: baseURL },
   ]);
