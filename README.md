@@ -17,7 +17,7 @@ Snippr is a portfolio project, so the reasoning is part of what's on show. Every
 - **Prompts too.** Save one under the `prompt` language. It stays plain text, long lines wrap, and Claude describes it without following it.
 - **Folders.** Drag a card onto a folder, or press Move on the card and pick one. Move works from the keyboard and on a phone, where a finger drag scrolls.
 - **An MCP server.** Claude Code, Cursor, and other MCP clients can search, read, and save snippets in your library.
-- **Two themes.** A dark default and an 8-bit one, remembered between visits.
+- **Three themes.** A dark default, a light one, and an 8-bit one, picked from the Theme menu and remembered between visits.
 - **Highlighted code** on every card and in the preview, by Shiki.
 - **A demo** in one click, with a small library and a short list of things to try.
 - **A phone layout** where the folders move into a drawer and nothing scrolls sideways.
@@ -44,7 +44,7 @@ Make a token on the Connect page, paste one line into your client, and ask it fo
 
 Tokens are stored as hashes and shown once. Each tool calls the same function as the matching API endpoint, so the ownership checks, the snippet cap, and the AI rate limit apply without a second copy of them.
 
-### Two themes
+### Themes
 
 <table>
   <tr>
@@ -54,7 +54,7 @@ Tokens are stored as hashes and shown once. Each tool calls the same function as
   </tr>
 </table>
 
-Both themes are the same components on different values. Components only use tokens named by role (`bg-surface`, `text-fg-muted`), and the 8-bit theme is one block of CSS that overrides them, with its own fonts and syntax colors. The choice is kept in a cookie, so the server sends the right theme with the first byte and nothing flashes.
+Every theme is the same components on different values. Components only use tokens named by role (`bg-surface`, `text-fg-muted`), and the light and 8-bit themes are each one block of CSS that overrides them, with their own syntax colors. 8-bit brings its own fonts too. The choice is kept in a cookie, so the server sends the right theme with the first byte and nothing flashes.
 
 ## How it's built
 
@@ -93,7 +93,7 @@ The parts most worth reading, each with the decision record behind it:
 - **Caps hold under parallel requests.** Creating a snippet, folder, or token counts and inserts under a per-user Postgres advisory lock, so 20 requests at once can't get past a cap. A database test fires exactly that at each one ([0025](docs/adr/0025-serialize-snippet-creates-per-user-with-an-advisory-lock.md)).
 - **Schema and code can't deploy out of order.** Production builds apply migrations before `next build`, and Vercel holds each deploy until CI passes: lint, types, unit tests, migrations on an empty Postgres, the database tests, and the end-to-end tests ([0016](docs/adr/0016-apply-migrations-in-the-production-build.md), [0020](docs/adr/0020-ci-on-github-actions-gating-production-deploys.md)).
 - **Local development can't reach production.** The scripts that connect refuse a database that isn't on your machine ([0015](docs/adr/0015-local-postgres-in-docker-for-development.md)).
-- **The themes are checked, not eyeballed.** A test checks every text and background pairing against WCAG AA in both themes, and another fails on any form field or button without an accessible name ([0027](docs/adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md), [0029](docs/adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)).
+- **The themes are checked, not eyeballed.** A test checks every text and background pairing against WCAG AA in every theme, and another fails on any form field or button without an accessible name ([0027](docs/adr/0027-one-default-identity-and-an-8-bit-theme-on-semantic-tokens.md), [0029](docs/adr/0029-remember-the-theme-in-a-cookie-and-highlight-code-in-both.md)).
 
 The screenshots above are taken by a script against the real app, so they can be retaken whenever the interface changes ([0032](docs/adr/0032-generate-readme-images-from-the-app-with-playwright.md)).
 
