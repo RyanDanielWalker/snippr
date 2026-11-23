@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
 import { moveChoices } from "@/lib/card-drop";
 import type { Folder } from "@/lib/library-types";
+import { useDisclosureMenu } from "./useDisclosureMenu";
 
 /**
  * The Move button on a snippet card, and the list of places it opens
@@ -13,7 +13,8 @@ import type { Folder } from "@/lib/library-types";
  * It's a *disclosure*, like a folder's ⋯ menu: a button that shows and hides
  * a list of ordinary buttons, with `aria-expanded` saying which. Tab moves
  * through the list like anything else on the page, and the arrow keys work
- * too. Escape closes it and puts focus back on Move.
+ * too. Escape closes it and puts focus back on Move. That behavior lives in
+ * useDisclosureMenu, which the theme picker shares.
  *
  * It sits inside the card, so its clicks and presses stop here. Otherwise a
  * click would also open the preview, and a press would start a drag.
@@ -31,32 +32,9 @@ export default function MoveMenu({
   onMove: (targetId: string) => void;
   disabled?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const wrapperRef = useRef<HTMLSpanElement>(null);
-  const listId = useId();
+  const { open, setOpen, close, buttonRef, listRef, listId, wrapperProps } =
+    useDisclosureMenu();
   const choices = moveChoices(folders, folderId);
-
-  // Opening moves focus to the first place, so the arrow keys work at once.
-  useEffect(() => {
-    if (open) listRef.current?.querySelector("button")?.focus();
-  }, [open]);
-
-  // A click anywhere else closes it, like a folder's ⋯ menu.
-  useEffect(() => {
-    if (!open) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  function close() {
-    setOpen(false);
-    buttonRef.current?.focus();
-  }
 
   function pick(targetId: string, current: boolean) {
     // Focus goes back to Move first. If the card then leaves the view, as it
@@ -65,39 +43,13 @@ export default function MoveMenu({
     if (!current) onMove(targetId);
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") {
-      // Handled here, so nothing further up closes as well.
-      e.preventDefault();
-      close();
-      return;
-    }
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    const buttons = [
-      ...(listRef.current?.querySelectorAll("button") ?? []),
-    ] as HTMLButtonElement[];
-    const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
-    const step = e.key === "ArrowDown" ? 1 : -1;
-    // Round the ends, so Up from the first goes to the last.
-    buttons[(at + step + buttons.length) % buttons.length]?.focus();
-    // The arrows would scroll the page too.
-    e.preventDefault();
-  }
-
   return (
     <span
-      ref={wrapperRef}
+      {...wrapperProps}
       // flex, so Move lines up with the buttons beside it.
       className="relative flex"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
-      // Tab past the last place, or Shift+Tab out of the list, closes it.
-      onBlur={(e) => {
-        if (open && !wrapperRef.current?.contains(e.relatedTarget as Node)) {
-          setOpen(false);
-        }
-      }}
-      onKeyDown={open ? handleKeyDown : undefined}
     >
       <button
         ref={buttonRef}
