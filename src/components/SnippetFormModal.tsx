@@ -16,6 +16,7 @@ import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
 import { useMarkTried } from "@/components/ThingsToTry";
 import { TOAST_ROOM_EDGE } from "@/lib/toasts";
+import { formatCode, showsFormat, unavailableReason } from "@/lib/format-code";
 
 /**
  * The form for a new snippet and for editing one. Pass `snippet` to edit it;
@@ -38,13 +39,26 @@ export default function SnippetFormModal({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [describeError, setDescribeError] = useState<string | null>(null);
+  // The Format button (docs/adr/0080). `beforeFormat` is the code as it was
+  // before the last format, kept so Undo can put it back: setting a
+  // textarea's value from code wipes the browser's own undo history, so
+  // Ctrl+Z can't. Any edit to the code clears it, since Undo would then throw
+  // that edit away.
+  const [formatting, setFormatting] = useState(false);
+  const [formatNote, setFormatNote] = useState<{
+    kind: "error" | "info";
+    text: string;
+  } | null>(null);
+  const [beforeFormat, setBeforeFormat] = useState<string | null>(null);
   // Never pressed for a new snippet, but hooks can't be skipped.
   const del = useDeleteSnippet(snippet?.id, onClose);
   const [initial] = useState(() => initialFields(snippet, defaultFolderId));
   const [form, setForm] = useState(initial);
 
   const dirty = isDirty(form, initial);
-  const canSave = hasRequired(form) && dirty && !saving && !del.deleting;
+  const canSave =
+    hasRequired(form) && dirty && !saving && !del.deleting && !formatting;
+  const formatOff = unavailableReason(form.language);
   const heading = editing ? "Edit snippet" : "New snippet";
   const id = useId();
   const titleRef = useDialogFocus<HTMLInputElement>();
@@ -114,6 +128,33 @@ export default function SnippetFormModal({
     setForm((f) => ({ ...f, description: result.data.description }));
   }
 
+  // The first press for a language downloads its formatter, which can take a
+  // moment. The code box is read-only until it's done, so nothing typed in
+  // the meantime gets overwritten by the result.
+  async function handleFormat() {
+    const code = form.code;
+    setFormatting(true);
+    setFormatNote(null);
+    const result = await formatCode(code, form.language);
+    setFormatting(false);
+    if (!result.ok) {
+      setFormatNote({ kind: "error", text: result.error });
+      return;
+    }
+    if (!result.changed) {
+      setFormatNote({ kind: "info", text: "Already formatted." });
+      return;
+    }
+    setBeforeFormat(code);
+    setForm((f) => ({ ...f, code: result.code }));
+  }
+
+  function handleUndoFormat() {
+    if (beforeFormat === null) return;
+    setForm((f) => ({ ...f, code: beforeFormat }));
+    setBeforeFormat(null);
+  }
+
   // Three layers (docs/adr/0074, docs/adr/0077):
   // - The overlay dims the page and closes the form on a tap, unless edited.
   // - The scroll area scrolls a form taller than the screen (a phone, or a
@@ -175,7 +216,12 @@ export default function SnippetFormModal({
                 <Select
                   id={`${id}-language`}
                   value={form.language}
-                  onChange={(language) => setForm((f) => ({ ...f, language }))}
+                  onChange={(language) => {
+                    setForm((f) => ({ ...f, language }));
+                    // A note about the old language would be about the
+                    // wrong one now.
+                    setFormatNote(null);
+                  }}
                 >
                   {LANGUAGES.map((l) => (
                     <option key={l} value={l}>
@@ -203,19 +249,70 @@ export default function SnippetFormModal({
             </div>
 
             <div>
-              <Label htmlFor={`${id}-code`}>
-                {bodyWording(form.language).label}
-              </Label>
+              <div className="flex items-end justify-between gap-3">
+                <Label htmlFor={`${id}-code`}>
+                  {bodyWording(form.language).label}
+                </Label>
+                {/* Format becomes Undo format until the code is edited again
+                (docs/adr/0080). Off for a language it doesn't cover, with
+                the reason under the code box. */}
+                {beforeFormat !== null ? (
+                  <button
+                    onClick={handleUndoFormat}
+                    className="mb-1 text-xs text-accent-text hover:text-fg px-2 py-0.5"
+                  >
+                    ↶ Undo format
+                  </button>
+                ) : (
+                  showsFormat(form.language) && (
+                    <button
+                      onClick={handleFormat}
+                      disabled={
+                        formatOff !== null || !form.code.trim() || formatting
+                      }
+                      aria-describedby={
+                        formatOff ? `${id}-format-off` : undefined
+                      }
+                      className="mb-1 text-xs text-accent-text hover:text-fg px-2 py-0.5 disabled:opacity-40 disabled:hover:text-accent-text"
+                    >
+                      {formatting ? "Formatting..." : "{ } Format"}
+                    </button>
+                  )
+                )}
+              </div>
               <textarea
                 id={`${id}-code`}
                 placeholder={bodyWording(form.language).placeholder}
                 value={form.code}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, code: e.target.value }))
-                }
+                readOnly={formatting}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, code: e.target.value }));
+                  setBeforeFormat(null);
+                  setFormatNote(null);
+                }}
                 rows={8}
                 className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 text-sm font-mono outline-none focus:ring-1 focus:ring-focus resize-none"
               />
+              {formatNote?.kind === "error" ? (
+                <p role="alert" className="mt-2 text-xs text-danger-text">
+                  {formatNote.text}
+                </p>
+              ) : formatNote?.kind === "info" ? (
+                <p role="status" className="mt-2 text-xs text-fg-subtle">
+                  {formatNote.text}
+                </p>
+              ) : (
+                formatOff &&
+                showsFormat(form.language) &&
+                beforeFormat === null && (
+                  <p
+                    id={`${id}-format-off`}
+                    className="mt-2 text-xs text-fg-subtle"
+                  >
+                    {formatOff}
+                  </p>
+                )
+              )}
             </div>
 
             <div>

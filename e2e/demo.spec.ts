@@ -126,11 +126,34 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await newForm.getByLabel("Title", { exact: true }).fill("Slugify");
   await page.keyboard.press("Escape");
   await expect(newForm).toBeVisible();
-  await newForm
-    .getByLabel("Code", { exact: true })
-    .fill(
-      'const slugify = (s: string) =>\n  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");',
-    );
+  const slugify =
+    'const slugify = (s: string) =>\n  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");';
+  const codeBox = newForm.getByLabel("Code", { exact: true });
+  await codeBox.fill(slugify);
+
+  // Format downloads Prettier on the first press, so this fails if the
+  // production build can't load it. Waiting for a script request fails if
+  // Prettier were in the page's first load instead, since the press would
+  // then fetch nothing. Undo puts the code back (ADR 0080).
+  const prettierLoads = page.waitForRequest(/\.js(\?|$)/);
+  await newForm.getByRole("button", { name: "{ } Format" }).click();
+  await prettierLoads;
+  await expect(codeBox).toHaveValue(
+    'const slugify = (s: string) =>\n  s\n    .toLowerCase()\n    .trim()\n    .replace(/[^a-z0-9]+/g, "-")\n    .replace(/^-|-$/g, "");',
+  );
+  await newForm.getByRole("button", { name: "↶ Undo format" }).click();
+  await expect(codeBox).toHaveValue(slugify);
+  // A language it doesn't cover turns it off and says why.
+  const language = newForm.getByLabel("Language", { exact: true });
+  await language.selectOption("python");
+  await expect(
+    newForm.getByRole("button", { name: "{ } Format" }),
+  ).toBeDisabled();
+  await expect(
+    newForm.getByText("No formatter for Python here."),
+  ).toBeVisible();
+  await language.selectOption("typescript");
+
   await newForm.getByLabel(/^Tags/).fill("strings, urls");
   await page.getByRole("button", { name: "Save snippet" }).click();
 
