@@ -49,6 +49,7 @@ flowchart LR
 | Demo mode | Expiring guest users, no sign-in needed | [0012](./adr/0012-demo-mode-as-expiring-guest-users.md) |
 | Shiki | Syntax highlighting: cards on the server, the preview modal in the browser | [0022](./adr/0022-highlight-cards-on-the-server.md) |
 | zod | Checks every API request body | [0014](./adr/0014-validate-request-bodies-with-zod.md) |
+| Prettier + sql-formatter | The snippet form's Format button, downloaded on the first press | [0080](./adr/0080-a-format-button-with-prettier-and-sql-formatter-loaded-on-first-press.md) |
 | MCP SDK | The MCP server MCP clients connect to, signed in by token | [0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md) |
 
 ## How a request flows
@@ -359,6 +360,25 @@ Inside that ceiling, guests from one IP address get at most 100 calls a day, so 
 
 Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-features-as-synchronous-claude-calls.md).
 
+## Formatting code
+
+The snippet form's Format button tidies the code in the box: indentation, spacing, one statement to a line. It runs entirely in the browser. No request goes to Snippr's server, and nothing is saved until you press Save ([0080](./adr/0080-a-format-button-with-prettier-and-sql-formatter-loaded-on-first-press.md)).
+
+Two formatters do the work. Prettier handles TypeScript, JavaScript, JSON, CSS, and HTML. sql-formatter handles SQL, in its PostgreSQL dialect. Python, Rust, Go, and Bash get a greyed-out button and a line saying which languages it covers. A prompt gets no button, since it's prose.
+
+**Nothing is downloaded until the first press.** Both formatters are big: TypeScript's first press fetches about 166 KB compressed, HTML's about 258 KB. So `src/lib/format-code.ts` never imports them at the top of the file. Each language has a loader that calls `import()` for just the pieces it needs. A *dynamic import* like `await import("prettier/plugins/postcss")` asks for a module while the code runs, and the bundler puts that module in a file of its own that the browser fetches the first time. Pressing Format on CSS fetches Prettier's core and its CSS plugin, and nothing for JavaScript. The second press is instant, from the cache.
+
+**What a press does,** in `formatCode`:
+
+1. Load the language's formatter. If the download fails, say "Couldn't load the formatter. Check your connection and try again."
+2. Format. If the formatter can't read the code, say where it stopped, for example "Couldn't read this as JavaScript at line 1, column 12. Nothing changed." That's the common case for a fragment like `foo: 1, bar: 2`, an object's insides without its braces. Prettier reports the position on the error's `loc`; sql-formatter only puts it in the message, so `errorPosition` reads both.
+3. Take off the newline Prettier adds at the end, since a snippet isn't a file.
+4. Refuse a result longer than the 20,000-character code limit, since the save would fail with it.
+
+**Undo.** After a format the button becomes Undo format, and the form keeps the code from before it (`beforeFormat` in `SnippetFormModal`). Ctrl+Z can't do this job: when code sets a textarea's value, the browser drops that box's undo history. Typing in the box clears `beforeFormat`, because undoing would then throw that typing away. While the first download runs, the code box is read-only and Save waits, so the result can't overwrite something typed in the meantime.
+
+**Tests.** `format-code.test.ts` runs the real formatters in Node, so the output it checks is what a visitor gets. `e2e/demo.spec.ts` presses Format in a production build, checks the result and Undo, and waits for the browser to fetch a script on the press. That wait would time out if Prettier were part of the page's first load.
+
 ## MCP server
 
 `POST /api/mcp` is an [MCP](https://modelcontextprotocol.io) server, so Claude Code, Cursor, and other MCP clients can use the library directly ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)). It has three tools:
@@ -470,7 +490,7 @@ src/
 │   ├── useDialogFocus.ts       Focus into the preview, the form, and the phone folder drawer, the page behind inert while open, focus back on close
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page; a toast's button, and its timer pausing on hover or focus
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
-│   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing, buttons in a sticky bar
+│   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing, buttons in a sticky bar, Format and Undo format
 │   ├── accessible-names.test.ts  Fields and buttons on the snippet forms, preview, and dashboard have names, except the folder name inputs, which only appear after a click; no control on the dashboard is inside another, and a card is an article opened by its title
 │   ├── LogoMark.tsx            The logo, colors passed in, and the Wordmark for page headers
 │   ├── ThemePicker.tsx         ThemeProvider and the Theme menu with a swatch per theme: cookie and data-theme, in the browser
@@ -504,6 +524,7 @@ src/
 │   ├── folder-name-input.ts    What Enter and blur do in the folder name input (tested)
 │   ├── folders.ts              /api/folders: sign-in, validation, then the cap or ownership (tested)
 │   ├── folder-ownership.ts     Folder ownership check for snippet writes (tested)
+│   ├── format-code.ts          The Format button: which languages it covers, loading each formatter on first press, and the sentence a failure shows (tested, against the real formatters)
 │   ├── guest.ts                Guest expiry and no-linking rules for the adapter (tested)
 │   ├── highlight.ts            Shiki passed in: card previews, every theme's colors, null instead of a throw, which languages wrap (tested)
 │   ├── keyword-search.ts       The dashboard's plain search box, spaces around the query ignored (tested)

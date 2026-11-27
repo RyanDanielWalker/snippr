@@ -14,6 +14,7 @@ Snippr is a portfolio project, so the reasoning is part of what's on show. Every
 
 - **AI search.** Turn on ✦ AI search, describe the code, and press Enter. Claude reads your library and returns what matches, even when none of your words are in the snippet. With it off, the box filters by title, tag, and language as you type.
 - **AI descriptions.** Paste code, press ✦ Generate, and Claude writes one sentence about what it does.
+- **A Format button.** Tidies TypeScript, JavaScript, JSON, CSS, HTML, and SQL in the form, with Prettier and sql-formatter. They download on the first press, and Undo puts the code back.
 - **Prompts too.** Save one under the `prompt` language. It stays plain text, long lines wrap, and Claude describes it without following it.
 - **Folders.** Drag a card onto a folder, or press Move on the card and pick one. Move works from the keyboard and on a phone, where a finger drag scrolls.
 - **An MCP server.** Claude Code, Cursor, and other MCP clients can search, read, and save snippets in your library.
@@ -107,7 +108,7 @@ Snippr is built with [Claude Code](https://claude.com/claude-code). Commits befo
 - **Auth:** NextAuth v4 with GitHub and Google, database sessions
 - **AI:** Anthropic SDK, Claude Haiku 5.5
 - **MCP:** the official TypeScript SDK
-- **Also:** zod for request bodies, Shiki for highlighting, dnd-kit for drag and drop
+- **Also:** zod for request bodies, Shiki for highlighting, dnd-kit for drag and drop, Prettier and sql-formatter for the Format button
 - **Tests:** Vitest for units and the database, Playwright end to end
 - **Shipping:** GitHub Actions, then Vercel
 
