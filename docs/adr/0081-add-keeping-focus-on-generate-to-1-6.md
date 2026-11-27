@@ -1,6 +1,6 @@
 # 0081. Add keeping focus on Generate to 1.6
 
-- **Status:** Accepted
+- **Status:** Accepted. Its follow-up was done in [0082](./0082-keep-keyboard-focus-when-a-button-is-busy-or-its-item-leaves.md), which also corrects its count of busy buttons from fourteen to thirteen.
 - **Date:** 2026-11-27
 - **Related:** `src/components/SnippetFormModal.tsx`, `e2e/demo.spec.ts`, `docs/ROADMAP.md`, [0075](./0075-close-1-5-and-scope-1-6-to-things-a-visitor-sees.md), [0080](./0080-a-format-button-with-prettier-and-sql-formatter-loaded-on-first-press.md)
 

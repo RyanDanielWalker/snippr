@@ -104,7 +104,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0070](./0070-one-press-delete-with-undo-and-an-empty-button.md) | One-press delete with Undo, and an Empty button | Accepted |
 | [0071](./0071-close-1-4-and-scope-1-5-to-accessibility.md) | Close 1.4, and scope 1.5 to accessibility | Accepted |
 | [0072](./0072-snippet-cards-are-articles-opened-by-a-title-button.md) | Snippet cards are articles, opened by a title button | Accepted |
-| [0073](./0073-move-a-snippet-from-a-move-menu-not-a-keyboard-drag.md) | Move a snippet from a Move menu, not a keyboard drag | Accepted |
+| [0073](./0073-move-a-snippet-from-a-move-menu-not-a-keyboard-drag.md) | Move a snippet from a Move menu, not a keyboard drag | Accepted; focus after a move out of the view superseded by [0082](./0082-keep-keyboard-focus-when-a-button-is-busy-or-its-item-leaves.md) |
 | [0074](./0074-leave-room-for-toasts-at-the-bottom-of-phone-dialogs.md) | Leave room for toasts at the bottom of phone dialogs | Accepted |
 | [0075](./0075-close-1-5-and-scope-1-6-to-things-a-visitor-sees.md) | Close 1.5, and scope 1.6 to things a visitor sees | Accepted |
 | [0076](./0076-add-a-phone-theme-picker-and-a-readme-shot-per-theme-to-1-6.md) | Add a phone theme picker and a README shot per theme to 1.6 | Accepted |
@@ -112,6 +112,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0078](./0078-a-light-theme-and-a-theme-menu-in-the-header.md) | A light theme, and a theme menu in the header | Accepted |
 | [0079](./0079-a-synthwave-theme-in-sunset-pink-with-a-neon-glow.md) | A synthwave theme in sunset pink, with a neon glow | Accepted |
 | [0080](./0080-a-format-button-with-prettier-and-sql-formatter-loaded-on-first-press.md) | A Format button, with Prettier and sql-formatter loaded on first press | Accepted |
-| [0081](./0081-add-keeping-focus-on-generate-to-1-6.md) | Add keeping focus on Generate to 1.6 | Accepted |
+| [0081](./0081-add-keeping-focus-on-generate-to-1-6.md) | Add keeping focus on Generate to 1.6 | Accepted; its follow-up done in [0082](./0082-keep-keyboard-focus-when-a-button-is-busy-or-its-item-leaves.md) |
+| [0082](./0082-keep-keyboard-focus-when-a-button-is-busy-or-its-item-leaves.md) | Keep keyboard focus when a button is busy or its item leaves | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

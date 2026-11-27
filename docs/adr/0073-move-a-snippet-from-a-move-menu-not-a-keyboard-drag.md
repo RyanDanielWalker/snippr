@@ -1,6 +1,6 @@
 # 0073. Move a snippet from a Move menu, not a keyboard drag
 
-- **Status:** Accepted
+- **Status:** Accepted. Its "focus goes with it" when a moved card leaves the view is superseded by [0082](./0082-keep-keyboard-focus-when-a-button-is-busy-or-its-item-leaves.md): focus now goes to the card that took its place.
 - **Date:** 2026-11-22
 - **Related:** `src/components/MoveMenu.tsx`, `src/lib/card-drop.ts`, `src/components/DashboardClient.tsx`, [0007](./0007-dnd-kit-for-drag-and-drop.md), [0071](./0071-close-1-4-and-scope-1-5-to-accessibility.md), [0072](./0072-snippet-cards-are-articles-opened-by-a-title-button.md)
 

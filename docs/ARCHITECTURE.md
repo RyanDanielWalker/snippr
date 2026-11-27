@@ -375,9 +375,38 @@ Two formatters do the work. Prettier handles TypeScript, JavaScript, JSON, CSS, 
 3. Take off the newline Prettier adds at the end, since a snippet isn't a file.
 4. Refuse a result longer than the 20,000-character code limit, since the save would fail with it.
 
-**Undo.** After a format the button becomes Undo format, and the form keeps the code from before it (`beforeFormat` in `SnippetFormModal`). Ctrl+Z can't do this job: when code sets a textarea's value, the browser drops that box's undo history. Typing in the box clears `beforeFormat`, because undoing would then throw that typing away. While the first download runs, the code box is read-only and Save waits, so the result can't overwrite something typed in the meantime. The button is `aria-disabled` during that wait, not `disabled`. Chrome moves focus off a button the moment it becomes disabled, so a keyboard user who pressed Format would land on the page behind the form. `aria-disabled` tells a screen reader it's unavailable while leaving it focusable, and `handleFormat` ignores a press while one is running. Format and Undo format are the same `<button>` element with a different label, so focus stays put when it switches. ✦ Generate, next to it, works the same way while Claude writes ([0081](./adr/0081-add-keeping-focus-on-generate-to-1-6.md)).
+**Undo.** After a format the button becomes Undo format, and the form keeps the code from before it (`beforeFormat` in `SnippetFormModal`). Ctrl+Z can't do this job: when code sets a textarea's value, the browser drops that box's undo history. Typing in the box clears `beforeFormat`, because undoing would then throw that typing away. While the first download runs, the code box is read-only and Save waits, so the result can't overwrite something typed in the meantime. The button is `aria-disabled` during that wait, not `disabled`. Chrome moves focus off a button the moment it becomes disabled, so a keyboard user who pressed Format would land on the page behind the form. `aria-disabled` tells a screen reader it's unavailable while leaving it focusable, and `handleFormat` ignores a press while one is running. Format and Undo format are the same `<button>` element with a different label, so focus stays put when it switches. ✦ Generate, next to it, works the same way while Claude writes ([0081](./adr/0081-add-keeping-focus-on-generate-to-1-6.md)), as does every busy button ("Keyboard focus" below).
 
 **Tests.** `format-code.test.ts` runs the real formatters in Node, so the output it checks is what a visitor gets. `e2e/demo.spec.ts` presses Format from the keyboard in a production build, checks the result, that focus stayed on the button, and Undo, and waits for the browser to fetch a script on the press. That wait would time out if Prettier were part of the page's first load.
+
+## Keyboard focus
+
+*Focus* is the element the keyboard is talking to: Enter presses it, and Tab moves on from it. When the focused element can't be focused any more, or leaves the page, the browser doesn't pick a neighbor. Focus falls back to the page itself, and the next Tab starts again from the top. Three pieces stop that from happening ([0082](./adr/0082-keep-keyboard-focus-when-a-button-is-busy-or-its-item-leaves.md)).
+
+**Dialogs.** The preview, the snippet form, and the phone folder drawer move focus in when they open and back to whatever opened them when they close, and make the page behind them inert while they're open (`useDialogFocus`, described under the drawer above).
+
+**Busy buttons are `aria-disabled`, not `disabled`.** Chrome moves focus off a button the moment it becomes `disabled`, so a button that's disabled while it saves would drop a keyboard user at the top of the page. `aria-disabled="true"` tells a screen reader the button is unavailable but leaves it focusable and clickable, so each press handler ignores a press while one is running. For example, `useDeleteSnippet`'s `press` returns early while `deleting` is true. `disabled` is still used for buttons that can't be pressed and can't have focus when that changes, like Save with nothing to save, which changes while you type in a field. `src/components/busy-buttons.test.ts` reads every component and fails on any `disabled={...}` that isn't on its list with the reason it's safe.
+
+**When what had focus leaves, focus goes to what took its place.** Deleting a card removes the button you pressed along with the card. `useKeepFocus` (`src/components/useKeepFocus.ts`) wraps a list and remembers the last thing focused inside it. After each render, if that element is gone and focus fell back to the page, it asks `focusAfterRemoval` (`src/lib/focus-after-removal.ts`) where to go:
+
+- back into the same item, if it's still shown;
+- else the next item that's still shown, or the one before it if the removed one was last;
+- for a control that wasn't in any item, the first item that's new since the last render, like the folder you just named;
+- else the fallback the page marks, like the view's heading.
+
+The page marks its list up for it. `data-focus-item={id}` goes on each item, `data-focus-primary` on the control that gets focus inside it, and `data-focus-fallback` (with `tabIndex={-1}` on a heading) on the fallback. Three lists use it:
+
+| List | Item | Gets focus | Fallback |
+| --- | --- | --- | --- |
+| Dashboard cards | A card, wrapped in `<div className="contents">` so its preview and edit form count as part of it | The card's title | The view's heading, else the empty state's message |
+| Sidebar folders | A folder's row | The row | The + (New folder) button |
+| Connect tokens | A token's row | Its Revoke | The "Your tokens" heading |
+
+So deleting the third card from its preview puts focus on the title of the card that's now third. Emptying Recently deleted puts it on the first card of All snippets. Pressing Enter on a new folder's name puts it on the new folder.
+
+The hook runs in `useEffect` on purpose. A card's preview closes in the same render the card leaves, and it makes the page usable again in its own effect cleanup. React runs those cleanups before any effect, and an inert element can't take focus.
+
+The Connect page's Make a token and Done swap one panel for another rather than removing a list item, so they focus the replacement directly as it mounts: the new token's Copy, then the name field. The demo checklist's open and close buttons do the same (`focusIfToggled` in `DashboardClient`).
 
 ## MCP server
 
@@ -430,6 +459,7 @@ docker-compose.yml              Local Postgres for development and tests
 docs/images/                    The README's screenshots and GIF, made by e2e/readme-images.ts
 docs/releases/                  Release notes, one file per GitHub Release (v1.1.md), published with gh release create
 e2e/
+├── connect.spec.ts             A member makes and revokes tokens from the keyboard, and focus follows each swap and removal
 ├── demo.spec.ts                End-to-end test: demo, open a card from its title button and reach a folder's ⋯ from the keyboard, create, search, drag into a folder, move a card with Move from the keyboard and back with the mouse, drag back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
 ├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer as a dialog (focus in and back, the page inert, Escape in a rename leaves it open, a backdrop tap closes it), Things to try's Move wording, and its tick from Move, delete from card, preview, and form in one press each, undo one from the toast, the next dialog's buttons sitting above that toast, then restore one from Recently deleted, delete one forever, and empty the rest
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
@@ -488,10 +518,12 @@ src/
 │   ├── useRestoreSnippet.ts    Restore from Recently deleted, shared by the card and preview
 │   ├── EmptyTrashButton.tsx    Two-step Empty beside the Recently deleted heading
 │   ├── useDialogFocus.ts       Focus into the preview, the form, and the phone folder drawer, the page behind inert while open, focus back on close
+│   ├── useKeepFocus.ts         Keeps focus in a list when what had it leaves: the cards, the sidebar's folders, the Connect page's tokens
 │   ├── Toaster.tsx             ToastProvider and useToast(), dashboard and Connect page; a toast's button, and its timer pausing on hover or focus
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing, buttons in a sticky bar, Format and Undo format
 │   ├── accessible-names.test.ts  Fields and buttons on the snippet forms, preview, and dashboard have names, except the folder name inputs, which only appear after a click; no control on the dashboard is inside another, and a card is an article opened by its title
+│   ├── busy-buttons.test.ts    Fails on any `disabled={...}` that isn't on its list with a reason, since a busy button that turns disabled drops focus
 │   ├── LogoMark.tsx            The logo, colors passed in, and the Wordmark for page headers
 │   ├── ThemePicker.tsx         ThemeProvider and the Theme menu with a swatch per theme: cookie and data-theme, in the browser
 │   ├── ThingsToTry.tsx         The demo's checklist, TryProvider, and markTried(), which ticks a line in the cookie
@@ -519,6 +551,7 @@ src/
 │   ├── email-verification.ts   Provider email verification (tested)
 │   ├── empty-state.ts          What the dashboard says when there are no cards to show (tested)
 │   ├── field-limits.ts         Field limits and the language list, shared with the UI
+│   ├── focus-after-removal.ts  Which item gets focus when the focused control leaves the page: the one that took its place (tested)
 │   ├── folder-cap.ts           Folder cap: 50 per member, 10 per guest (tested)
 │   ├── folder-delete.ts        What the folder menu says before and after a delete, and each folder's archived count (tested)
 │   ├── folder-name-input.ts    What Enter and blur do in the folder name input (tested)
