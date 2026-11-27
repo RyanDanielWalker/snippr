@@ -134,15 +134,24 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   // Format downloads Prettier on the first press, so this fails if the
   // production build can't load it. Waiting for a script request fails if
   // Prettier were in the page's first load instead, since the press would
-  // then fetch nothing. Undo puts the code back (ADR 0080).
+  // then fetch nothing. Undo puts the code back (ADR 0080). It's pressed
+  // from the keyboard, and focus has to stay on the button: one that turns
+  // disabled while it loads loses focus to the page behind the form.
   const prettierLoads = page.waitForRequest(/\.js(\?|$)/);
-  await newForm.getByRole("button", { name: "{ } Format" }).click();
+  await newForm.getByRole("button", { name: "{ } Format" }).focus();
+  await page.keyboard.press("Enter");
   await prettierLoads;
   await expect(codeBox).toHaveValue(
     'const slugify = (s: string) =>\n  s\n    .toLowerCase()\n    .trim()\n    .replace(/[^a-z0-9]+/g, "-")\n    .replace(/^-|-$/g, "");',
   );
-  await newForm.getByRole("button", { name: "↶ Undo format" }).click();
+  await expect(
+    newForm.getByRole("button", { name: "↶ Undo format" }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
   await expect(codeBox).toHaveValue(slugify);
+  await expect(
+    newForm.getByRole("button", { name: "{ } Format" }),
+  ).toBeFocused();
   // A language it doesn't cover turns it off and says why.
   const language = newForm.getByLabel("Language", { exact: true });
   await language.selectOption("python");

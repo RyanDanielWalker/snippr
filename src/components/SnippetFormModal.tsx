@@ -132,6 +132,7 @@ export default function SnippetFormModal({
   // moment. The code box is read-only until it's done, so nothing typed in
   // the meantime gets overwritten by the result.
   async function handleFormat() {
+    if (formatting) return;
     const code = form.code;
     setFormatting(true);
     setFormatNote(null);
@@ -265,15 +266,19 @@ export default function SnippetFormModal({
                   </button>
                 ) : (
                   showsFormat(form.language) && (
+                    // While it downloads it's aria-disabled, not disabled:
+                    // Chrome moves focus off a button that becomes disabled,
+                    // so a keyboard user who pressed it would land on the
+                    // page behind the form. The same button turns into Undo
+                    // format, and keeps focus through that too.
                     <button
                       onClick={handleFormat}
-                      disabled={
-                        formatOff !== null || !form.code.trim() || formatting
-                      }
+                      disabled={formatOff !== null || !form.code.trim()}
+                      aria-disabled={formatting || undefined}
                       aria-describedby={
                         formatOff ? `${id}-format-off` : undefined
                       }
-                      className="mb-1 text-xs text-accent-text hover:text-fg px-2 py-0.5 disabled:opacity-40 disabled:hover:text-accent-text"
+                      className="mb-1 text-xs text-accent-text hover:text-fg px-2 py-0.5 disabled:opacity-40 disabled:hover:text-accent-text aria-disabled:opacity-40"
                     >
                       {formatting ? "Formatting..." : "{ } Format"}
                     </button>
