@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "test:db": "vitest run --config vitest.db.config.mts",
     "test:e2e": "playwright test",
+    "test:e2e:browsers": "playwright test --config playwright.browsers.config.ts --project=webkit && playwright test --config playwright.browsers.config.ts --project=firefox",
     "e2e:db": "node scripts/e2e-db.mjs",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",

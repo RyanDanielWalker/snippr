@@ -3,26 +3,46 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { GUEST_AI_DAILY_CEILING } from "../src/lib/rate-limit";
 import { e2eDatabase } from "../scripts/e2e-guard.mjs";
 
+// Safari's Tab skips buttons and links unless "Press Tab to highlight each
+// item" is on in its settings; Option-Tab reaches everything. Playwright's
+// WebKit does the same, so a keyboard user's Tab is Option-Tab there
+// (ADR 0083).
+function tabKey(page: Page) {
+  return page.context().browser()?.browserType().name() === "webkit"
+    ? "Alt+Tab"
+    : "Tab";
+}
+
+// Safari doesn't focus a button you click or tap: the press works, but focus
+// stays where it was. So after a click there's no focus to keep or hand
+// back, and a check of where it went only means something where a click
+// does focus (ADR 0083). The keyboard paths in this file run everywhere.
+async function expectFocusedAfterClick(page: Page, locator: Locator) {
+  if (page.context().browser()?.browserType().name() === "webkit") return;
+  await expect(locator).toBeFocused();
+}
+
 // Tabs past the end of a dialog and fails if focus ever lands on the page
-// behind it. Leaving for the browser's own toolbar (body is focused then) is
-// fine, and has to happen with the dialog after it: that's the wrap from the
-// last button back to the first.
+// behind it. It has to come back round to a control it already visited,
+// which shows it really went past the end. Chromium leaves for its own
+// toolbar on the way (body is focused then), which is fine; Firefox and
+// WebKit wrap straight back to the first control.
 async function expectTabToStayIn(page: Page, dialog: Locator) {
   const stops: string[] = [];
   for (let i = 0; i < 20; i++) {
-    await page.keyboard.press("Tab");
+    await page.keyboard.press(tabKey(page));
     stops.push(
       await dialog.evaluate((el) => {
         const focused = document.activeElement;
         if (!focused || focused === document.body) return "browser";
-        if (el.contains(focused)) return "dialog";
-        return focused.outerHTML.slice(0, 80);
+        const html = focused.outerHTML.slice(0, 80);
+        return el.contains(focused) ? `dialog: ${html}` : `outside: ${html}`;
       }),
     );
   }
-  expect(stops.filter((s) => s !== "dialog" && s !== "browser")).toEqual([]);
-  expect(stops).toContain("browser");
-  expect(stops.lastIndexOf("dialog")).toBeGreaterThan(stops.indexOf("browser"));
+  expect(stops.filter((s) => s.startsWith("outside"))).toEqual([]);
+  const inDialog = stops.filter((s) => s.startsWith("dialog"));
+  expect(new Set(inDialog).size).toBeLessThan(inDialog.length);
 }
 
 // The main flow, through the real app and a real database: start a demo, add
@@ -105,7 +125,7 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   // so Tab from a folder lands on a button you can see.
   const sidebar = page.locator("aside");
   await sidebar.getByRole("button", { name: /^Frontend/ }).focus();
-  await page.keyboard.press("Tab");
+  await page.keyboard.press(tabKey(page));
   const folderMenu = sidebar.getByRole("button", {
     name: "Rename or delete Frontend",
   });
@@ -139,8 +159,8 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
     .getByRole("button", { name: "Rename or delete Scratch" })
     .focus();
   await page.keyboard.press("Enter");
-  await page.keyboard.press("Tab");
-  await page.keyboard.press("Tab");
+  await page.keyboard.press(tabKey(page));
+  await page.keyboard.press(tabKey(page));
   await expect(
     sidebar.getByRole("button", { name: "Delete", exact: true }),
   ).toBeFocused();
@@ -526,9 +546,10 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   // The view fell back to All snippets, where the card is too, so the
   // button that was pressed is still there, now Archive, and keeps focus
   // (ADR 0082).
-  await expect(
+  await expectFocusedAfterClick(
+    page,
     card("Long code").getByRole("button", { name: "Archive", exact: true }),
-  ).toBeFocused();
+  );
 
   // Dropping a card on the row archives it too (ADR 0065). The row is hidden
   // while the archive is empty, so it has to come up for the drag, and a

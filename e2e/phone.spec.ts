@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 // On a phone, a toast spans the bottom of the screen, so a dialog ends above
 // it and its buttons stay tappable while one shows (ADR 0074). `toastText`
@@ -8,6 +8,16 @@ async function expectAboveToast(button: Locator, toastText: Locator) {
   const toastBox = await toastText.locator("..").boundingBox();
   if (!buttonBox || !toastBox) throw new Error("Button or toast not on screen");
   expect(buttonBox.y + buttonBox.height).toBeLessThanOrEqual(toastBox.y);
+}
+
+// Safari doesn't focus a button you click or tap: the press works, but focus
+// stays where it was. So after a click there's no focus to keep or hand
+// back, and a check of where it went only means something where a click
+// does focus (ADR 0083). The same paths are checked from the keyboard in
+// every browser: removing a card in demo.spec.ts, tokens in connect.spec.ts.
+async function expectFocusedAfterClick(page: Page, locator: Locator) {
+  if (page.context().browser()?.browserType().name() === "webkit") return;
+  await expect(locator).toBeFocused();
 }
 
 // The dashboard on a phone: nothing scrolls sideways, and the folders open in
@@ -82,7 +92,7 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   // page is usable again.
   await page.keyboard.press("Escape");
   await expect(sidebar).toBeHidden();
-  await expect(foldersButton).toBeFocused();
+  await expectFocusedAfterClick(page, foldersButton);
   expect(
     await card("Debounce").evaluate((el) => el.closest("[inert]") !== null),
   ).toBe(false);
@@ -141,11 +151,40 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   // there instead of the top of the page (ADR 0082).
   const titleOf = (title: string) =>
     card(title).getByRole("button", { name: title, exact: true });
+  let next = cards.first();
   async function takesThePlaceOf(title: string) {
     const titles = await cards.locator("h3 button").allTextContents();
     const at = titles.indexOf(title);
     return titleOf(titles[at + 1] ?? titles[at - 1]);
   }
+
+  // A tap on Delete moves focus to the next card's title, and the page
+  // mustn't jump under the finger that tapped (ADR 0083). Delete is near the
+  // top of the screen here, so the card's title is above it. Chrome keeps
+  // what's on screen still when something above it goes ("scroll
+  // anchoring"), so the next card should stay right where it was, and
+  // moving focus to its title mustn't scroll the page somewhere else.
+  // Undo puts the card back for the steps below.
+  const first = cards.first();
+  const firstTitle = (await first.locator("h3 button").textContent()) ?? "";
+  next = await takesThePlaceOf(firstTitle);
+  await first.evaluate((el) => {
+    window.scrollBy(0, el.getBoundingClientRect().bottom - 120);
+  });
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  const onScreen = async () => (await next.boundingBox())?.y;
+  const nextWasAt = await onScreen();
+  await first.getByRole("button", { name: "Delete", exact: true }).click();
+  await expect(card(firstTitle)).toBeHidden();
+  await expectFocusedAfterClick(page, next);
+  expect(await onScreen()).toBe(nextWasAt);
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  const back = page.getByText("Back in your library.");
+  await expect(back).toBeVisible();
+  await expect(card(firstTitle)).toBeVisible();
+  await page.getByRole("button", { name: "Dismiss" }).click();
+  await expect(back).toBeHidden();
+  await page.evaluate(() => window.scrollTo(0, 0));
 
   // From the preview, in one tap. Undo in the toast brings it straight back.
   const moved = page.getByText("Moved to Recently deleted.");
@@ -161,7 +200,7 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await expect(card("Debounce")).toBeVisible();
 
   // Then for real this time.
-  let next = await takesThePlaceOf("Debounce");
+  next = await takesThePlaceOf("Debounce");
   await card("Debounce").getByRole("heading").click();
   await preview.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(preview).toBeHidden();
@@ -257,7 +296,7 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   expect(deletes).toBe(1);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.unroute("**/api/snippets");
-  await expect(next).toBeFocused();
+  await expectFocusedAfterClick(page, next);
 
   // All three wait in Recently deleted, newest first, with their 30 days.
   const sidebar = page.locator("aside");
@@ -304,7 +343,7 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await expect(page.getByText("Deleted for good.")).toBeVisible();
   await expect(retry).toBeHidden();
   await expect(cards).toHaveCount(1);
-  await expect(next).toBeFocused();
+  await expectFocusedAfterClick(page, next);
 
   // Empty takes two presses too. With nothing left, the row goes and the
   // view falls back to All snippets.
@@ -318,7 +357,7 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await expect(empty).toBeHidden();
   // Empty went with the trash, so focus goes to the first card of the view
   // that replaced it.
-  await expect(cards.first().locator("h3 button")).toBeFocused();
+  await expectFocusedAfterClick(page, cards.first().locator("h3 button"));
   await page.getByRole("button", { name: "Folders", exact: true }).click();
   await expect(trashRow).toBeHidden();
 });
