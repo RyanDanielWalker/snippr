@@ -110,5 +110,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0076](./0076-add-a-phone-theme-picker-and-a-readme-shot-per-theme-to-1-6.md) | Add a phone theme picker and a README shot per theme to 1.6 | Accepted |
 | [0077](./0077-a-sticky-button-bar-on-the-snippet-form.md) | A sticky button bar on the snippet form | Accepted |
 | [0078](./0078-a-light-theme-and-a-theme-menu-in-the-header.md) | A light theme, and a theme menu in the header | Accepted |
+| [0079](./0079-a-synthwave-theme-in-sunset-pink-with-a-neon-glow.md) | A synthwave theme in sunset pink, with a neon glow | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

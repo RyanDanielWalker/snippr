@@ -387,7 +387,9 @@ The 8-bit theme is a `[data-theme="8bit"]` block in `globals.css` that overrides
 
 The light theme is a `[data-theme="light"]` block ([0078](./adr/0078-a-light-theme-and-a-theme-menu-in-the-header.md)). It's the default identity turned over: a paper page, ink text in three levels, and the tangerine accent kept as the button color but darkened to burnt orange (`#a83a06`) wherever it's text, since bright tangerine on paper is about 2:1. Shape and type come from the default. One thing works the other way round from the dark themes. There, "raised" means lighter, so a form field is a lighter box on a darker card. On paper, a lighter box on a near-white card disappears. So in the light theme, cards and dialogs are near white, and `surface-raised` (form fields, tag chips, menus, toasts) is a tint of the page, darker than the card it sits on, like the code block.
 
-Each theme also sets `color-scheme`, a CSS property that tells the browser whether to draw its own parts light or dark: scrollbars, the list a `<select>` opens, checkboxes. The default and 8-bit say `dark`, light says `light`. For example, the language list in the snippet form opens dark on the default theme and light on the light one.
+The synthwave theme is a `[data-theme="synthwave"]` block ([0079](./adr/0079-a-synthwave-theme-in-sunset-pink-with-a-neon-glow.md)). Hot pink buttons on a deep purple page, with cyan for the focus ring and the big calls to action. Text on both is the page's purple, since white on hot pink fails 4.5:1. Its colors are only half of it. It also sets four shape tokens that 8-bit uses for its drop shadow, button lip, card shadow, and dot grid, and here they make the neon. The wordmark, the pink buttons, and a dragged card get a pink glow: a shadow with no offset and only blur, like `0 0 14px rgb(255 62 165 / 0.45)`, so it reads as light coming off the edge rather than a shadow under it. The page gets a 48-pixel grid of faint lines and a pink haze at the top, drawn with CSS gradients in `--page-pattern`. Fonts and corners are the default's.
+
+Each theme also sets `color-scheme`, a CSS property that tells the browser whether to draw its own parts light or dark: scrollbars, the list a `<select>` opens, checkboxes. The default, 8-bit, and synthwave say `dark`, light says `light`. For example, the language list in the snippet form opens dark on the default theme and light on the light one.
 
 `src/lib/theme.ts` holds the list of themes (`THEMES`, in the order the picker shows them) and their names (`THEME_NAMES`). The contrast test builds its list from `THEMES`, so a theme added there gets every check without anyone adding it to the test: each color token overridden, and every pairing at 4.5:1. The default is no attribute and no cookie. Its block's selector is `:root, [data-theme="default"]`, and the second half exists only for the picker's swatches, below.
 
@@ -395,7 +397,7 @@ The picker (`ThemePicker` in `src/components/ThemePicker.tsx`) is a Theme button
 
 On a phone, a member's dashboard header doesn't fit on one row: wordmark, Folders, avatar, Theme, Connect, and Sign out, all the more in 8-bit's wide type. So the header wraps. The buttons drop to a second row, kept to the right, and none of their labels breaks across two lines. A demo guest's header has fewer buttons and still fits on one row. `e2e/theme.spec.ts` signs in a member at 375 pixels and checks every theme for anything off the edge.
 
-Code is highlighted with every palette in one pass: Shiki writes `ayu-dark` inline and each other theme's color beside it as a variable, `--shiki-light` and `--shiki-8bit`. One rule per theme in `globals.css` switches to its variable. The light palette is hand-made (`src/lib/shiki-light.ts`), like the 8-bit one, because none of Shiki's bundled light themes passes 4.5:1 on every color against the light code background.
+Code is highlighted with every palette in one pass: Shiki writes `ayu-dark` inline and each other theme's color beside it as a variable, `--shiki-light`, `--shiki-8bit`, and `--shiki-synthwave`. One rule per theme in `globals.css` switches to its variable. The light palette is hand-made (`src/lib/shiki-light.ts`), like the 8-bit one, because none of Shiki's bundled light themes passes 4.5:1 on every color against the light code background. Synthwave's isn't: it's Synthwave '84, which Shiki bundles, loaded by name (`src/lib/shiki-synthwave.ts`). Its red falls just short of 4.5:1 on the theme's own background, but Snippr draws the code background itself and synthwave's is darker, so every color passes. `shiki-synthwave.test.ts` checks them as Shiki loads them. Some have an alpha channel, for example `#ffffffee`, white at 93%, so the test blends each over the background before measuring, because that blend is the color a reader sees.
 
 ## Code map
 
@@ -411,7 +413,7 @@ e2e/
 ├── demo.spec.ts                End-to-end test: demo, open a card from its title button and reach a folder's ⋯ from the keyboard, create, search, drag into a folder, move a card with Move from the keyboard and back with the mouse, drag back out through a hidden Unorganized, drag a card onto a hidden Archive row, Tab stays in dialogs, prompts wrap and code doesn't, the demo's used-up-AI message, every line of Things to try ticking, and the list staying closed
 ├── phone.spec.ts               The dashboard at phone width: no sideways scroll, folder drawer as a dialog (focus in and back, the page inert, Escape in a rename leaves it open, a backdrop tap closes it), Things to try's Move wording, and its tick from Move, delete from card, preview, and form in one press each, undo one from the toast, the next dialog's buttons sitting above that toast, then restore one from Recently deleted, delete one forever, and empty the rest
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
-└── theme.spec.ts               The 8-bit theme at phone width: survives a reload, no sideways scroll
+└── theme.spec.ts               The themes at phone width: 8-bit survives a reload, Light and Synthwave recolor code, nothing scrolls sideways
 playwright.config.ts            Runs it against a production build on port 3100
 playwright.images.config.ts     The same build and database, for readme-images.ts only
 prisma/
@@ -525,6 +527,7 @@ src/
 │   ├── schemas.ts              zod schemas for every request body (tested)
 │   ├── shiki-8bit.ts           The 8-bit theme's syntax colors (tested: AA on the code background)
 │   ├── shiki-light.ts          The light theme's syntax colors (tested: AA on the code background)
+│   ├── shiki-synthwave.ts      Which bundled Shiki theme synthwave uses, and its code background (tested: AA as Shiki loads it)
 │   ├── theme.ts                The theme list, their names, and the cookie (tested)
 │   ├── sidebar.ts              The collapsed sidebar's cookie, read by the dashboard page (tested)
 │   ├── things-to-try.ts        The demo checklist's items and its cookie: read, tick, close, write (tested)

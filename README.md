@@ -17,7 +17,7 @@ Snippr is a portfolio project, so the reasoning is part of what's on show. Every
 - **Prompts too.** Save one under the `prompt` language. It stays plain text, long lines wrap, and Claude describes it without following it.
 - **Folders.** Drag a card onto a folder, or press Move on the card and pick one. Move works from the keyboard and on a phone, where a finger drag scrolls.
 - **An MCP server.** Claude Code, Cursor, and other MCP clients can search, read, and save snippets in your library.
-- **Three themes.** A dark default, a light one, and an 8-bit one, picked from the Theme menu and remembered between visits.
+- **Four themes.** A dark default, a light one, an 8-bit one, and a synthwave one, picked from the Theme menu and remembered between visits.
 - **Highlighted code** on every card and in the preview, by Shiki.
 - **A demo** in one click, with a small library and a short list of things to try.
 - **A phone layout** where the folders move into a drawer and nothing scrolls sideways.
@@ -54,7 +54,7 @@ Tokens are stored as hashes and shown once. Each tool calls the same function as
   </tr>
 </table>
 
-Every theme is the same components on different values. Components only use tokens named by role (`bg-surface`, `text-fg-muted`), and the light and 8-bit themes are each one block of CSS that overrides them, with their own syntax colors. 8-bit brings its own fonts too. The choice is kept in a cookie, so the server sends the right theme with the first byte and nothing flashes.
+Every theme is the same components on different values. Components only use tokens named by role (`bg-surface`, `text-fg-muted`), and the light, 8-bit, and synthwave themes are each one block of CSS that overrides them, with their own syntax colors. 8-bit brings its own fonts too, and synthwave a neon glow. The choice is kept in a cookie, so the server sends the right theme with the first byte and nothing flashes.
 
 ## How it's built
 
