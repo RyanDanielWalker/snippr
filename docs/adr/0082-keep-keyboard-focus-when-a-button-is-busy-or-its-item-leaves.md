@@ -1,6 +1,6 @@
 # 0082. Keep keyboard focus when a button is busy or its item leaves
 
-- **Status:** Accepted, supersedes "focus goes with it" after a move in [0073](./0073-move-a-snippet-from-a-move-menu-not-a-keyboard-drag.md), and does the follow-up of [0081](./0081-add-keeping-focus-on-generate-to-1-6.md)
+- **Status:** Accepted, supersedes "focus goes with it" after a move in [0073](./0073-move-a-snippet-from-a-move-menu-not-a-keyboard-drag.md), and does the follow-up of [0081](./0081-add-keeping-focus-on-generate-to-1-6.md). Its guard test and per-handler press checks are superseded by [0083](./0083-one-helper-for-unavailable-buttons-a-lint-rule-and-a-safari-check.md): one helper and a lint rule.
 - **Date:** 2026-11-27
 - **Related:** `src/lib/focus-after-removal.ts`, `src/components/useKeepFocus.ts`, `src/components/busy-buttons.test.ts`, `src/components/DashboardClient.tsx`, `src/components/FolderSidebar.tsx`, `src/components/ConnectClient.tsx`, `e2e/connect.spec.ts`, [0070](./0070-one-press-delete-with-undo-and-an-empty-button.md), [0073](./0073-move-a-snippet-from-a-move-menu-not-a-keyboard-drag.md), [0080](./0080-a-format-button-with-prettier-and-sql-formatter-loaded-on-first-press.md), [0081](./0081-add-keeping-focus-on-generate-to-1-6.md)
 

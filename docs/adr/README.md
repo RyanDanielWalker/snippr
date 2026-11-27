@@ -113,6 +113,7 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0079](./0079-a-synthwave-theme-in-sunset-pink-with-a-neon-glow.md) | A synthwave theme in sunset pink, with a neon glow | Accepted |
 | [0080](./0080-a-format-button-with-prettier-and-sql-formatter-loaded-on-first-press.md) | A Format button, with Prettier and sql-formatter loaded on first press | Accepted |
 | [0081](./0081-add-keeping-focus-on-generate-to-1-6.md) | Add keeping focus on Generate to 1.6 | Accepted; its follow-up done in [0082](./0082-keep-keyboard-focus-when-a-button-is-busy-or-its-item-leaves.md) |
-| [0082](./0082-keep-keyboard-focus-when-a-button-is-busy-or-its-item-leaves.md) | Keep keyboard focus when a button is busy or its item leaves | Accepted |
+| [0082](./0082-keep-keyboard-focus-when-a-button-is-busy-or-its-item-leaves.md) | Keep keyboard focus when a button is busy or its item leaves | Accepted; guard test and press checks superseded by [0083](./0083-one-helper-for-unavailable-buttons-a-lint-rule-and-a-safari-check.md) |
+| [0083](./0083-one-helper-for-unavailable-buttons-a-lint-rule-and-a-safari-check.md) | One helper for unavailable buttons, a lint rule, and a Safari check | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.

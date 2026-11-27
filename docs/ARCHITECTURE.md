@@ -385,7 +385,17 @@ Two formatters do the work. Prettier handles TypeScript, JavaScript, JSON, CSS, 
 
 **Dialogs.** The preview, the snippet form, and the phone folder drawer move focus in when they open and back to whatever opened them when they close, and make the page behind them inert while they're open (`useDialogFocus`, described under the drawer above).
 
-**Busy buttons are `aria-disabled`, not `disabled`.** Chrome moves focus off a button the moment it becomes `disabled`, so a button that's disabled while it saves would drop a keyboard user at the top of the page. `aria-disabled="true"` tells a screen reader the button is unavailable but leaves it focusable and clickable, so each press handler ignores a press while one is running. For example, `useDeleteSnippet`'s `press` returns early while `deleting` is true. `disabled` is still used for buttons that can't be pressed and can't have focus when that changes, like Save with nothing to save, which changes while you type in a field. `src/components/busy-buttons.test.ts` reads every component and fails on any `disabled={...}` that isn't on its list with the reason it's safe.
+**Busy buttons are `aria-disabled`, not `disabled`.** Chrome moves focus off a button the moment it becomes `disabled`, so a button that's disabled while it saves would drop a keyboard user at the top of the page. `aria-disabled="true"` tells a screen reader the button is unavailable but leaves it focusable, and clickable too. So every such button spreads `unavailableButton(busy)` from `src/lib/unavailable-button.ts` and keeps its own `onClick` ([0083](./adr/0083-one-helper-for-unavailable-buttons-a-lint-rule-and-a-safari-check.md)):
+
+```tsx
+<button onClick={handleDelete} {...unavailableButton(deleting)}>
+```
+
+It sets `aria-disabled`, and while the button is unavailable it adds an `onClickCapture` that cancels the click. React runs *capture* handlers as the click travels down from the page to the button, before any `onClick`. Stopping it there means neither the button's `onClick` nor a parent's runs, which matters on a card, since a click anywhere on it opens the preview. The handlers that already ignored a second press, like `useDeleteSnippet`'s `press`, still do, as a backstop.
+
+`disabled` is still used for buttons that can't be pressed and can't have focus when that changes, like Save with nothing to save, which changes while you type in a field. ESLint enforces the split (`eslint.config.mjs`). A `disabled` or a hand-written `aria-disabled` in a component is an error. Each of the four `disabled` buttons that stay has an `eslint-disable-next-line` comment on the line above saying why it's safe. A comment left behind after its `disabled` is gone is an error too.
+
+**Disclosure menus keep focus still on a click.** The Theme menu and a card's Move menu (`useDisclosureMenu`) move focus to their first choice when they open, and close when focus leaves them. Safari doesn't focus a button you click. It takes focus off the focused choice and gives it to nothing, so the menu used to close on mousedown, and the click on a choice never landed. Picking a theme or a Move destination with a mouse or a tap did nothing in Safari. The menu now cancels `mousedown`'s default action, which stops a click moving focus in every browser. A click on the menu's own button closes it through `close()`, which puts focus back on the button.
 
 **When what had focus leaves, focus goes to what took its place.** Deleting a card removes the button you pressed along with the card. `useKeepFocus` (`src/components/useKeepFocus.ts`) wraps a list and remembers the last thing focused inside it. After each render, if that element is gone and focus fell back to the page, it asks `focusAfterRemoval` (`src/lib/focus-after-removal.ts`) where to go:
 
@@ -465,6 +475,7 @@ e2e/
 ├── readme-images.ts            Not a test: takes the README's screenshots and GIF (npm run readme-images)
 └── theme.spec.ts               The themes at phone width: 8-bit survives a reload, Light and Synthwave recolor code, nothing scrolls sideways
 playwright.config.ts            Runs it against a production build on port 3100
+playwright.browsers.config.ts   The same tests in WebKit and Firefox, by hand (npm run test:e2e:browsers)
 playwright.images.config.ts     The same build and database, for readme-images.ts only
 prisma/
 ├── migrations/                 SQL migrations, starting from the 0_init baseline
@@ -506,7 +517,7 @@ src/
 │   ├── ConnectClient.tsx       The Connect page's token form, new-token panel, and list
 │   ├── FolderSidebar.tsx       The Library panel (a drawer on phones): All snippets, Unorganized, Archive, Recently deleted, then folders indented under them; collapses to an icon rail whose rows are still drop targets (tested: when Unorganized and Archive show, including mid-drag, the count's color under a drag, the rail's names and letters, and that only the open row is `aria-current`)
 │   ├── MoveMenu.tsx            A card's Move button and its list of places, for moving without a drag
-│   ├── useDisclosureMenu.ts    A button that opens a list: focus, arrow keys, Escape, click outside; for Move and Theme
+│   ├── useDisclosureMenu.ts    A button that opens a list: focus, arrow keys, Escape, click outside, and clicks inside that don't move focus (Safari); for Move and Theme
 │   ├── SnippetCard.tsx         Draggable card with edit, move, delete, copy; in Recently deleted, restore, copy, and delete forever; a click or its title button opens the preview
 │   ├── SnippetCardView.tsx     Card markup only, an <article> named by its title, shared with the landing page; the title is a button where the card opens
 │   ├── CreatedDate.tsx         A snippet's created date on the card and preview, in the reader's time zone
@@ -523,7 +534,6 @@ src/
 │   ├── DemoButton.tsx          "Try the demo" form on the landing page
 │   ├── SnippetFormModal.tsx    New and edit form, labelled fields, unsaved-change guard (click outside, Escape), delete when editing, buttons in a sticky bar, Format and Undo format
 │   ├── accessible-names.test.ts  Fields and buttons on the snippet forms, preview, and dashboard have names, except the folder name inputs, which only appear after a click; no control on the dashboard is inside another, and a card is an article opened by its title
-│   ├── busy-buttons.test.ts    Fails on any `disabled={...}` that isn't on its list with a reason, since a busy button that turns disabled drops focus
 │   ├── LogoMark.tsx            The logo, colors passed in, and the Wordmark for page headers
 │   ├── ThemePicker.tsx         ThemeProvider and the Theme menu with a swatch per theme: cookie and data-theme, in the browser
 │   ├── ThingsToTry.tsx         The demo's checklist, TryProvider, and markTried(), which ticks a line in the cookie
@@ -589,6 +599,7 @@ src/
 │   ├── token-store.ts          Database side of api-tokens.ts (tested against Postgres)
 │   ├── toasts.ts               Toast queue: limit, duplicates (never merging one with a button), how long each stays (tested); TOAST_ROOM and TOAST_ROOM_EDGE, the room phone dialogs leave for toasts
 │   ├── trash.ts                Recently deleted's 30 days, its limit, and a card's countdown (tested)
+│   ├── unavailable-button.ts   Props for a busy or unavailable button: aria-disabled, and a click stopped on its way down (tested)
 │   └── prisma.ts               Prisma client singleton
 └── types/next-auth.d.ts        Adds user.id and user.isGuest to the Session type, and guestExpiresAt to the adapter's user
 vitest.config.mts               npm test: the *.test.ts files next to the code

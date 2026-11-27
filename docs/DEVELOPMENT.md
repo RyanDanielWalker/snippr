@@ -57,6 +57,7 @@ In Vercel, every secret is marked **Sensitive**, which encrypts it so it can't b
 | `npm run test:watch` | Re-run tests as files change |
 | `npm run test:db` | The store, snippet cap race, AI usage counter, foreign key index, row-level security, provider token, and email case index tests, against a real Postgres. Resets the `snippr_test` database first |
 | `npm run test:e2e` | The end-to-end test in a real browser. Resets the e2e database, builds, and serves on port 3100 first, so it takes a minute or two |
+| `npm run test:e2e:browsers` | The same end-to-end tests in WebKit (Safari's engine), then Firefox. Not in CI. Run it after changing focus, keyboard handling, or layout |
 | `npm run e2e:db` | Wipe the e2e database and apply every migration. `test:e2e` runs it for you |
 | `npm run readme-images` | Retake the README's screenshots and GIF in `docs/images/`. Builds and serves like `test:e2e` |
 
@@ -69,6 +70,8 @@ npx playwright install chromium   # once
 npm run db:up
 npm run test:e2e
 ```
+
+CI runs Chromium only. `npm run test:e2e:browsers` runs every test in WebKit, the engine behind Safari, and then in Firefox ([0083](./adr/0083-one-helper-for-unavailable-buttons-a-lint-rule-and-a-safari-check.md)). Install the two browsers once with `npx playwright install webkit firefox`. It runs one browser at a time, each against a freshly reset database, because both together would start 8 demos against the limit of 5. Two Safari habits shape the tests. Its Tab skips buttons unless a setting is on, so the tests press Option-Tab there (`tabKey`). And it doesn't focus a button you click, so focus checks after a click skip WebKit (`expectFocusedAfterClick`). A run is capped at 10 minutes, because headless WebKit once froze after a drag.
 
 It runs against `snippr_e2e`, a second database in the same Docker Postgres, and wipes it before every run. Your dev data isn't touched. Set `E2E_DATABASE_URL` to use another database; it has to be local and its name has to end in `_e2e`. It reads `NEXTAUTH_SECRET` from `.env`. AI search isn't covered yet, so no Claude calls and no API key needed.
 
@@ -248,7 +251,7 @@ If a change involves a decision that's hard to reverse, not obvious from the cod
 A change is ready to push when:
 
 - [ ] It works locally, and risky changes have been checked with a production build.
-- [ ] `npm run format:check`, `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`, and changes to a store, `ai-usage.ts`, or `schema.prisma` pass `npm run test:db`. CI runs all of them after the push either way.
+- [ ] `npm run format:check`, `npm run lint`, `npm run typecheck`, and `npm test` pass. Changes to the dashboard, demo, or API also pass `npm run test:e2e`, changes to focus, keyboard handling, or layout also pass `npm run test:e2e:browsers`, and changes to a store, `ai-usage.ts`, or `schema.prisma` pass `npm run test:db`. CI runs all of them after the push either way.
 - [ ] New API input goes through a schema in `src/lib/schemas.ts` (via `parseBody`), and every record lookup checks ownership.
 - [ ] New Route Handlers take the user from the session (`currentUser()`), never from a token. `/api/mcp` is the one exception ([0024](./adr/0024-remote-mcp-server-with-personal-access-tokens.md)).
 - [ ] New Route Handler logic lives in `src/lib` with the database passed in as a store, and has tests for its `401`, `400`, and ownership cases ([0018](./adr/0018-route-handler-logic-in-lib-with-a-store.md)).
