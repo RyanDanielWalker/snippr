@@ -8,6 +8,7 @@
 
 import { eightBitShikiTheme } from "./shiki-8bit";
 import { lightShikiTheme } from "./shiki-light";
+import { SYNTHWAVE_SHIKI_THEME } from "./shiki-synthwave";
 import type { Theme } from "./theme";
 
 // Its orange keywords pick up the accent. The background is ignored: the
@@ -15,7 +16,7 @@ import type { Theme } from "./theme";
 export const SHIKI_THEME = "ayu-dark";
 
 /**
- * Every theme's palette in one pass (ADR 0029, 0078). Shiki writes the default's
+ * Every theme's palette in one pass (ADR 0029, 0078, 0079). Shiki writes the default's
  * colors inline and each other one as a --shiki-<key> variable, which
  * globals.css switches to under that data-theme. The keys match THEMES.
  */
@@ -23,6 +24,7 @@ export const SHIKI_THEMES = {
   default: SHIKI_THEME,
   light: lightShikiTheme,
   "8bit": eightBitShikiTheme,
+  synthwave: SYNTHWAVE_SHIKI_THEME,
 } satisfies Record<Theme, unknown>;
 
 /** A card shows about six lines; this leaves room to scroll a little. */

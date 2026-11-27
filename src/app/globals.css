@@ -200,6 +200,70 @@
   --mark-cut: #c94e14;
 }
 
+/* The synthwave theme (ADR 0079): hot pink on deep purple, with cyan for
+   focus and the big calls to action. The wordmark and primary buttons glow,
+   and the page is a faint grid under a pink haze. Fonts and corners are the
+   default's. It overrides every color token, which theme-tokens.test.ts
+   checks, along with the contrast of every pairing. */
+[data-theme="synthwave"] {
+  color-scheme: dark;
+
+  --page: #1b1030;
+  --surface: #241640;
+  --surface-raised: #2f1d52;
+  --surface-hover: #3b2765;
+  --overlay: rgb(10 5 24 / 0.8);
+  --code: #130b24;
+
+  --line: #3a2660;
+  --line-strong: #573b8a;
+
+  --fg: #fdf2ff;
+  --fg-muted: #e4d4f4;
+  --fg-subtle: #bba6d8;
+
+  /* Hot pink. Text on it is the page color, as white on pink fails AA. */
+  --accent: #ff3ea5;
+  --accent-hover: #ff6bbb;
+  --accent-fg: #1b1030;
+  --accent-text: #ff7cc8;
+  --accent-soft: #3f1342;
+  --accent-line: #9a2c78;
+  --focus: #36f9f6;
+
+  /* The cyan call-to-action buttons */
+  --inverse: #36f9f6;
+  --inverse-hover: #8dfbf9;
+  --inverse-fg: #1b1030;
+
+  --danger: #d81f4b;
+  --danger-hover: #b3173c;
+  --danger-fg: #ffffff;
+  --danger-text: #ff7088;
+  --danger-soft: #3f0d26;
+  --danger-line: #86204a;
+  --warning-text: #fede5d;
+  --warning-soft: #3a2c0c;
+
+  /* The neon: a pink glow on the wordmark, on buttons with a lip, and on a
+     card being dragged. The page is a 48px grid in the line color, at about
+     half strength, under a pink haze at the top. */
+  --wordmark-shadow:
+    0 0 6px rgb(255 62 165 / 0.8), 0 0 18px rgb(255 62 165 / 0.6);
+  --press-shadow: 0 0 14px rgb(255 62 165 / 0.45);
+  --lifted-shadow: 0 0 32px rgb(255 62 165 / 0.5);
+  --mark-cut: #36f9f6;
+  --page-pattern:
+    radial-gradient(
+      ellipse 80% 45% at 50% 0%,
+      rgb(255 62 165 / 0.16),
+      transparent
+    ),
+    linear-gradient(rgb(58 38 96 / 0.55) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, rgb(58 38 96 / 0.55) 1px, transparent 1px) 0 0 / 48px
+      48px;
+}
+
 /* Drop Tailwind's palette, so bg-gray-800 and friends don't exist. */
 @theme {
   --color-*: initial;
@@ -318,6 +382,11 @@ code,
 [data-theme="8bit"] .shiki,
 [data-theme="8bit"] .shiki span {
   color: var(--shiki-8bit) !important;
+}
+
+[data-theme="synthwave"] .shiki,
+[data-theme="synthwave"] .shiki span {
+  color: var(--shiki-synthwave) !important;
 }
 
 .shiki-wrapper pre {

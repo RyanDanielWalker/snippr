@@ -5,7 +5,7 @@
  */
 
 /** In the order the picker lists them. */
-export const THEMES = ["default", "light", "8bit"] as const;
+export const THEMES = ["default", "light", "8bit", "synthwave"] as const;
 export type Theme = (typeof THEMES)[number];
 
 /** What the picker calls each theme. */
@@ -13,6 +13,7 @@ export const THEME_NAMES: Record<Theme, string> = {
   default: "Default",
   light: "Light",
   "8bit": "8-bit",
+  synthwave: "Synthwave",
 };
 
 export const THEME_COOKIE = "snippr-theme";

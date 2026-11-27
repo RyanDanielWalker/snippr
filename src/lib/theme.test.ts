@@ -16,7 +16,8 @@ describe("parseTheme", () => {
   it("falls back to the default for anything else", () => {
     expect(parseTheme(undefined)).toBe("default");
     expect(parseTheme("")).toBe("default");
-    expect(parseTheme("synthwave")).toBe("default");
+    expect(parseTheme("vaporwave")).toBe("default");
+    expect(parseTheme("Synthwave")).toBe("default");
     expect(parseTheme("8BIT")).toBe("default");
     expect(parseTheme('8bit"><script>')).toBe("default");
   });
@@ -27,6 +28,7 @@ describe("themeAttribute", () => {
     expect(themeAttribute("default")).toBeUndefined();
     expect(themeAttribute("light")).toBe("light");
     expect(themeAttribute("8bit")).toBe("8bit");
+    expect(themeAttribute("synthwave")).toBe("synthwave");
   });
 });
 

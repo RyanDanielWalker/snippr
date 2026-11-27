@@ -96,11 +96,19 @@ test("the 8-bit theme survives a reload and fits a phone", async ({ page }) => {
   expect(await sidewaysOverflow(page)).toBe(0);
 
   // Code recolors in place, from the palette Shiki wrote beside ayu-dark.
-  const codeColor = await page
-    .locator(".snippet-code .shiki")
-    .first()
-    .evaluate((el) => getComputedStyle(el).color);
-  expect(codeColor).toBe("rgb(11, 16, 32)");
+  const codeColor = () =>
+    page
+      .locator(".snippet-code .shiki")
+      .first()
+      .evaluate((el) => getComputedStyle(el).color);
+  expect(await codeColor()).toBe("rgb(11, 16, 32)");
+
+  // Synthwave's code is Shiki's bundled Synthwave '84, whose plain text is
+  // Shiki's fallback grey (ADR 0079).
+  await pickTheme(page, "Synthwave");
+  await expect(html).toHaveAttribute("data-theme", "synthwave");
+  expect(await codeColor()).toBe("rgb(187, 187, 187)");
+  expect(await sidewaysOverflow(page)).toBe(0);
 
   // Back to the default: no attribute, and no cookie left behind.
   await pickTheme(page, "Default");
