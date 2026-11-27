@@ -37,7 +37,7 @@ export function ThemeProvider({
  */
 export function ThemePicker({ className = "" }: { className?: string }) {
   const { theme, setTheme } = use(ThemeContext);
-  const { open, setOpen, close, buttonRef, listRef, listId, wrapperProps } =
+  const { open, close, toggle, buttonRef, listRef, listId, wrapperProps } =
     useDisclosureMenu();
 
   function pick(next: Theme) {
@@ -52,7 +52,7 @@ export function ThemePicker({ className = "" }: { className?: string }) {
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={toggle}
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         className={`text-fg-subtle hover:text-fg transition ${className}`}

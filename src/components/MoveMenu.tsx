@@ -34,7 +34,7 @@ export default function MoveMenu({
   /** A move is under way: Move keeps focus but ignores presses. */
   busy?: boolean;
 }) {
-  const { open, setOpen, close, buttonRef, listRef, listId, wrapperProps } =
+  const { open, close, toggle, buttonRef, listRef, listId, wrapperProps } =
     useDisclosureMenu();
   const choices = moveChoices(folders, folderId);
 
@@ -58,7 +58,7 @@ export default function MoveMenu({
         type="button"
         // Not disabled: a disabled button drops focus, and focus is on Move
         // while the move it just started is under way (docs/adr/0082).
-        onClick={() => setOpen(!open)}
+        onClick={toggle}
         {...unavailableButton(busy)}
         aria-expanded={open}
         aria-controls={open ? listId : undefined}

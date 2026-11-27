@@ -11,7 +11,13 @@ import { useEffect, useId, useRef, useState } from "react";
  * - The arrow keys move through the list, wrapping at the ends. Tab works too,
  *   like anywhere else on the page.
  * - Escape, a click outside, or tabbing out of the list closes it. Escape
- *   puts focus back on the button.
+ *   puts focus back on the button, and so does a click on the button.
+ * - A click inside it never moves focus (docs/adr/0083). Safari doesn't
+ *   focus a button you click: it takes focus off the focused choice and
+ *   gives it to nothing. Without this, that looked like focus leaving the
+ *   list, the list closed on mousedown, and the click on a choice never
+ *   landed. Picking a theme or a place to move to with the mouse did
+ *   nothing in Safari.
  *
  * The component draws the button and the list, and spreads `wrapperProps` on
  * an element around both.
@@ -43,6 +49,16 @@ export function useDisclosureMenu() {
     buttonRef.current?.focus();
   }
 
+  /**
+   * What a press on the button does. Closing goes through `close`: the
+   * click no longer moves focus to the button (see onMouseDown below), and
+   * focus would otherwise be left on a choice that's gone.
+   */
+  function toggle() {
+    if (open) close();
+    else setOpen(true);
+  }
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Escape") {
       // Handled here, so nothing further up (a dialog) closes as well.
@@ -66,6 +82,7 @@ export function useDisclosureMenu() {
     open,
     setOpen,
     close,
+    toggle,
     buttonRef,
     listRef,
     listId,
@@ -78,6 +95,9 @@ export function useDisclosureMenu() {
         }
       },
       onKeyDown: open ? handleKeyDown : undefined,
+      // Cancelling mousedown's default stops a click moving focus, in every
+      // browser. The click itself still happens.
+      onMouseDown: (e: React.MouseEvent) => e.preventDefault(),
     },
   };
 }
