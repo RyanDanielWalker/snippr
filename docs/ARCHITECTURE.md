@@ -362,7 +362,7 @@ Limits and trade-offs of the AI approach itself are in [0005](./adr/0005-ai-feat
 
 ## Formatting code
 
-The snippet form's Format button tidies the code in the box: indentation, spacing, one statement to a line. It runs entirely in the browser. No request goes to Snippr's server, and nothing is saved until you press Save ([0080](./adr/0080-a-format-button-with-prettier-and-sql-formatter-loaded-on-first-press.md)).
+The snippet form's Format button tidies the code in the box: indentation, spacing, one statement to a line. It runs entirely in the browser. The code isn't sent anywhere, and nothing is saved until you press Save ([0080](./adr/0080-a-format-button-with-prettier-and-sql-formatter-loaded-on-first-press.md)).
 
 Two formatters do the work. Prettier handles TypeScript, JavaScript, JSON, CSS, and HTML. sql-formatter handles SQL, in its PostgreSQL dialect. Python, Rust, Go, and Bash get a greyed-out button and a line saying which languages it covers. A prompt gets no button, since it's prose.
 
@@ -375,9 +375,9 @@ Two formatters do the work. Prettier handles TypeScript, JavaScript, JSON, CSS, 
 3. Take off the newline Prettier adds at the end, since a snippet isn't a file.
 4. Refuse a result longer than the 20,000-character code limit, since the save would fail with it.
 
-**Undo.** After a format the button becomes Undo format, and the form keeps the code from before it (`beforeFormat` in `SnippetFormModal`). Ctrl+Z can't do this job: when code sets a textarea's value, the browser drops that box's undo history. Typing in the box clears `beforeFormat`, because undoing would then throw that typing away. While the first download runs, the code box is read-only and Save waits, so the result can't overwrite something typed in the meantime.
+**Undo.** After a format the button becomes Undo format, and the form keeps the code from before it (`beforeFormat` in `SnippetFormModal`). Ctrl+Z can't do this job: when code sets a textarea's value, the browser drops that box's undo history. Typing in the box clears `beforeFormat`, because undoing would then throw that typing away. While the first download runs, the code box is read-only and Save waits, so the result can't overwrite something typed in the meantime. The button is `aria-disabled` during that wait, not `disabled`. Chrome moves focus off a button the moment it becomes disabled, so a keyboard user who pressed Format would land on the page behind the form. `aria-disabled` tells a screen reader it's unavailable while leaving it focusable, and `handleFormat` ignores a press while one is running. Format and Undo format are the same `<button>` element with a different label, so focus stays put when it switches.
 
-**Tests.** `format-code.test.ts` runs the real formatters in Node, so the output it checks is what a visitor gets. `e2e/demo.spec.ts` presses Format in a production build, checks the result and Undo, and waits for the browser to fetch a script on the press. That wait would time out if Prettier were part of the page's first load.
+**Tests.** `format-code.test.ts` runs the real formatters in Node, so the output it checks is what a visitor gets. `e2e/demo.spec.ts` presses Format from the keyboard in a production build, checks the result, that focus stayed on the button, and Undo, and waits for the browser to fetch a script on the press. That wait would time out if Prettier were part of the page's first load.
 
 ## MCP server
 
