@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toaster";
 import { callApi } from "@/lib/api-client";
+import { unavailableButton } from "@/lib/unavailable-button";
 
 /** How long the first press stays armed before Empty resets, like Delete forever. */
 const CONFIRM_MS = 3000;
@@ -61,9 +62,9 @@ export default function EmptyTrashButton() {
         </p>
       )}
       <button
+        // Keeps focus while it works (docs/adr/0082).
         onClick={press}
-        // aria-disabled keeps focus here while it works (docs/adr/0082).
-        aria-disabled={emptying || undefined}
+        {...unavailableButton(emptying)}
         className={`text-xs case-control transition ${
           armed ? "text-danger-text" : "text-fg-subtle hover:text-danger-text"
         }`}

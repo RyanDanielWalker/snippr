@@ -232,11 +232,31 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await expect(card("Retry with backoff")).toBeHidden();
   await expect(next).toBeFocused();
 
-  // From the card itself.
+  // From the card itself. The server is slowed down here, so the second
+  // press lands while the first is under way. Delete is aria-disabled then,
+  // not disabled, so it can still be clicked, and it mustn't send a second
+  // request or open the card's preview (ADR 0083). unavailableButton stops
+  // the click, and the delete hook ignores a press while it's deleting too,
+  // so this checks the outcome. demo.spec.ts checks unavailableButton on
+  // its own, with Move, whose handler has no check of its own.
   const port = card("Free up a port");
   next = await takesThePlaceOf("Free up a port");
-  await port.getByRole("button", { name: "Delete", exact: true }).click();
+  let deletes = 0;
+  await page.route("**/api/snippets", async (route) => {
+    if (route.request().method() !== "DELETE") return route.fallback();
+    deletes++;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await route.fallback();
+  });
+  const portDelete = port.getByRole("button", { name: /^Delet/ });
+  await portDelete.click();
+  await expect(portDelete).toHaveAttribute("aria-disabled", "true");
+  // force: Playwright won't click an aria-disabled button on its own.
+  await portDelete.click({ force: true });
   await expect(port).toBeHidden();
+  expect(deletes).toBe(1);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.unroute("**/api/snippets");
   await expect(next).toBeFocused();
 
   // All three wait in Recently deleted, newest first, with their 30 days.

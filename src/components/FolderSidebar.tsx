@@ -603,10 +603,9 @@ export default function FolderSidebar({
       <div ref={foldersRef} className="mt-3 ml-5 pl-1 border-l border-line">
         <div className="flex items-center justify-between px-3 pt-1 pb-2">
           <span className={HEADING}>Folders</span>
-          {/* disabled while the name field is open, which has focus by then
-              (autoFocus), so nothing is lost. */}
           <button
             onClick={startCreate}
+            // eslint-disable-next-line no-restricted-syntax -- Off while the name field is open, and that field takes focus as it opens (autoFocus), so nothing is lost.
             disabled={creating}
             data-focus-fallback
             className={`${HEADING_BUTTON} disabled:opacity-40`}

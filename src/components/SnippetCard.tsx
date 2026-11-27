@@ -12,6 +12,7 @@ import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useArchiveSnippet } from "@/components/useArchiveSnippet";
 import { useRestoreSnippet } from "@/components/useRestoreSnippet";
 import { goneIn } from "@/lib/trash";
+import { unavailableButton } from "@/lib/unavailable-button";
 import type { Snippet, Folder } from "@/lib/library-types";
 
 export default function SnippetCard({
@@ -136,9 +137,8 @@ export default function SnippetCard({
         }`}
         footer={
           <div className="pt-1 mt-auto space-y-2">
-            {/* Busy buttons are aria-disabled, not disabled: a disabled
-                button loses focus, and the hooks ignore a second press
-                anyway (docs/adr/0082). */}
+            {/* Busy buttons stay focusable and ignore presses while they
+                work (unavailableButton, docs/adr/0082). */}
             {(del.error || archive.error || restore.error) && (
               <p role="alert" className="text-xs text-danger-text">
                 {del.error ?? archive.error ?? restore.error}
@@ -154,8 +154,8 @@ export default function SnippetCard({
                   <div className="flex items-center gap-4">
                     <button
                       onClick={handleRestore}
+                      {...unavailableButton(restore.pending)}
                       onPointerDown={(e) => e.stopPropagation()}
-                      aria-disabled={restore.pending || undefined}
                       className="text-xs case-control text-fg-subtle hover:text-fg transition"
                     >
                       {restore.label}
@@ -170,8 +170,8 @@ export default function SnippetCard({
                   </div>
                   <button
                     onClick={handleDelete}
+                    {...unavailableButton(del.deleting)}
                     onPointerDown={(e) => e.stopPropagation()}
-                    aria-disabled={del.deleting || undefined}
                     className={`text-xs case-control transition ${
                       del.armed
                         ? "text-danger-text"
@@ -200,7 +200,7 @@ export default function SnippetCard({
                       folders={folders}
                       folderId={snippet.folderId}
                       onMove={onMove}
-                      disabled={moving}
+                      busy={moving}
                     />
                   )}
                   <button
@@ -212,8 +212,8 @@ export default function SnippetCard({
                   </button>
                   <button
                     onClick={handleArchive}
+                    {...unavailableButton(archive.pending)}
                     onPointerDown={(e) => e.stopPropagation()}
-                    aria-disabled={archive.pending || undefined}
                     className="text-xs case-control text-fg-subtle hover:text-fg transition"
                   >
                     {archive.label}
@@ -221,8 +221,8 @@ export default function SnippetCard({
                 </div>
                 <button
                   onClick={handleDelete}
+                  {...unavailableButton(del.deleting)}
                   onPointerDown={(e) => e.stopPropagation()}
-                  aria-disabled={del.deleting || undefined}
                   className={`text-xs case-control transition ${
                     del.armed
                       ? "text-danger-text"

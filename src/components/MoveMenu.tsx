@@ -1,6 +1,7 @@
 "use client";
 
 import { moveChoices } from "@/lib/card-drop";
+import { unavailableButton } from "@/lib/unavailable-button";
 import type { Folder } from "@/lib/library-types";
 import { useDisclosureMenu } from "./useDisclosureMenu";
 
@@ -23,14 +24,15 @@ export default function MoveMenu({
   folders,
   folderId,
   onMove,
-  disabled = false,
+  busy = false,
 }: {
   folders: Folder[];
   /** Where the snippet is now: a folder's id, or null for Unorganized. */
   folderId: string | null | undefined;
   /** Called with the drop id of the place picked (see `moveChoices`). */
   onMove: (targetId: string) => void;
-  disabled?: boolean;
+  /** A move is under way: Move keeps focus but ignores presses. */
+  busy?: boolean;
 }) {
   const { open, setOpen, close, buttonRef, listRef, listId, wrapperProps } =
     useDisclosureMenu();
@@ -54,10 +56,10 @@ export default function MoveMenu({
       <button
         ref={buttonRef}
         type="button"
-        // aria-disabled, not disabled: a disabled button drops focus, and
-        // focus is on Move while the move it just started is under way.
-        onClick={() => !disabled && setOpen(!open)}
-        aria-disabled={disabled || undefined}
+        // Not disabled: a disabled button drops focus, and focus is on Move
+        // while the move it just started is under way (docs/adr/0082).
+        onClick={() => setOpen(!open)}
+        {...unavailableButton(busy)}
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         className="text-xs case-control text-fg-subtle hover:text-fg transition"

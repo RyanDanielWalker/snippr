@@ -35,6 +35,7 @@ import {
 } from "@/lib/snippet-cap";
 import { SEARCH_QUERY_MAX } from "@/lib/field-limits";
 import { callApi } from "@/lib/api-client";
+import { unavailableButton } from "@/lib/unavailable-button";
 import { CARD_INSTRUCTIONS } from "@/lib/card-keys";
 import { emptyState } from "@/lib/empty-state";
 import { matchesKeyword } from "@/lib/keyword-search";
@@ -600,15 +601,13 @@ export default function DashboardClient({
                     ✦ AI search
                   </button>
 
-                  {/* aria-disabled, not disabled, when the library is full.
+                  {/* Unavailable, not disabled, when the library is full.
                       It can fill while this button has focus, when the form
                       it opened saves the last snippet and gives focus back,
                       and a disabled button would drop it (docs/adr/0082). */}
                   <button
-                    onClick={() => {
-                      if (capStatus !== "full") setShowModal(true);
-                    }}
-                    aria-disabled={capStatus === "full" || undefined}
+                    onClick={() => setShowModal(true)}
+                    {...unavailableButton(capStatus === "full")}
                     title={
                       capStatus === "full"
                         ? snippetCapMessage(cap, user.isGuest)

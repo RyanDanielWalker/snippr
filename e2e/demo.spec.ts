@@ -287,11 +287,25 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(move).toBeFocused();
 
   // Up from the first place wraps to the last, and Enter moves it there.
-  // The card leaves Frontend, so it leaves this view.
+  // The card leaves Frontend, so it leaves this view. The server is slowed
+  // down so Move can be pressed again while the move is under way. Move is
+  // aria-disabled then and still takes the press, but unavailableButton
+  // stops it, so the list stays shut (ADR 0083). Move's own handler doesn't
+  // check, so this fails if unavailableButton doesn't.
+  await page.route("**/api/snippets", async (route) => {
+    if (route.request().method() !== "PATCH") return route.fallback();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await route.fallback();
+  });
   await page.keyboard.press("Enter");
   await page.keyboard.press("ArrowUp");
   await expect(moveTo.getByRole("button", { name: "Shell" })).toBeFocused();
   await page.keyboard.press("Enter");
+  await expect(move).toBeFocused();
+  await expect(move).toHaveAttribute("aria-disabled", "true");
+  await page.keyboard.press("Enter");
+  await expect(move).toHaveAttribute("aria-expanded", "false");
+  await page.unroute("**/api/snippets");
   await expect(page.getByText("Moved to Shell.")).toBeVisible();
   await expect(card("Debounce")).toBeHidden();
   await expect(cards).toHaveCount(1);

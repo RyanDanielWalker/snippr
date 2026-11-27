@@ -9,6 +9,7 @@ import { useCopy } from "@/components/useCopy";
 import { markTried } from "@/components/ThingsToTry";
 import { useKeepFocus } from "@/components/useKeepFocus";
 import { callApi } from "@/lib/api-client";
+import { unavailableButton } from "@/lib/unavailable-button";
 import { TOKEN_NAME_MAX } from "@/lib/field-limits";
 import { clientSetups } from "@/lib/mcp-config";
 
@@ -160,9 +161,9 @@ function CreateToken({
         />
         <button
           type="submit"
-          // Not disabled while it saves, so it keeps focus; submit ignores
-          // a second press (docs/adr/0082).
-          aria-disabled={saving || undefined}
+          // Keeps focus while it saves, and a second press doesn't send the
+          // form again (docs/adr/0082).
+          {...unavailableButton(saving)}
           className="bg-accent text-accent-fg shadow-press case-control hover:bg-accent-hover aria-disabled:opacity-60 text-sm font-medium rounded-box px-4 py-2 transition"
         >
           {saving ? "Making..." : "Make a token"}
@@ -318,9 +319,9 @@ function TokenItem({ token }: { token: TokenRow }) {
         )}
       </div>
       <button
+        // Keeps focus while it works (docs/adr/0082).
         onClick={press}
-        // Keeps focus while it works; press ignores a second one.
-        aria-disabled={revoking || undefined}
+        {...unavailableButton(revoking)}
         data-focus-primary
         // The visible label plus which token, so a screen reader hears both.
         aria-label={`${label} ${token.name}`}

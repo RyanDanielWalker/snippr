@@ -12,6 +12,7 @@ import { highlightCode, lineWrapClass } from "@/lib/highlight";
 import type { Snippet } from "@/lib/library-types";
 import { bodyWording } from "@/lib/snippet-form";
 import { TOAST_ROOM } from "@/lib/toasts";
+import { unavailableButton } from "@/lib/unavailable-button";
 
 export default function SnippetModal({
   snippet,
@@ -141,12 +142,12 @@ export default function SnippetModal({
           </p>
         )}
         {/* Delete on the opposite side from Edit and Copy, so a near miss
-            doesn't land on it. Busy buttons are aria-disabled, not
-            disabled, so they keep focus (docs/adr/0082). */}
+            doesn't land on it. Busy buttons keep focus and ignore
+            presses while they work (docs/adr/0082). */}
         <div className="flex items-center justify-between gap-4 p-4 border-t border-line">
           <button
             onClick={del.press}
-            aria-disabled={del.deleting || undefined}
+            {...unavailableButton(del.deleting)}
             className={`px-2 py-2 text-sm transition shrink-0 ${
               del.armed
                 ? "text-danger-text"
@@ -159,7 +160,7 @@ export default function SnippetModal({
             {isDeleted ? (
               <button
                 onClick={restore.press}
-                aria-disabled={restore.pending || undefined}
+                {...unavailableButton(restore.pending)}
                 className="px-4 py-2 text-sm text-fg-muted hover:text-fg transition shrink-0"
               >
                 {restore.label}
@@ -168,7 +169,7 @@ export default function SnippetModal({
               <>
                 <button
                   onClick={archive.press}
-                  aria-disabled={archive.pending || undefined}
+                  {...unavailableButton(archive.pending)}
                   className="px-2 py-2 text-sm text-fg-muted hover:text-fg transition shrink-0"
                 >
                   {archive.label}

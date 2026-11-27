@@ -16,6 +16,7 @@ import { useDeleteSnippet } from "@/components/useDeleteSnippet";
 import { useDialogFocus } from "@/components/useDialogFocus";
 import { useMarkTried } from "@/components/ThingsToTry";
 import { TOAST_ROOM_EDGE } from "@/lib/toasts";
+import { unavailableButton } from "@/lib/unavailable-button";
 import { formatCode, showsFormat, unavailableReason } from "@/lib/format-code";
 
 /**
@@ -276,9 +277,10 @@ export default function SnippetFormModal({
                     // page behind the form. The same button turns into Undo
                     // format, and keeps focus through that too.
                     <button
-                      onClick={handleFormat}
+                      // eslint-disable-next-line no-restricted-syntax -- Format is off with no code or a language it can't do. Both change while you're in the code box or the language list, never while Format has focus.
                       disabled={formatOff !== null || !form.code.trim()}
-                      aria-disabled={formatting || undefined}
+                      onClick={handleFormat}
+                      {...unavailableButton(formatting)}
                       aria-describedby={
                         formatOff ? `${id}-format-off` : undefined
                       }
@@ -344,9 +346,10 @@ export default function SnippetFormModal({
                 reason as Format: Chrome moves focus off a button that
                 becomes disabled (docs/adr/0081). */}
                 <button
-                  onClick={handleGenerateDescription}
+                  // eslint-disable-next-line no-restricted-syntax -- Generate is off with no code, which changes while you're in the code box, never while Generate has focus.
                   disabled={!form.code}
-                  aria-disabled={generating || undefined}
+                  onClick={handleGenerateDescription}
+                  {...unavailableButton(generating)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-accent-text hover:text-fg px-2 py-1 disabled:opacity-40 aria-disabled:opacity-40"
                 >
                   {generating ? "Writing..." : "✦ Generate"}
@@ -394,10 +397,8 @@ export default function SnippetFormModal({
               <div className="flex items-center justify-end gap-3">
                 {editing && (
                   <button
-                    onClick={() => {
-                      if (!saving) del.press();
-                    }}
-                    aria-disabled={del.deleting || saving || undefined}
+                    onClick={del.press}
+                    {...unavailableButton(del.deleting || saving)}
                     className={`mr-auto px-2 py-2 text-sm transition ${
                       del.armed
                         ? "text-danger-text"
@@ -414,9 +415,10 @@ export default function SnippetFormModal({
                   Cancel
                 </button>
                 <button
-                  onClick={handleSubmit}
+                  // eslint-disable-next-line no-restricted-syntax -- Nothing to save changes while you're in a field, never while Save has focus.
                   disabled={nothingToSave}
-                  aria-disabled={busy || undefined}
+                  onClick={handleSubmit}
+                  {...unavailableButton(busy)}
                   className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:cursor-not-allowed"
                 >
                   {saving
