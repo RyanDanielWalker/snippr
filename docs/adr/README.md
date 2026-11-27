@@ -112,5 +112,6 @@ Don't write one for routine choices (naming, small refactors, picking a utility 
 | [0078](./0078-a-light-theme-and-a-theme-menu-in-the-header.md) | A light theme, and a theme menu in the header | Accepted |
 | [0079](./0079-a-synthwave-theme-in-sunset-pink-with-a-neon-glow.md) | A synthwave theme in sunset pink, with a neon glow | Accepted |
 | [0080](./0080-a-format-button-with-prettier-and-sql-formatter-loaded-on-first-press.md) | A Format button, with Prettier and sql-formatter loaded on first press | Accepted |
+| [0081](./0081-add-keeping-focus-on-generate-to-1-6.md) | Add keeping focus on Generate to 1.6 | Accepted |
 
 ADRs 0002 through 0008 were written retroactively in October 2026 to document decisions made during the initial build in April 2026. They describe the reasoning at the time, plus what we now know about each choice.
