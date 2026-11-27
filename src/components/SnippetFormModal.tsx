@@ -110,7 +110,7 @@ export default function SnippetFormModal({
   }
 
   async function handleGenerateDescription() {
-    if (!form.code) return;
+    if (!form.code || generating) return;
     // Ticked when it's asked, like AI search in DashboardClient.
     tried("describe");
     setGenerating(true);
@@ -336,10 +336,14 @@ export default function SnippetFormModal({
                   }
                   className="w-full bg-surface-raised text-fg rounded-box px-4 py-2.5 pr-28 text-sm outline-none focus:ring-1 focus:ring-focus"
                 />
+                {/* aria-disabled while it writes, not disabled, for the same
+                reason as Format: Chrome moves focus off a button that
+                becomes disabled (docs/adr/0081). */}
                 <button
                   onClick={handleGenerateDescription}
-                  disabled={!form.code || generating}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-accent-text hover:text-fg px-2 py-1 disabled:opacity-40"
+                  disabled={!form.code}
+                  aria-disabled={generating || undefined}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-accent-text hover:text-fg px-2 py-1 disabled:opacity-40 aria-disabled:opacity-40"
                 >
                   {generating ? "Writing..." : "✦ Generate"}
                 </button>

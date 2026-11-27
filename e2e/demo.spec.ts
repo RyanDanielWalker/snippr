@@ -392,10 +392,16 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
     await card("Debounce")
       .getByRole("button", { name: "Edit", exact: true })
       .click();
-    await editForm.getByRole("button", { name: "✦ Generate" }).click();
+    // From the keyboard, and focus stays on the button while it writes and
+    // after: a button that turns disabled loses focus to the page behind
+    // the form (ADR 0081).
+    const generate = editForm.getByRole("button", { name: "✦ Generate" });
+    await generate.focus();
+    await page.keyboard.press("Enter");
     await expect(
       editForm.getByText(/The demo has used up its AI for today/),
     ).toBeVisible();
+    await expect(generate).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(editForm).toBeHidden();
     await expect(tryLine("write a description")).toContainText("Done:");
