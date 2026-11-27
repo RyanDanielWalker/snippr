@@ -132,8 +132,10 @@ function CreateToken({ onCreated }: { onCreated: (token: string) => void }) {
         />
         <button
           type="submit"
-          disabled={saving}
-          className="bg-accent text-accent-fg shadow-press case-control hover:bg-accent-hover disabled:opacity-60 text-sm font-medium rounded-box px-4 py-2 transition"
+          // Not disabled while it saves, so it keeps focus; submit ignores
+          // a second press (docs/adr/0082).
+          aria-disabled={saving || undefined}
+          className="bg-accent text-accent-fg shadow-press case-control hover:bg-accent-hover aria-disabled:opacity-60 text-sm font-medium rounded-box px-4 py-2 transition"
         >
           {saving ? "Making..." : "Make a token"}
         </button>
@@ -264,7 +266,8 @@ function TokenItem({ token }: { token: TokenRow }) {
       </div>
       <button
         onClick={press}
-        disabled={revoking}
+        // Keeps focus while it works; press ignores a second one.
+        aria-disabled={revoking || undefined}
         // The visible label plus which token, so a screen reader hears both.
         aria-label={`${label} ${token.name}`}
         className={`text-xs rounded-box px-3 py-1.5 transition ${

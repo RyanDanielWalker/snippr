@@ -587,15 +587,21 @@ export default function DashboardClient({
                     ✦ AI search
                   </button>
 
+                  {/* aria-disabled, not disabled, when the library is full.
+                      It can fill while this button has focus, when the form
+                      it opened saves the last snippet and gives focus back,
+                      and a disabled button would drop it (docs/adr/0082). */}
                   <button
-                    onClick={() => setShowModal(true)}
-                    disabled={capStatus === "full"}
+                    onClick={() => {
+                      if (capStatus !== "full") setShowModal(true);
+                    }}
+                    aria-disabled={capStatus === "full" || undefined}
                     title={
                       capStatus === "full"
                         ? snippetCapMessage(cap, user.isGuest)
                         : undefined
                     }
-                    className="flex-1 sm:flex-none bg-accent hover:bg-accent-hover text-accent-fg shadow-press px-4 py-2.5 rounded-box font-title case-control text-sm font-medium transition shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent"
+                    className="flex-1 sm:flex-none bg-accent hover:bg-accent-hover text-accent-fg shadow-press px-4 py-2.5 rounded-box font-title case-control text-sm font-medium transition shrink-0 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:hover:bg-accent"
                   >
                     + New snippet
                   </button>

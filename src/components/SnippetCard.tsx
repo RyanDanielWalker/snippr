@@ -133,6 +133,9 @@ export default function SnippetCard({
         }`}
         footer={
           <div className="pt-1 mt-auto space-y-2">
+            {/* Busy buttons are aria-disabled, not disabled: a disabled
+                button loses focus, and the hooks ignore a second press
+                anyway (docs/adr/0082). */}
             {(del.error || archive.error || restore.error) && (
               <p role="alert" className="text-xs text-danger-text">
                 {del.error ?? archive.error ?? restore.error}
@@ -149,7 +152,7 @@ export default function SnippetCard({
                     <button
                       onClick={handleRestore}
                       onPointerDown={(e) => e.stopPropagation()}
-                      disabled={restore.pending}
+                      aria-disabled={restore.pending || undefined}
                       className="text-xs case-control text-fg-subtle hover:text-fg transition"
                     >
                       {restore.label}
@@ -165,7 +168,7 @@ export default function SnippetCard({
                   <button
                     onClick={handleDelete}
                     onPointerDown={(e) => e.stopPropagation()}
-                    disabled={del.deleting}
+                    aria-disabled={del.deleting || undefined}
                     className={`text-xs case-control transition ${
                       del.armed
                         ? "text-danger-text"
@@ -207,7 +210,7 @@ export default function SnippetCard({
                   <button
                     onClick={handleArchive}
                     onPointerDown={(e) => e.stopPropagation()}
-                    disabled={archive.pending}
+                    aria-disabled={archive.pending || undefined}
                     className="text-xs case-control text-fg-subtle hover:text-fg transition"
                   >
                     {archive.label}
@@ -216,7 +219,7 @@ export default function SnippetCard({
                 <button
                   onClick={handleDelete}
                   onPointerDown={(e) => e.stopPropagation()}
-                  disabled={del.deleting}
+                  aria-disabled={del.deleting || undefined}
                   className={`text-xs case-control transition ${
                     del.armed
                       ? "text-danger-text"

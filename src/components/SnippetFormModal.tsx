@@ -56,8 +56,12 @@ export default function SnippetFormModal({
   const [form, setForm] = useState(initial);
 
   const dirty = isDirty(form, initial);
-  const canSave =
-    hasRequired(form) && dirty && !saving && !del.deleting && !formatting;
+  // Two reasons Save can't be pressed. Nothing to save is `disabled`. Busy
+  // is only `aria-disabled`, so the button keeps focus while it saves
+  // (docs/adr/0082); handleSubmit checks canSave, so a press does nothing.
+  const nothingToSave = !hasRequired(form) || !dirty;
+  const busy = saving || del.deleting || formatting;
+  const canSave = !nothingToSave && !busy;
   const formatOff = unavailableReason(form.language);
   const heading = editing ? "Edit snippet" : "New snippet";
   const id = useId();
@@ -390,8 +394,10 @@ export default function SnippetFormModal({
               <div className="flex items-center justify-end gap-3">
                 {editing && (
                   <button
-                    onClick={del.press}
-                    disabled={del.deleting || saving}
+                    onClick={() => {
+                      if (!saving) del.press();
+                    }}
+                    aria-disabled={del.deleting || saving || undefined}
                     className={`mr-auto px-2 py-2 text-sm transition ${
                       del.armed
                         ? "text-danger-text"
@@ -409,8 +415,9 @@ export default function SnippetFormModal({
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={!canSave}
-                  className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={nothingToSave}
+                  aria-disabled={busy || undefined}
+                  className="px-4 py-2 text-sm case-control bg-accent text-accent-fg shadow-press rounded-box hover:bg-accent-hover transition disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:cursor-not-allowed"
                 >
                   {saving
                     ? "Saving..."

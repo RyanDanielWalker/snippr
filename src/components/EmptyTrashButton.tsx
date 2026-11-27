@@ -62,7 +62,8 @@ export default function EmptyTrashButton() {
       )}
       <button
         onClick={press}
-        disabled={emptying}
+        // aria-disabled keeps focus here while it works (docs/adr/0082).
+        aria-disabled={emptying || undefined}
         className={`text-xs case-control transition ${
           armed ? "text-danger-text" : "text-fg-subtle hover:text-danger-text"
         }`}
