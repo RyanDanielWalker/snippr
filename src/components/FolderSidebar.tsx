@@ -9,6 +9,7 @@ import { folderDeleteText } from "@/lib/folder-delete";
 import { folderNameAction } from "@/lib/folder-name-input";
 import { ARCHIVE_DROP_ID, UNORGANIZED_DROP_ID } from "@/lib/card-drop";
 import { useToast } from "@/components/Toaster";
+import { useKeepFocus } from "@/components/useKeepFocus";
 import type { Folder } from "@/lib/library-types";
 
 // Outline icons, drawn inline so the sidebar needs no icon library. Each is
@@ -178,6 +179,8 @@ function DroppableFolder({
       ref={setNodeRef}
       onClick={onClick}
       aria-current={selected ? "true" : undefined}
+      // Where focus lands in a folder's row (useKeepFocus).
+      data-focus-primary
       className={`${ROW} ${
         isOver
           ? "bg-accent text-accent-fg ring-2 ring-focus"
@@ -255,6 +258,11 @@ export default function FolderSidebar({
   const [saving, startSaving] = useTransition();
   const [, startDeleting] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
+  // Saving a name, Escape, and Delete all take away what had focus: the name
+  // field, or the folder's menu and then its row. Focus goes to the folder
+  // that was saved, the one after a deleted one, or the + button when
+  // there's nothing to go to (docs/adr/0082).
+  const foldersRef = useKeepFocus<HTMLDivElement>(folders.map((f) => f.id));
   // What the open folder's armed Delete warns about. Only one menu is open at
   // a time, so it's worked out once, for that folder.
   const deleteNote = menuOpenId
@@ -592,12 +600,15 @@ export default function FolderSidebar({
       {/* Folders sit inside the library, so they're indented under it,
           with a guide line like a file tree's. Their right edge doesn't
           move, so the counts stay in the same column as the ones above. */}
-      <div className="mt-3 ml-5 pl-1 border-l border-line">
+      <div ref={foldersRef} className="mt-3 ml-5 pl-1 border-l border-line">
         <div className="flex items-center justify-between px-3 pt-1 pb-2">
           <span className={HEADING}>Folders</span>
+          {/* disabled while the name field is open, which has focus by then
+              (autoFocus), so nothing is lost. */}
           <button
             onClick={startCreate}
             disabled={creating}
+            data-focus-fallback
             className={`${HEADING_BUTTON} disabled:opacity-40`}
             title="New folder"
             aria-label="New folder"
@@ -610,6 +621,7 @@ export default function FolderSidebar({
           {folders.map((folder) => (
             <div
               key={folder.id}
+              data-focus-item={folder.id}
               aria-busy={deletingId === folder.id}
               className={`relative group transition ${
                 deletingId === folder.id ? "opacity-40 pointer-events-none" : ""

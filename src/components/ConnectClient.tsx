@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import { useToast } from "@/components/Toaster";
 import { useCopy } from "@/components/useCopy";
 import { markTried } from "@/components/ThingsToTry";
+import { useKeepFocus } from "@/components/useKeepFocus";
 import { callApi } from "@/lib/api-client";
 import { TOKEN_NAME_MAX } from "@/lib/field-limits";
 import { clientSetups } from "@/lib/mcp-config";
@@ -29,6 +30,22 @@ export default function ConnectClient({
   isGuest: boolean;
 }) {
   const [created, setCreated] = useState<string | null>(null);
+  // Making a token swaps the form for the new token, and Done swaps it back,
+  // so the button that was pressed leaves the page either way. Focus goes
+  // to what replaced it, the token's Copy or the name field, or a keyboard
+  // user is dropped back at the top of the page (docs/adr/0082). Same
+  // pattern as the demo checklist's buttons in DashboardClient.
+  const swapped = useRef(false);
+  const focusIfSwapped = (element: HTMLElement | null) => {
+    if (element && swapped.current) {
+      swapped.current = false;
+      element.focus();
+    }
+  };
+  function swap(token: string | null) {
+    swapped.current = true;
+    setCreated(token);
+  }
 
   // Getting here is the last line of the demo's checklist (docs/adr/0049).
   useEffect(() => {
@@ -72,9 +89,13 @@ export default function ConnectClient({
         ) : (
           <>
             {created ? (
-              <NewToken token={created} onDone={() => setCreated(null)} />
+              <NewToken
+                token={created}
+                onDone={() => swap(null)}
+                focusRef={focusIfSwapped}
+              />
             ) : (
-              <CreateToken onCreated={setCreated} />
+              <CreateToken onCreated={swap} focusRef={focusIfSwapped} />
             )}
             <TokenList tokens={tokens} />
           </>
@@ -84,7 +105,13 @@ export default function ConnectClient({
   );
 }
 
-function CreateToken({ onCreated }: { onCreated: (token: string) => void }) {
+function CreateToken({
+  onCreated,
+  focusRef,
+}: {
+  onCreated: (token: string) => void;
+  focusRef: (element: HTMLElement | null) => void;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -123,6 +150,7 @@ function CreateToken({ onCreated }: { onCreated: (token: string) => void }) {
       </label>
       <div className="flex flex-wrap gap-3">
         <input
+          ref={focusRef}
           id="token-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -149,7 +177,15 @@ function CreateToken({ onCreated }: { onCreated: (token: string) => void }) {
   );
 }
 
-function NewToken({ token, onDone }: { token: string; onDone: () => void }) {
+function NewToken({
+  token,
+  onDone,
+  focusRef,
+}: {
+  token: string;
+  onDone: () => void;
+  focusRef: (element: HTMLElement | null) => void;
+}) {
   return (
     <section className="bg-surface border border-accent-line rounded-panel p-4 space-y-4">
       <div className="space-y-1">
@@ -159,7 +195,7 @@ function NewToken({ token, onDone }: { token: string; onDone: () => void }) {
           show it to you again.
         </p>
       </div>
-      <CopyBlock text={token} label="token" />
+      <CopyBlock text={token} label="token" buttonRef={focusRef} />
       {clientSetups(token).map((setup) => (
         <div key={setup.client} className="space-y-2">
           <h3 className="text-sm font-medium">{setup.client}</h3>
@@ -177,7 +213,15 @@ function NewToken({ token, onDone }: { token: string; onDone: () => void }) {
   );
 }
 
-function CopyBlock({ text, label }: { text: string; label: string }) {
+function CopyBlock({
+  text,
+  label,
+  buttonRef,
+}: {
+  text: string;
+  label: string;
+  buttonRef?: (element: HTMLElement | null) => void;
+}) {
   const { copy, copied } = useCopy(text);
   return (
     <div className="relative">
@@ -185,6 +229,7 @@ function CopyBlock({ text, label }: { text: string; label: string }) {
         {text}
       </pre>
       <button
+        ref={buttonRef}
         onClick={copy}
         aria-label={`Copy ${label}`}
         className="absolute top-2 right-2 text-xs text-fg-muted hover:text-fg bg-surface-raised rounded-chip px-2 py-1"
@@ -196,9 +241,14 @@ function CopyBlock({ text, label }: { text: string; label: string }) {
 }
 
 function TokenList({ tokens }: { tokens: TokenRow[] }) {
+  // A revoked token's row leaves, and its Revoke with it. Focus goes to the
+  // next token's Revoke, or the heading once none are left (docs/adr/0082).
+  const listRef = useKeepFocus<HTMLElement>(tokens.map((t) => t.id));
   return (
-    <section className="space-y-3">
-      <h2 className="font-semibold">Your tokens</h2>
+    <section ref={listRef} className="space-y-3">
+      <h2 tabIndex={-1} data-focus-fallback className="font-semibold">
+        Your tokens
+      </h2>
       {tokens.length === 0 ? (
         <p className="text-sm text-fg-subtle">
           None yet. Nothing outside this browser can reach your snippets.
@@ -254,7 +304,10 @@ function TokenItem({ token }: { token: TokenRow }) {
   const label = revoking ? "Revoking..." : armed ? "Confirm revoke" : "Revoke";
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+    <li
+      data-focus-item={token.id}
+      className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+    >
       <div className="min-w-0">
         <p className="text-sm truncate">{token.name}</p>
         <p className="text-xs text-fg-subtle">Made {token.created}</p>
@@ -268,6 +321,7 @@ function TokenItem({ token }: { token: TokenRow }) {
         onClick={press}
         // Keeps focus while it works; press ignores a second one.
         aria-disabled={revoking || undefined}
+        data-focus-primary
         // The visible label plus which token, so a screen reader hears both.
         aria-label={`${label} ${token.name}`}
         className={`text-xs rounded-box px-3 py-1.5 transition ${

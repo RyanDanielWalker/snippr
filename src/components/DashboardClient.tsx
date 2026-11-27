@@ -27,6 +27,7 @@ import ThingsToTry, {
 import { useToast } from "@/components/Toaster";
 import { TOAST_ROOM } from "@/lib/toasts";
 import { useDialogFocus } from "@/components/useDialogFocus";
+import { useKeepFocus } from "@/components/useKeepFocus";
 import {
   snippetCap,
   snippetCapMessage,
@@ -309,6 +310,14 @@ export default function DashboardClient({
         pickByIds(aiResultIds, active)
       : filtered;
 
+  // Deleting, archiving, restoring, or moving a card takes it out of the
+  // view, and the button that was pressed goes with it. Focus goes to the
+  // card that took its place, or the heading or empty state when none are
+  // left, instead of falling back to the top of the page (docs/adr/0082).
+  const resultsRef = useKeepFocus<HTMLDivElement>(
+    aiLoading ? [] : displaySnippets.map((s) => s.id),
+  );
+
   const showingAiSearch = aiMode && (aiLoading || aiResultIds !== null);
   const heading = resultsHeading(
     selectedFolderId === null
@@ -514,7 +523,7 @@ export default function DashboardClient({
               />
             </div>
 
-            <div className="flex-1 min-w-0">
+            <div ref={resultsRef} className="flex-1 min-w-0">
               {capStatus !== "ok" && (
                 <div
                   className={`text-xs px-4 py-2 rounded-box mb-4 ${
@@ -533,7 +542,11 @@ export default function DashboardClient({
 
               {heading && (
                 <div className="flex items-baseline justify-between gap-4 mb-4">
-                  <h2 className="text-lg font-medium text-fg-muted">
+                  <h2
+                    tabIndex={-1}
+                    data-focus-fallback
+                    className="text-lg font-medium text-fg-muted"
+                  >
                     {heading}
                   </h2>
                   {/* Only over Recently deleted itself, not over AI search
@@ -618,6 +631,8 @@ export default function DashboardClient({
                 <div className="text-center py-24 text-fg-subtle">
                   <p
                     role={empty.tone === "error" ? "alert" : undefined}
+                    tabIndex={-1}
+                    data-focus-fallback
                     className={`text-lg ${empty.tone === "error" ? "text-danger-text" : ""}`}
                   >
                     {empty.title}

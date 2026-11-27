@@ -57,9 +57,12 @@ export default function SnippetCardView({
             {titleButton ? (
               // The card's cursor, not a button's arrow: a press on the
               // title can still start a drag.
+              // data-focus-primary: where focus lands when the card
+              // before this one leaves the view (useKeepFocus).
               <button
                 type="button"
                 {...titleButton}
+                data-focus-primary
                 className="text-left break-words cursor-[inherit]"
               >
                 {snippet.title}

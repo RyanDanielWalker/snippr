@@ -75,6 +75,8 @@ test("the dashboard fits a phone, with its folders in a drawer", async ({
   await page.keyboard.press("Escape");
   await expect(rename).toBeHidden();
   await expect(drawer).toBeVisible();
+  // Focus goes back to the folder's row, not the top of the page (ADR 0082).
+  await expect(drawer.getByRole("button", { name: /^Frontend/ })).toBeFocused();
 
   // Then Escape closes it, focus goes back to the Folders button, and the
   // page is usable again.
@@ -134,6 +136,17 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   const card = (title: string) =>
     page.getByRole("article", { name: title, exact: true });
 
+  // Every way a card leaves moves focus to the card that took its place, or
+  // the next one up when it was last, so a keyboard user carries on from
+  // there instead of the top of the page (ADR 0082).
+  const titleOf = (title: string) =>
+    card(title).getByRole("button", { name: title, exact: true });
+  async function takesThePlaceOf(title: string) {
+    const titles = await cards.locator("h3 button").allTextContents();
+    const at = titles.indexOf(title);
+    return titleOf(titles[at + 1] ?? titles[at - 1]);
+  }
+
   // From the preview, in one tap. Undo in the toast brings it straight back.
   const moved = page.getByText("Moved to Recently deleted.");
   await card("Debounce").getByRole("heading").click();
@@ -148,10 +161,12 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await expect(card("Debounce")).toBeVisible();
 
   // Then for real this time.
+  let next = await takesThePlaceOf("Debounce");
   await card("Debounce").getByRole("heading").click();
   await preview.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(preview).toBeHidden();
   await expect(card("Debounce")).toBeHidden();
+  await expect(next).toBeFocused();
 
   // From the edit form, reached through the preview. The delete's toast is
   // still up, and the buttons of both dialogs sit above it.
@@ -211,14 +226,18 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   ).toBe(true);
   await page.unroute("**/api/snippets");
   await expectAboveToast(formDelete, moved);
+  next = await takesThePlaceOf("Retry with backoff");
   await formDelete.click();
   await expect(form).toBeHidden();
   await expect(card("Retry with backoff")).toBeHidden();
+  await expect(next).toBeFocused();
 
   // From the card itself.
   const port = card("Free up a port");
+  next = await takesThePlaceOf("Free up a port");
   await port.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(port).toBeHidden();
+  await expect(next).toBeFocused();
 
   // All three wait in Recently deleted, newest first, with their 30 days.
   const sidebar = page.locator("aside");
@@ -246,6 +265,7 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   ).toHaveCount(0);
 
   // Restore sends it back to the library.
+  next = await takesThePlaceOf("Debounce");
   await deletedPreview
     .getByRole("button", { name: "Restore", exact: true })
     .click();
@@ -253,15 +273,18 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await expect(deletedPreview).toBeHidden();
   await expect(card("Debounce")).toBeHidden();
   await expect(cards).toHaveCount(2);
+  await expect(next).toBeFocused();
 
   // Delete forever takes two presses, and then it's gone.
   const retry = card("Retry with backoff");
+  next = await takesThePlaceOf("Retry with backoff");
   await retry.getByRole("button", { name: "Delete forever" }).click();
   await expect(retry).toBeVisible();
   await retry.getByRole("button", { name: "Confirm delete" }).click();
   await expect(page.getByText("Deleted for good.")).toBeVisible();
   await expect(retry).toBeHidden();
   await expect(cards).toHaveCount(1);
+  await expect(next).toBeFocused();
 
   // Empty takes two presses too. With nothing left, the row goes and the
   // view falls back to All snippets.
@@ -273,6 +296,9 @@ test("a snippet can be deleted from its card, preview, or edit form, undone, the
   await expect(card("Debounce")).toBeVisible();
   await expect(port).toBeHidden();
   await expect(empty).toBeHidden();
+  // Empty went with the trash, so focus goes to the first card of the view
+  // that replaced it.
+  await expect(cards.first().locator("h3 button")).toBeFocused();
   await page.getByRole("button", { name: "Folders", exact: true }).click();
   await expect(trashRow).toBeHidden();
 });

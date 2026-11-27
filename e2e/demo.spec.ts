@@ -112,6 +112,45 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(folderMenu).toBeFocused();
   await expect(folderMenu).toHaveCSS("opacity", "1");
 
+  // Making and deleting a folder from the keyboard. Each step removes what
+  // had focus, and focus goes to what took its place, not back to the top
+  // of the page (ADR 0082). Escape on the name field goes back to +.
+  const newFolder = sidebar.getByRole("button", { name: "New folder" });
+  const folderName = sidebar.getByRole("textbox", { name: "Folder name" });
+  await newFolder.focus();
+  await page.keyboard.press("Enter");
+  await expect(folderName).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(newFolder).toBeFocused();
+  // Enter saves it, and focus goes to the new folder.
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("Scratch");
+  await page.keyboard.press("Enter");
+  const scratch = sidebar.getByRole("button", { name: /^Scratch/ });
+  await expect(scratch).toBeFocused();
+  // Deleting it moves focus to the folder that takes its place in the list.
+  const folderRows = sidebar.locator(
+    "[data-focus-item] > [data-focus-primary]",
+  );
+  const rowNames = await folderRows.allTextContents();
+  const at = rowNames.findIndex((n) => n.startsWith("Scratch"));
+  const takesItsPlace = at + 1 < rowNames.length ? at : at - 1;
+  await sidebar
+    .getByRole("button", { name: "Rename or delete Scratch" })
+    .focus();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(
+    sidebar.getByRole("button", { name: "Delete", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+  await expect(scratch).toBeHidden();
+  await expect(folderRows.nth(takesItsPlace)).toBeFocused();
+  // Its toast would still be up for the form's Tab check below.
+  await page.getByRole("button", { name: "Dismiss" }).click();
+
   // Escape closes an untouched form, and leaves one you've typed in alone.
   // Tab stays in it too.
   const newForm = page.getByRole("dialog", { name: "New snippet" });
@@ -256,6 +295,8 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(page.getByText("Moved to Shell.")).toBeVisible();
   await expect(card("Debounce")).toBeHidden();
   await expect(cards).toHaveCount(1);
+  // Focus went with the card, so it moves to the one left (ADR 0082).
+  await expect(cardTitle("Slugify")).toBeFocused();
 
   // And back, with the mouse this time.
   await sidebar.getByRole("button", { name: /^Shell/ }).click();
@@ -468,6 +509,12 @@ test("a demo visitor can save, find, and file a snippet", async ({ page }) => {
   await expect(page.getByText("Back in your library.")).toBeVisible();
   await expect(archiveRow).toBeHidden();
   await expect(card("Long code")).toBeVisible();
+  // The view fell back to All snippets, where the card is too, so the
+  // button that was pressed is still there, now Archive, and keeps focus
+  // (ADR 0082).
+  await expect(
+    card("Long code").getByRole("button", { name: "Archive", exact: true }),
+  ).toBeFocused();
 
   // Dropping a card on the row archives it too (ADR 0065). The row is hidden
   // while the archive is empty, so it has to come up for the drag, and a

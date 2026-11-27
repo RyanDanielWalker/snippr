@@ -93,8 +93,11 @@ export default function SnippetCard({
     setShowEdit(true);
   }
 
+  // The wrapper only marks what belongs to this card for useKeepFocus
+  // (docs/adr/0082): the card and the dialogs it opens. `contents` keeps it
+  // out of the layout, so the article is still the grid's item.
   return (
-    <>
+    <div data-focus-item={snippet.id} className="contents">
       {showEdit && (
         <SnippetFormModal
           snippet={snippet}
@@ -233,6 +236,6 @@ export default function SnippetCard({
           </div>
         }
       />
-    </>
+    </div>
   );
 }
