@@ -49,9 +49,21 @@ Tokens are stored as hashes and shown once. Each tool calls the same function as
 
 <table>
   <tr>
-    <td width="64%"><img src="docs/images/8bit.png" alt="The dashboard in the 8-bit theme: a dot grid, square corners, pixel fonts, and bright Sweetie 16 colors"></td>
-    <td width="18%"><img src="docs/images/phone.png" alt="The dashboard on a phone in the default theme"></td>
-    <td width="18%"><img src="docs/images/phone-8bit.png" alt="The dashboard on a phone in the 8-bit theme"></td>
+    <td width="50%"><img src="docs/images/light.png" alt="The dashboard in the light theme: warm paper background, dark ink text, and tangerine buttons"></td>
+    <td width="50%"><img src="docs/images/synthwave.png" alt="The dashboard in the synthwave theme: deep purple with a faint grid, hot pink buttons, and a neon glow on the logo"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/8bit.png" alt="The dashboard in the 8-bit theme: a dot grid, square corners, pixel fonts, and bright Sweetie 16 colors"></td>
+    <td width="50%"><img src="docs/images/theme-picker.png" alt="The Theme menu open in the header, listing Default, Light, 8-bit, and Synthwave, each with a swatch of its colors"></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="25%"><img src="docs/images/phone.png" alt="The dashboard on a phone in the default theme"></td>
+    <td width="25%"><img src="docs/images/phone-light.png" alt="The dashboard on a phone in the light theme"></td>
+    <td width="25%"><img src="docs/images/phone-8bit.png" alt="The dashboard on a phone in the 8-bit theme"></td>
+    <td width="25%"><img src="docs/images/phone-synthwave.png" alt="The dashboard on a phone in the synthwave theme"></td>
   </tr>
 </table>
 
