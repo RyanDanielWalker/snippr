@@ -5,6 +5,12 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { searchExample } from "../src/lib/landing-samples";
+import {
+  THEME_NAMES,
+  THEMES,
+  themeAttribute,
+  type Theme,
+} from "../src/lib/theme";
 import { hashSessionToken } from "../src/lib/session-tokens";
 import { e2eDatabase } from "../scripts/e2e-guard.mjs";
 
@@ -35,19 +41,51 @@ async function startDemo(page: Page) {
   await page.getByRole("button", { name: "Close things to try" }).click();
 }
 
+// Every theme but the default, which dashboard.png and phone.png show.
+// Each gets a wide shot and a phone shot, named after its data-theme value.
+const OTHER_THEMES = THEMES.filter((theme) => theme !== "default");
+
+function themeMenu(page: Page) {
+  return page.getByRole("group", { name: "Theme" });
+}
+
+// Through the header's Theme menu, the way a visitor does it, at every
+// width (ADR 0078). The menu closes on a pick.
+async function pickTheme(page: Page, theme: Theme) {
+  await page.getByRole("button", { name: "Theme", exact: true }).click();
+  await themeMenu(page)
+    .getByRole("button", { name: THEME_NAMES[theme] })
+    .click();
+  await expect(themeMenu(page)).toBeHidden();
+  const attribute = themeAttribute(theme);
+  if (attribute) {
+    await expect(page.locator("html")).toHaveAttribute("data-theme", attribute);
+  } else {
+    await expect(page.locator("html")).not.toHaveAttribute("data-theme");
+  }
+}
+
 // Fonts and syntax colors arrive after the page does; a shot taken before
 // them shows fallback type. Transitions are finished first, or a theme
 // switch is caught halfway through its color change.
-async function shoot(page: Page, name: string, fullPage = false) {
+async function shoot(
+  page: Page,
+  name: string,
+  options: { fullPage?: boolean; clip?: Rect } = {},
+) {
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({
     path: path.join(OUT, name),
-    fullPage,
+    ...options,
     animations: "disabled",
   });
 }
 
-test("desktop: dashboard, AI search, 8-bit", async ({ browser }) => {
+type Rect = { x: number; y: number; width: number; height: number };
+
+test("desktop: dashboard, AI search, every theme, the menu", async ({
+  browser,
+}) => {
   const context = await browser.newContext({
     viewport: DESKTOP,
     deviceScaleFactor: 2,
@@ -68,18 +106,39 @@ test("desktop: dashboard, AI search, 8-bit", async ({ browser }) => {
   await shoot(page, "ai-search.png");
   await page.getByRole("button", { name: "✦ AI search" }).click();
 
+  for (const theme of OTHER_THEMES) {
+    await pickTheme(page, theme);
+    await shoot(page, `${theme}.png`);
+  }
+
+  // The menu open, in the default theme. The menu is small on a whole
+  // page, so this is the top right corner of it: half the width and half
+  // the height, which keeps the other shots' shape. It's the corner the
+  // Theme button sits in, so the menu is inside it.
+  await pickTheme(page, "default");
   await page.getByRole("button", { name: "Theme", exact: true }).click();
-  await page
-    .getByRole("group", { name: "Theme" })
-    .getByRole("button", { name: "8-bit" })
-    .click();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "8bit");
-  await shoot(page, "8bit.png");
+  await expect(themeMenu(page)).toBeVisible();
+  const clip = {
+    x: DESKTOP.width / 2,
+    y: 0,
+    width: DESKTOP.width / 2,
+    height: DESKTOP.height / 2,
+  };
+  const menu = await themeMenu(page).boundingBox();
+  if (
+    !menu ||
+    menu.x < clip.x ||
+    menu.x + menu.width > clip.x + clip.width ||
+    menu.y + menu.height > clip.height
+  ) {
+    throw new Error("The Theme menu isn't in the top right corner");
+  }
+  await shoot(page, "theme-picker.png", { clip });
 
   await context.close();
 });
 
-test("phone: both themes", async ({ browser, baseURL }) => {
+test("phone: every theme", async ({ browser }) => {
   const context = await browser.newContext({
     viewport: PHONE,
     deviceScaleFactor: 3,
@@ -90,14 +149,10 @@ test("phone: both themes", async ({ browser, baseURL }) => {
   await startDemo(page);
   await shoot(page, "phone.png");
 
-  // Set the cookie rather than go through the picker. Whether to switch is
-  // left to the README item in 1.6 (ADR 0076).
-  await context.addCookies([
-    { name: "snippr-theme", value: "8bit", url: baseURL },
-  ]);
-  await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "8bit");
-  await shoot(page, "phone-8bit.png");
+  for (const theme of OTHER_THEMES) {
+    await pickTheme(page, theme);
+    await shoot(page, `phone-${theme}.png`);
+  }
 
   await context.close();
 });
@@ -155,7 +210,7 @@ test("connect: a new token and its setup", async ({ browser, baseURL }) => {
       );
     }
   });
-  await shoot(page, "connect.png", true);
+  await shoot(page, "connect.png", { fullPage: true });
 
   await context.close();
 });

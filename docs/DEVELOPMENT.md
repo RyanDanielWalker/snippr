@@ -87,6 +87,8 @@ npm run db:up
 npm run readme-images
 ```
 
+Each theme in `THEMES` (`src/lib/theme.ts`) other than the default gets a wide shot and a phone shot named after its `data-theme` value, like `synthwave.png` and `phone-synthwave.png`. The default's are `dashboard.png` and `phone.png`. So a new theme gets its images on the next run without touching the script, but `README.md` has to be told to show them. The script picks each theme through the header's Theme menu, the way a visitor would, rather than setting the theme cookie. That way a menu that stops working on a phone breaks the run instead of quietly producing images. `theme-picker.png` is a crop of the menu open: the top right quarter of the dashboard, the same shape as the wide shots, and the script fails if the menu ever falls outside it.
+
 Unlike the end-to-end tests, it calls the real Claude for the AI search shots, so `.env` needs `ANTHROPIC_API_KEY`. It only checks that each screen loaded, so look at the images before committing them.
 
 ## Store tests
